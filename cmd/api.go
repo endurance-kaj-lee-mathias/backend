@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/message"
 	"log/slog"
 	"net/http"
@@ -18,6 +19,7 @@ func (server *server) mount() http.Handler {
 	r.Use(middleware.Timeout(time.Minute))
 
 	handler := message.Wire(server.db)
+	healthHandler := health.NewHandler(server.db)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +28,7 @@ func (server *server) mount() http.Handler {
 	})
 
 	r.Get("/hello", handler.GetMessage)
+	r.Get("/health", healthHandler.Health)
 
 	return r
 }
