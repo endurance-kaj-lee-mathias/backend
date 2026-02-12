@@ -1,10 +1,12 @@
 package main
 
 import (
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/message"
 	"log/slog"
 	"net/http"
 	"time"
+
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/message"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -25,8 +27,18 @@ func (server *server) mount() http.Handler {
 		})
 	})
 
-	r.Get("/hello", handler.GetMessage)
+	r.Group(func(r chi.Router) {
+		r.Use(auth.TokenAuthentication(server.idp))
 
+		r.Group(func(r chi.Router) {
+			r.Use(auth.RequireRoles("admin"))
+			r.Get("/hello-admin", handler.GetMessage)
+		})
+
+		r.Get("/hello-token", handler.GetMessage)
+	})
+
+	r.Get("/hello-public", handler.GetMessage)
 	return r
 }
 
