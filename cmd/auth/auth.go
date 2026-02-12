@@ -10,6 +10,7 @@ import (
 
 	"github.com/MicahParks/keyfunc/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/config"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 )
 
@@ -17,7 +18,7 @@ type contextKey string
 
 const claimsKey contextKey = "claims"
 
-func TokenAuthentication(config main.Idp) func(http.Handler) http.Handler {
+func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
 	var url = fmt.Sprintf(
 		"%s/realms/%s/protocol/openid-connect/certs",
 		config.Url,
