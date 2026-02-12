@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -13,6 +14,12 @@ const maxBodySize = 1_048_576
 
 func Decode(r *http.Request, data any) error {
 	contentType := r.Header.Get("Content-Type")
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			slog.Error("failed to close request body", "error", err)
+		}
+	}()
+
 	if contentType != "" {
 		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
 
