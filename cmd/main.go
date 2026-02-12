@@ -1,9 +1,10 @@
 package main
 
 import (
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/config"
 	"log/slog"
 	"os"
+
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/config"
 
 	"github.com/joho/godotenv"
 )
@@ -14,8 +15,10 @@ func main() {
 	}
 
 	cfg := config.LoadConfig()
+	idp := config.LoadIdp()
+
 	db := loadDatabase(cfg.Url, cfg.Schema)
-	api := server{cfg, db}
+	api := server{cfg, idp, db}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
