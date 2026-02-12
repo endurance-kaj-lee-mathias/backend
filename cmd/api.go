@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/message"
 
 	"github.com/go-chi/chi/v5"
@@ -20,6 +21,7 @@ func (server *server) mount() http.Handler {
 	r.Use(middleware.Timeout(time.Minute))
 
 	handler := message.Wire(server.db)
+	healthHandler := health.NewHandler(server.db)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +31,7 @@ func (server *server) mount() http.Handler {
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.TokenAuthentication(server.idp))
+		r.Get("/hello", handler.GetMessage)
 
 		r.Group(func(r chi.Router) {
 			r.Use(auth.RequireRoles("admin"))
@@ -39,6 +42,7 @@ func (server *server) mount() http.Handler {
 	})
 
 	r.Get("/hello-public", handler.GetMessage)
+	r.Get("/health", healthHandler.Health)
 	return r
 }
 
