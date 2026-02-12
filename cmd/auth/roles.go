@@ -30,6 +30,7 @@ func RequireRoles(roles ...string) func(http.Handler) http.Handler {
 				}
 
 				next.ServeHTTP(w, r)
+				return
 			}
 
 			response.WriteError(w, http.StatusForbidden, MissingRole)
