@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/env"
 )
 
@@ -14,7 +15,7 @@ type Config struct {
 func LoadConfig() Config {
 	port := env.Get("SERVER_PORT", "8080")
 	url := env.Get("DB_URL", "postgresql://user:password@localhost:5432/endurance?sslmode=disable")
-	schema := env.Get("DB_SCHEMA", "registrations")
+	schema := env.Get("DB_SCHEMA", "endurance")
 
 	return Config{
 		Port:   fmt.Sprintf(":%s", port),
