@@ -8,6 +8,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/message"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,6 +22,7 @@ func (server *server) mount() http.Handler {
 	r.Use(middleware.Timeout(time.Minute))
 
 	handler := message.Wire(server.db)
+	userHandler := users.Wire(server.db)
 	healthHandler := health.NewHandler(server.db)
 
 	r.Use(func(next http.Handler) http.Handler {
@@ -39,6 +41,13 @@ func (server *server) mount() http.Handler {
 		})
 
 		r.Get("/hello-token", handler.GetMessage)
+
+		r.Route("/users", func(r chi.Router) {
+			r.Post("/", userHandler.CreateUser)
+			r.Get("/{id}", userHandler.GetUser)
+			r.Post("/{veteranId}/support", userHandler.AddSupportMember)
+			r.Get("/{veteranId}/support", userHandler.ListSupportMembers)
+		})
 	})
 
 	r.Get("/hello-public", handler.GetMessage)
