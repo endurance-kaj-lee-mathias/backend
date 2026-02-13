@@ -34,3 +34,18 @@ func FromEntity(entity UserEntity) (domain.User, error) {
 		UpdatedAt: entity.UpdatedAt,
 	}, nil
 }
+
+func ToEntity(user *domain.User) (UserEntity, error) {
+	roles, err := json.Marshal(user.Roles)
+	if err != nil {
+		return UserEntity{}, fmt.Errorf("marshal roles: %w", err)
+	}
+
+	return UserEntity{
+		ID:        user.ID,
+		Email:     user.Email,
+		Roles:     roles,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}, nil
+}

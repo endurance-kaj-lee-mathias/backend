@@ -11,8 +11,6 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure/entities"
 )
 
-var ErrNotFound = errors.New("user not found")
-
 func (r *repository) Save(ctx context.Context, e entities.UserEntity) error {
 	query := `
 		INSERT INTO users (id, email, roles)
