@@ -1,0 +1,88 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@username = kaj
+@password = password
+
+### =====================================================
+### Get access token from Keycloak
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&
+client_id={{clientId}}&
+client_secret={{clientSecret}}&
+username={{username}}&
+password={{password}}&
+scope=openid
+
+> {%
+  client.global.set("token", response.body.access_token);
+%}
+
+### =====================================================
+### Create VETERAN user
+### =====================================================
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "veteran1@example.com",
+  "roles": ["VETERAN"]
+}
+
+### =====================================================
+### Create SUPPORT user
+### =====================================================
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "support1@example.com",
+  "roles": ["SUPPORT"]
+}
+
+### =====================================================
+### Create THERAPIST user
+### =====================================================
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "therapist1@example.com",
+  "roles": ["THERAPIST"]
+}
+
+### =====================================================
+### Get user by ID
+### (copy id from response)
+### =====================================================
+GET {{baseUrl}}/users/980c088e-8ee6-4b8d-a566-cb48cb120beb
+Authorization: Bearer {{token}}
+
+### =====================================================
+### Add SUPPORT member to VETERAN
+### (replace veteranId & supportId)
+### =====================================================
+POST {{baseUrl}}/users/d2b833b8-7d28-46ae-8f3a-919cdbda00c0/support
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "supportId": "980c088e-8ee6-4b8d-a566-cb48cb120beb"
+}
+
+### =====================================================
+### List SUPPORT members of VETERAN
+### =====================================================
+GET {{baseUrl}}/users/d2b833b8-7d28-46ae-8f3a-919cdbda00c0/support
+Authorization: Bearer {{token}}

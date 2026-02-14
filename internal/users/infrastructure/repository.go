@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -13,12 +14,12 @@ import (
 
 func (r *repository) Save(ctx context.Context, e entities.UserEntity) error {
 	query := `
-		INSERT INTO users (id, email, roles)
-		VALUES ($1, $2, $3)
+		INSERT INTO users (id, email, roles, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (id) DO UPDATE
 		SET email = EXCLUDED.email,
 		    roles = EXCLUDED.roles,
-		    updated_at = now()
+		    updated_at = EXCLUDED.updated_at
 	`
 
 	_, err := r.db.ExecContext(
@@ -27,6 +28,8 @@ func (r *repository) Save(ctx context.Context, e entities.UserEntity) error {
 		e.ID,
 		e.Email,
 		e.Roles,
+		e.CreatedAt,
+		e.UpdatedAt,
 	)
 	return err
 }
@@ -77,12 +80,12 @@ func (r *repository) FindByEmail(ctx context.Context, email string) (entities.Us
 
 func (r *repository) AddSupportMember(ctx context.Context, veteranID, supportID uuid.UUID) error {
 	query := `
-		INSERT INTO user_supports (veteran_id, support_id)
-		VALUES ($1, $2)
+		INSERT INTO user_supports (veteran_id, support_id, created_at)
+		VALUES ($1, $2, $3)
 		ON CONFLICT (veteran_id, support_id) DO NOTHING
 	`
 
-	_, err := r.db.ExecContext(ctx, query, veteranID, supportID)
+	_, err := r.db.ExecContext(ctx, query, veteranID, supportID, time.Now().UTC())
 	return err
 }
 
