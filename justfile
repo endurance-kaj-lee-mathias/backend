@@ -6,3 +6,9 @@ deps:
 
 run:
     go run cmd/*.go
+
+up:
+    goose up
+
+down:
+    goose down
