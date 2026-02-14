@@ -4,21 +4,21 @@ import (
 	"time"
 )
 
-type User struct {
-	ID        UserId    `json:"id"`
+type Member struct {
+	ID        MemberId  `json:"id"`
+	Veteran   VeteranId `json:"veteran"`
 	Email     string    `json:"email"`
-	Roles     []Role    `json:"roles"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func NewUser(email string, roles []Role) User {
+func NewMember(veteran VeteranId, email string) Member {
 	now := time.Now().UTC()
 
-	return User{
-		ID:        NewId(),
+	return Member{
+		ID:        NewMemberId(),
+		Veteran:   veteran,
 		Email:     email,
-		Roles:     roles,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

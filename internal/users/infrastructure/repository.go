@@ -4,15 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log/slog"
-	"time"
 
-	"github.com/google/uuid"
-
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure/entities"
 )
 
-func (r *repository) Save(ctx context.Context, e entities.UserEntity) error {
+func (r *repository) Create(ctx context.Context, ent entities.UserEntity) error {
 	query := `
 		INSERT INTO users (id, email, roles, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
@@ -25,12 +22,13 @@ func (r *repository) Save(ctx context.Context, e entities.UserEntity) error {
 	_, err := r.db.ExecContext(
 		ctx,
 		query,
-		e.ID,
-		e.Email,
-		e.Roles,
-		e.CreatedAt,
-		e.UpdatedAt,
+		ent.ID,
+		ent.Email,
+		ent.Roles,
+		ent.CreatedAt,
+		ent.UpdatedAt,
 	)
+
 	return err
 }
 
@@ -48,8 +46,9 @@ func (r *repository) FindByID(ctx context.Context, id uuid.UUID) (entities.UserE
 		Scan(&e.ID, &e.Email, &e.Roles, &e.CreatedAt, &e.UpdatedAt); err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
-			return entities.UserEntity{}, ErrNotFound
+			return entities.UserEntity{}, NotFound
 		}
+
 		return entities.UserEntity{}, err
 	}
 
@@ -57,7 +56,7 @@ func (r *repository) FindByID(ctx context.Context, id uuid.UUID) (entities.UserE
 }
 
 func (r *repository) FindByEmail(ctx context.Context, email string) (entities.UserEntity, error) {
-	var e entities.UserEntity
+	var ent entities.UserEntity
 
 	query := `
 		SELECT id, email, roles, created_at, updated_at
@@ -67,58 +66,14 @@ func (r *repository) FindByEmail(ctx context.Context, email string) (entities.Us
 
 	if err := r.db.
 		QueryRowContext(ctx, query, email).
-		Scan(&e.ID, &e.Email, &e.Roles, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		Scan(&ent.ID, &ent.Email, &ent.Roles, &ent.CreatedAt, &ent.UpdatedAt); err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
-			return entities.UserEntity{}, ErrNotFound
+			return entities.UserEntity{}, NotFound
 		}
+
 		return entities.UserEntity{}, err
 	}
 
-	return e, nil
-}
-
-func (r *repository) AddSupportMember(ctx context.Context, veteranID, supportID uuid.UUID) error {
-	query := `
-		INSERT INTO user_supports (veteran_id, support_id, created_at)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (veteran_id, support_id) DO NOTHING
-	`
-
-	_, err := r.db.ExecContext(ctx, query, veteranID, supportID, time.Now().UTC())
-	return err
-}
-
-func (r *repository) ListSupportMembers(ctx context.Context, veteranID uuid.UUID) ([]entities.UserEntity, error) {
-	query := `
-		SELECT u.id, u.email, u.roles, u.created_at, u.updated_at
-		FROM users u
-		JOIN user_supports s ON u.id = s.support_id
-		WHERE s.veteran_id = $1
-	`
-
-	rows, err := r.db.QueryContext(ctx, query, veteranID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			slog.Error("failed to close rows", "error", err)
-		}
-	}()
-
-	var out []entities.UserEntity
-	for rows.Next() {
-		var e entities.UserEntity
-		if err := rows.Scan(&e.ID, &e.Email, &e.Roles, &e.CreatedAt, &e.UpdatedAt); err != nil {
-			return nil, err
-		}
-		out = append(out, e)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return out, nil
+	return ent, nil
 }

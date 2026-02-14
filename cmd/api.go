@@ -7,7 +7,7 @@ import (
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/message"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
 
 	"github.com/go-chi/chi/v5"
@@ -21,8 +21,8 @@ func (server *server) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(time.Minute))
 
-	handler := message.Wire(server.db)
 	userHandler := users.Wire(server.db)
+	supportHandler := support.Wire(server.db)
 	healthHandler := health.NewHandler(server.db)
 
 	r.Use(func(next http.Handler) http.Handler {
@@ -33,25 +33,17 @@ func (server *server) mount() http.Handler {
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.TokenAuthentication(server.idp))
-		r.Get("/hello", handler.GetMessage)
-
-		r.Group(func(r chi.Router) {
-			r.Use(auth.RequireRoles("admin"))
-			r.Get("/hello-admin", handler.GetMessage)
-		})
-
-		r.Get("/hello-token", handler.GetMessage)
 
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/", userHandler.CreateUser)
 			r.Get("/{id}", userHandler.GetUser)
-			r.Post("/{veteranId}/support", userHandler.AddSupportMember)
-			r.Get("/{veteranId}/support", userHandler.ListSupportMembers)
+			r.Get("/{id}/support", supportHandler.GetAll)
+			r.Post("/{id}/support", supportHandler.AddMember)
 		})
 	})
 
-	r.Get("/hello-public", handler.GetMessage)
 	r.Get("/health", healthHandler.Health)
+
 	return r
 }
 

@@ -2,10 +2,9 @@ package entities
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
@@ -17,35 +16,58 @@ type UserEntity struct {
 	UpdatedAt time.Time       `db:"updated_at"`
 }
 
-func FromEntity(entity UserEntity) (domain.User, error) {
+func FromEntity(ent UserEntity) (domain.User, error) {
 	roles := make([]domain.Role, 0)
 
-	if len(entity.Roles) > 0 {
-		if err := json.Unmarshal(entity.Roles, &roles); err != nil {
-			return domain.User{}, fmt.Errorf("unmarshal roles: %w", err)
+	if len(ent.Roles) > 0 {
+		if err := json.Unmarshal(ent.Roles, &roles); err != nil {
+			return domain.User{}, InvalidRoles
 		}
 	}
 
+	id, err := domain.ParseId(ent.ID.String())
+
+	if err != nil {
+		return domain.User{}, err
+	}
+
 	return domain.User{
-		ID:        entity.ID,
-		Email:     entity.Email,
+		ID:        id,
+		Email:     ent.Email,
 		Roles:     roles,
-		CreatedAt: entity.CreatedAt,
-		UpdatedAt: entity.UpdatedAt,
+		CreatedAt: ent.CreatedAt,
+		UpdatedAt: ent.UpdatedAt,
 	}, nil
 }
 
-func ToEntity(user *domain.User) (UserEntity, error) {
-	roles, err := json.Marshal(user.Roles)
+func FromEntities(entities []UserEntity) []domain.User {
+	output := make([]domain.User, 0, len(entities))
+
+	for _, entity := range entities {
+		entity, err := FromEntity(entity)
+
+		if err != nil {
+			continue
+		}
+
+		output = append(output, entity)
+	}
+
+	return output
+}
+
+func ToEntity(usr domain.User) (UserEntity, error) {
+	roles, err := json.Marshal(usr.Roles)
+
 	if err != nil {
-		return UserEntity{}, fmt.Errorf("marshal roles: %w", err)
+		return UserEntity{}, InvalidRoles
 	}
 
 	return UserEntity{
-		ID:        user.ID,
-		Email:     user.Email,
+		ID:        usr.ID.UUID,
+		Email:     usr.Email,
 		Roles:     roles,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		CreatedAt: usr.CreatedAt,
+		UpdatedAt: usr.UpdatedAt,
 	}, nil
 }
