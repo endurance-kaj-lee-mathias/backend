@@ -11,6 +11,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, veteranID, memberId uuid.UUID) (entities.MemberEntity, error)
 	ReadAll(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error)
+	ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error)
 }
 
 type repository struct {

@@ -11,6 +11,8 @@ type MemberEntity struct {
 	ID        uuid.UUID `db:"id"`
 	Veteran   uuid.UUID `db:"veteran"`
 	Email     string    `db:"email"`
+	FirstName string    `db:"first_name"`
+	LastName  string    `db:"last_name"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
@@ -28,13 +30,15 @@ func FromEntity(ent MemberEntity) (domain.Member, error) {
 		return domain.Member{}, err
 	}
 
-	return domain.Member{
-		ID:        memberId,
-		Veteran:   veteranId,
-		Email:     ent.Email,
-		CreatedAt: ent.CreatedAt,
-		UpdatedAt: ent.UpdatedAt,
-	}, nil
+	return domain.NewMember(
+		memberId,
+		veteranId,
+		ent.Email,
+		ent.FirstName,
+		ent.LastName,
+		ent.CreatedAt,
+		ent.UpdatedAt,
+	), nil
 }
 
 func FromEntities(ents []MemberEntity) []domain.Member {
@@ -58,6 +62,8 @@ func ToEntity(mem domain.Member) (MemberEntity, error) {
 		ID:        mem.ID.UUID,
 		Veteran:   mem.Veteran.UUID,
 		Email:     mem.Email,
+		FirstName: mem.FirstName,
+		LastName:  mem.LastName,
 		CreatedAt: mem.CreatedAt,
 		UpdatedAt: mem.UpdatedAt,
 	}, nil

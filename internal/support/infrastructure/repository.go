@@ -13,13 +13,22 @@ func (r *repository) Create(ctx context.Context, veteranID, memberId uuid.UUID) 
 	var ent entities.MemberEntity
 
 	query := `
-		INSERT INTO user_supports (veteran_id, support_id, created_at)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (veteran_id, support_id) DO NOTHING
-		RETURNING veteran_id, support_id, created_at
-	`
+					WITH ins AS (
+						INSERT INTO user_supports (veteran_id, support_id, created_at)
+						VALUES ($1, $2, $3)
+						ON CONFLICT (veteran_id, support_id) DO NOTHING
+						RETURNING veteran_id, support_id, created_at
+					)
+					SELECT ins.veteran_id, ins.support_id, ins.created_at, u.email, u.first_name, u.last_name, u.updated_at
+					FROM users u
+					LEFT JOIN ins ON u.id = ins.support_id
+					LEFT JOIN user_supports s ON u.id = s.support_id AND s.veteran_id = $1
+					WHERE u.id = $2
+				`
 
-	err := r.db.QueryRowContext(ctx, query, veteranID, memberId, time.Now().UTC()).Scan(&ent.Veteran, &ent.ID, &ent.CreatedAt)
+	err := r.db.QueryRowContext(ctx, query, veteranID, memberId, time.Now().UTC()).Scan(
+		&ent.Veteran, &ent.ID, &ent.CreatedAt, &ent.Email, &ent.FirstName, &ent.LastName, &ent.UpdatedAt,
+	)
 
 	if err != nil {
 		return entities.MemberEntity{}, err
@@ -30,50 +39,12 @@ func (r *repository) Create(ctx context.Context, veteranID, memberId uuid.UUID) 
 
 func (r *repository) ReadAll(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error) {
 	query := `
-		SELECT u.id, s.veteran_id, u.email, s.created_at, u.updated_at
+		SELECT u.id, s.veteran_id, u.email, u.first_name, u.last_name, s.created_at, u.updated_at
 		FROM users u
 		JOIN user_supports s ON u.id = s.support_id
 		WHERE s.veteran_id = $1
-	`
-
-	rows, err := r.db.QueryContext(ctx, query, id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err := rows.Close(); err != nil {
-			slog.Error("failed to close rows", "error", err)
-		}
-	}()
-
-	var ents []entities.MemberEntity
-
-	for rows.Next() {
-		var ent entities.MemberEntity
-
-		err := rows.Scan(
-			&ent.ID, &ent.Veteran, &ent.Email, &ent.CreatedAt, &ent.UpdatedAt,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		ents = append(ents, ent)
-	}
-
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return ents, nil
-}
-
-func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error) {
-	query := `
-		SELECT u.id, s.veteran_id, u.email, s.created_at, u.updated_at
+		UNION
+		SELECT u.id, s.veteran_id, u.email, u.first_name, u.last_name, s.created_at, u.updated_at
 		FROM users u
 		JOIN user_supports s ON u.id = s.veteran_id
 		WHERE s.support_id = $1
@@ -97,7 +68,50 @@ func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entit
 		var ent entities.MemberEntity
 
 		err := rows.Scan(
-			&ent.ID, &ent.Veteran, &ent.Email, &ent.CreatedAt, &ent.UpdatedAt,
+			&ent.ID, &ent.Veteran, &ent.Email, &ent.FirstName, &ent.LastName, &ent.CreatedAt, &ent.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		ents = append(ents, ent)
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return ents, nil
+}
+
+func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error) {
+	query := `
+		SELECT u.id, s.veteran_id, u.email, u.first_name, u.last_name, s.created_at, u.updated_at
+		FROM users u
+		JOIN user_supports s ON u.id = s.veteran_id
+		WHERE s.support_id = $1
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
+
+	var ents []entities.MemberEntity
+
+	for rows.Next() {
+		var ent entities.MemberEntity
+
+		err := rows.Scan(
+			&ent.ID, &ent.Veteran, &ent.Email, &ent.FirstName, &ent.LastName, &ent.CreatedAt, &ent.UpdatedAt,
 		)
 
 		if err != nil {

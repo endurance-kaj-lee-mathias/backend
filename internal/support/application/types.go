@@ -10,6 +10,7 @@ import (
 type Service interface {
 	AddMember(ctx context.Context, veteranID domain.VeteranId, memberId domain.MemberId) (domain.Member, error)
 	GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error)
+	GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error)
 }
 
 type service struct {

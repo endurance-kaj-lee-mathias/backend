@@ -6,16 +6,20 @@ import (
 )
 
 type MemberModel struct {
-	ID      uuid.UUID `json:"id"`
-	Veteran uuid.UUID `json:"veteran"`
-	Email   string    `json:"email"`
+	ID        uuid.UUID `json:"id"`
+	Veteran   uuid.UUID `json:"veteran"`
+	Email     string    `json:"email"`
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
 }
 
 func ToModel(mem domain.Member) MemberModel {
 	return MemberModel{
-		ID:      mem.ID.UUID,
-		Veteran: mem.Veteran.UUID,
-		Email:   mem.Email,
+		ID:        mem.ID.UUID,
+		Veteran:   mem.Veteran.UUID,
+		Email:     mem.Email,
+		FirstName: mem.FirstName,
+		LastName:  mem.LastName,
 	}
 }
 

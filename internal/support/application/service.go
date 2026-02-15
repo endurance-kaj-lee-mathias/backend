@@ -26,3 +26,13 @@ func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Mem
 
 	return entities.FromEntities(ents), nil
 }
+
+func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error) {
+	ents, err := s.repo.ReadAllByMember(ctx, id.UUID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return entities.FromEntities(ents), nil
+}
