@@ -139,6 +139,14 @@ func GetUserClaims(ctx context.Context) (*Claims, bool) {
 		c.Email = email
 	}
 
+	if firstName, ok := raw["given_name"].(string); ok {
+		c.FirstName = firstName
+	}
+
+	if lastName, ok := raw["family_name"].(string); ok {
+		c.LastName = lastName
+	}
+
 	if ra, ok := raw["realm_access"].(map[string]any); ok {
 		if roles, ok := ra["roles"].([]any); ok {
 			for _, r := range roles {

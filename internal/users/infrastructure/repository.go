@@ -11,10 +11,12 @@ import (
 
 func (r *repository) Create(ctx context.Context, ent entities.UserEntity) error {
 	query := `
-		INSERT INTO users (id, email, roles, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO users (id, email, first_name, last_name, roles, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (id) DO UPDATE
 		SET email = EXCLUDED.email,
+			first_name = EXCLUDED.first_name,
+			last_name = EXCLUDED.last_name,
 		    roles = EXCLUDED.roles,
 		    updated_at = EXCLUDED.updated_at
 	`
@@ -24,6 +26,8 @@ func (r *repository) Create(ctx context.Context, ent entities.UserEntity) error 
 		query,
 		ent.ID,
 		ent.Email,
+		ent.FirstName,
+		ent.LastName,
 		ent.Roles,
 		ent.CreatedAt,
 		ent.UpdatedAt,
@@ -36,14 +40,14 @@ func (r *repository) FindByID(ctx context.Context, id uuid.UUID) (entities.UserE
 	var e entities.UserEntity
 
 	query := `
-		SELECT id, email, roles, created_at, updated_at
+		SELECT id, email, first_name, last_name, roles, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
 
 	if err := r.db.
 		QueryRowContext(ctx, query, id).
-		Scan(&e.ID, &e.Email, &e.Roles, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		Scan(&e.ID, &e.Email, &e.FirstName, &e.LastName, &e.Roles, &e.CreatedAt, &e.UpdatedAt); err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return entities.UserEntity{}, NotFound
@@ -59,14 +63,14 @@ func (r *repository) FindByEmail(ctx context.Context, email string) (entities.Us
 	var ent entities.UserEntity
 
 	query := `
-		SELECT id, email, roles, created_at, updated_at
+		SELECT id, email, first_name, last_name, roles, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
 
 	if err := r.db.
 		QueryRowContext(ctx, query, email).
-		Scan(&ent.ID, &ent.Email, &ent.Roles, &ent.CreatedAt, &ent.UpdatedAt); err != nil {
+		Scan(&ent.ID, &ent.Email, &ent.FirstName, &ent.LastName, &ent.Roles, &ent.CreatedAt, &ent.UpdatedAt); err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return entities.UserEntity{}, NotFound

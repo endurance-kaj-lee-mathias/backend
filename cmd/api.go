@@ -35,7 +35,7 @@ func (server *server) mount() http.Handler {
 		r.Use(auth.TokenAuthentication(server.idp))
 
 		r.Route("/users", func(r chi.Router) {
-			r.Post("/", userHandler.CreateUser)
+			r.Get("/", userHandler.GetOrCreate)
 			r.Get("/{id}", userHandler.GetUser)
 			r.Get("/{id}/support", supportHandler.GetAll)
 			r.Post("/{id}/support", supportHandler.AddMember)

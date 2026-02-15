@@ -5,33 +5,47 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/transport/models"
 )
 
-func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var req models.AddUserModel
+func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
 
-	if err := request.Decode(r, &req); err != nil {
-		response.WriteError(w, http.StatusBadRequest, err)
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
 		return
 	}
 
-	if err := req.Validate(); err != nil {
-		response.WriteError(w, http.StatusBadRequest, err)
+	id, err := domain.ParseId(claims.Sub)
+
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
-	usr, err := h.service.AddUser(r.Context(), req.Email, req.Roles)
+	roles := make([]domain.Role, 0, len(claims.Roles))
+	for _, role := range claims.Roles {
+		roles = append(roles, domain.Role(role))
+	}
+
+	usr, err := h.service.SyncUser(
+		r.Context(),
+		id,
+		claims.Email,
+		claims.FirstName,
+		claims.LastName,
+		roles,
+	)
 
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	response.Write(w, http.StatusCreated, models.ToModel(usr))
+	response.Write(w, http.StatusOK, models.ToModel(usr))
 }
 
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {

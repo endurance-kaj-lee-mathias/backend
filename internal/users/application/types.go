@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	AddUser(ctx context.Context, email string, roles []domain.Role) (domain.User, error)
+	SyncUser(ctx context.Context, id domain.UserId, email string, firstName string, lastName string, roles []domain.Role) (domain.User, error)
 	GetByID(ctx context.Context, id domain.UserId) (domain.User, error)
 	GetByEmail(ctx context.Context, email string) (domain.User, error)
 }

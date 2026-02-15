@@ -8,12 +8,12 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure/entities"
 )
 
-func (s *service) AddUser(ctx context.Context, email string, roles []domain.Role) (domain.User, error) {
+func (s *service) SyncUser(ctx context.Context, id domain.UserId, email string, firstName string, lastName string, roles []domain.Role) (domain.User, error) {
 	if email == "" {
 		return domain.User{}, errors.New("email required")
 	}
 
-	usr := domain.NewUser(email, roles)
+	usr := domain.NewUser(id, email, firstName, lastName, roles)
 	ent, err := entities.ToEntity(usr)
 
 	if err != nil {

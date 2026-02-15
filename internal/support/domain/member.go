@@ -12,11 +12,11 @@ type Member struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func NewMember(veteran VeteranId, email string) Member {
+func NewMember(id MemberId, veteran VeteranId, email string) Member {
 	now := time.Now().UTC()
 
 	return Member{
-		ID:        NewMemberId(),
+		ID:        id,
 		Veteran:   veteran,
 		Email:     email,
 		CreatedAt: now,

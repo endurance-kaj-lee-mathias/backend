@@ -6,15 +6,19 @@ import (
 )
 
 type UserModel struct {
-	ID    uuid.UUID     `json:"id"`
-	Email string        `json:"email"`
-	Roles []domain.Role `json:"roles"`
+	ID        uuid.UUID     `json:"id"`
+	Email     string        `json:"email"`
+	FirstName string        `json:"firstName"`
+	LastName  string        `json:"lastName"`
+	Roles     []domain.Role `json:"roles"`
 }
 
 func ToModel(usr domain.User) UserModel {
 	return UserModel{
-		ID:    usr.ID.UUID,
-		Email: usr.Email,
-		Roles: usr.Roles,
+		ID:        usr.ID.UUID,
+		Email:     usr.Email,
+		FirstName: usr.FirstName,
+		LastName:  usr.LastName,
+		Roles:     usr.Roles,
 	}
 }
