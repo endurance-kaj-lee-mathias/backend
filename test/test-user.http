@@ -6,7 +6,7 @@
 @realm = endurance
 @clientId = backend
 @clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
-@username = Mathias
+@username = Kaj
 @password = password
 
 ### =====================================================
@@ -42,19 +42,15 @@ Authorization: Bearer {{token}}
 
 ### =====================================================
 ### Add SUPPORT member to VETERAN
-### (replace veteranId & supportId with actual UUIDs)
+### (The authenticated user will be added as support member)
+### (replace veteranId with actual UUID)
 ### =====================================================
 POST {{baseUrl}}/users/2e808133-794d-4ba3-8da0-e562131692fb/support
 Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "id": "6e58b8a2-2e53-4bbd-b8d1-2bd13d3959b4"
-}
 
 ### =====================================================
-### List SUPPORT members of VETERAN
-### (replace veteranId)
+### List SUPPORT members of current VETERAN
+### (Uses data from Keycloak token)
 ### =====================================================
-GET {{baseUrl}}/users/d2b833b8-7d28-46ae-8f3a-919cdbda00c0/support
+GET {{baseUrl}}/users/support
 Authorization: Bearer {{token}}

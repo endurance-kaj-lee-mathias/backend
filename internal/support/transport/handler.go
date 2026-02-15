@@ -2,30 +2,36 @@ package transport
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/transport/models"
 )
 
 func (h *Handler) AddMember(w http.ResponseWriter, r *http.Request) {
-	veteranId, err := domain.ParseVeteranId(chi.URLParam(r, "id"))
+	veteranIdStr := chi.URLParam(r, "id")
+	if strings.EqualFold(veteranIdStr, "me") {
+		// handle "me" if needed, but for now we follow the instruction that
+		// the account that posts it is the support member.
+	}
+
+	veteranId, err := domain.ParseVeteranId(veteranIdStr)
 
 	if err != nil {
-		response.WriteError(w, http.StatusInternalServerError, InvalidId)
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
-	var req models.AddSupportModel
-
-	if err := request.Decode(r, &req); err != nil {
-		response.WriteError(w, http.StatusBadRequest, err)
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
 		return
 	}
 
-	supportID, err := domain.ParseMemberId(req.ID)
+	supportID, err := domain.ParseMemberId(claims.Sub)
 
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, err)
@@ -43,10 +49,16 @@ func (h *Handler) AddMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
-	id, err := domain.ParseVeteranId(chi.URLParam(r, "id"))
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseVeteranId(claims.Sub)
 
 	if err != nil {
-		response.WriteError(w, http.StatusInternalServerError, InvalidId)
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
