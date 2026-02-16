@@ -144,7 +144,7 @@ func (r *repository) Delete(ctx context.Context, veteranID, supportID uuid.UUID)
 	}
 
 	if rowsAffected == 0 {
-		return nil
+		return UserNotFound
 	}
 
 	return nil

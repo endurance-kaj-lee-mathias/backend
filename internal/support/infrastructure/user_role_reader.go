@@ -16,7 +16,7 @@ func (r *userRoleReader) GetRoles(ctx context.Context, userID uuid.UUID) ([]stri
 
 	if err := r.db.QueryRowContext(ctx, query, userID).Scan(&rawRoles); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrUserNotFound
+			return nil, UserNotFound
 		}
 		return nil, err
 	}

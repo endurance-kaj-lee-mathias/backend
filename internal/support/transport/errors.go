@@ -13,12 +13,12 @@ var NotFound = errors.New("member was not found")
 
 func mapAddMemberError(err error) (int, error) {
 	switch {
-	case errors.Is(err, domain.ErrVeteranMustHaveVeteranRole),
-		errors.Is(err, domain.ErrSupporterMustBeAbleToSupport):
+	case errors.Is(err, domain.VeteranMustHaveVeteranRole),
+		errors.Is(err, domain.SupporterMustBeAbleToSupport):
 		return 403, err
-	case errors.Is(err, domain.ErrSelfSupportNotAllowed):
+	case errors.Is(err, domain.SelfSupportNotAllowed):
 		return 400, err
-	case errors.Is(err, infrastructure.ErrUserNotFound):
+	case errors.Is(err, infrastructure.UserNotFound):
 		return 404, err
 	default:
 		return 500, err

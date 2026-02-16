@@ -2,4 +2,4 @@ package infrastructure
 
 import "errors"
 
-var ErrUserNotFound = errors.New("user not found")
+var UserNotFound = errors.New("user not found")
