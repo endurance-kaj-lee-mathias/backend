@@ -10,6 +10,7 @@ import (
 
 func Wire(db *sql.DB) *transport.Handler {
 	repo := infrastructure.NewRepository(db)
-	service := application.NewService(repo)
+	userRoleRead := infrastructure.NewUserRoleReader(db)
+	service := application.NewService(repo, userRoleRead)
 	return transport.NewHandler(service)
 }

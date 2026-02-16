@@ -8,9 +8,13 @@ import (
 )
 
 type Service interface {
-	SyncUser(ctx context.Context, id domain.UserId, email string, firstName string, lastName string, roles []domain.Role) (domain.User, error)
+	// GetOrCreate returns the existing user for the given id if it is present,
+	// otherwise it will create a new user based on the provided JWT data.
+	// After creation, the database record is the single source of truth.
+	GetOrCreate(ctx context.Context, id domain.UserId, email string, firstName string, lastName string, roles []domain.Role) (domain.User, error)
 	GetByID(ctx context.Context, id domain.UserId) (domain.User, error)
 	GetByEmail(ctx context.Context, email string) (domain.User, error)
+	DeleteUser(ctx context.Context, id domain.UserId) error
 }
 
 type service struct {

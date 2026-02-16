@@ -8,8 +8,21 @@ import (
 )
 
 func (s *service) AddMember(ctx context.Context, veteranID domain.VeteranId, memberId domain.MemberId) (domain.Member, error) {
-	ent, err := s.repo.Create(ctx, veteranID.UUID, memberId.UUID)
+	veteranRoles, err := s.userRoleRead.GetRoles(ctx, veteranID.UUID)
+	if err != nil {
+		return domain.Member{}, err
+	}
 
+	supporterRoles, err := s.userRoleRead.GetRoles(ctx, memberId.UUID)
+	if err != nil {
+		return domain.Member{}, err
+	}
+
+	if err := domain.ValidateSupportRelationship(veteranRoles, supporterRoles, veteranID.UUID.String(), memberId.UUID.String()); err != nil {
+		return domain.Member{}, err
+	}
+
+	ent, err := s.repo.Create(ctx, veteranID.UUID, memberId.UUID)
 	if err != nil {
 		return domain.Member{}, err
 	}
@@ -35,4 +48,8 @@ func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]dom
 	}
 
 	return entities.FromEntities(ents), nil
+}
+
+func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error {
+	return s.repo.Delete(ctx, veteranID.UUID, supportID.UUID)
 }

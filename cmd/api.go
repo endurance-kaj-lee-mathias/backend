@@ -36,7 +36,9 @@ func (server *server) mount() http.Handler {
 
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/", userHandler.GetOrCreate)
+			r.Delete("/me", userHandler.DeleteMe)
 			r.Get("/support", supportHandler.GetAll)
+			r.Delete("/support/{supportId}", supportHandler.DeleteSupporter)
 			r.Get("/{id}", userHandler.GetUser)
 			r.Post("/{id}/support", supportHandler.AddMember)
 		})

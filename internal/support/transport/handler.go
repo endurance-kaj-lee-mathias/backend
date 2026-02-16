@@ -2,7 +2,6 @@ package transport
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
@@ -13,10 +12,6 @@ import (
 
 func (h *Handler) AddMember(w http.ResponseWriter, r *http.Request) {
 	veteranIdStr := chi.URLParam(r, "id")
-	if strings.EqualFold(veteranIdStr, "me") {
-		// handle "me" if needed, but for now we follow the instruction that
-		// the account that posts it is the support member.
-	}
 
 	veteranId, err := domain.ParseVeteranId(veteranIdStr)
 
@@ -41,7 +36,8 @@ func (h *Handler) AddMember(w http.ResponseWriter, r *http.Request) {
 	mem, err := h.service.AddMember(r.Context(), veteranId, supportID)
 
 	if err != nil {
-		response.WriteError(w, http.StatusInternalServerError, err)
+		status, errMsg := mapAddMemberError(err)
+		response.WriteError(w, status, errMsg)
 		return
 	}
 
@@ -70,4 +66,34 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Write(w, http.StatusOK, models.ToModels(mems))
+}
+
+func (h *Handler) DeleteSupporter(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	veteranId, err := domain.ParseVeteranId(claims.Sub)
+
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	supportIdStr := chi.URLParam(r, "supportId")
+	supportId, err := domain.ParseMemberId(supportIdStr)
+
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteSupporter(r.Context(), veteranId, supportId); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

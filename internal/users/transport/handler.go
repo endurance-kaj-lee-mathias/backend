@@ -31,7 +31,7 @@ func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 		roles = append(roles, domain.Role(role))
 	}
 
-	usr, err := h.service.SyncUser(
+	usr, err := h.service.GetOrCreate(
 		r.Context(),
 		id,
 		claims.Email,
@@ -64,4 +64,27 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Write(w, http.StatusOK, models.ToModel(usr))
+}
+
+func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseId(claims.Sub)
+
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteUser(r.Context(), id); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

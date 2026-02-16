@@ -127,3 +127,25 @@ func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entit
 
 	return ents, nil
 }
+
+func (r *repository) Delete(ctx context.Context, veteranID, supportID uuid.UUID) error {
+	query := `DELETE FROM user_supports WHERE veteran_id = $1 AND support_id = $2`
+
+	result, err := r.db.ExecContext(ctx, query, veteranID, supportID)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return nil
+	}
+
+	return nil
+}

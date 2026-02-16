@@ -81,3 +81,25 @@ func (r *repository) FindByEmail(ctx context.Context, email string) (entities.Us
 
 	return ent, nil
 }
+
+func (r *repository) Delete(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM users WHERE id = $1`
+
+	result, err := r.db.ExecContext(ctx, query, id)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return NotFound
+	}
+
+	return nil
+}
