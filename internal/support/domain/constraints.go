@@ -1,17 +1,13 @@
 package domain
 
-const (
-	RoleVeteran   = "VETERAN"
-	RoleTherapist = "THERAPIST"
-	RoleSupport   = "SUPPORT"
-)
+import usersdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 
 func ValidateSupportRelationship(veteranRoles, supporterRoles []string, veteranID, supporterID string) error {
 	if veteranID == supporterID {
 		return ErrSelfSupportNotAllowed
 	}
 
-	if !hasRole(veteranRoles, RoleVeteran) {
+	if !hasRole(veteranRoles, string(usersdomain.RoleVeteran)) {
 		return ErrVeteranMustHaveVeteranRole
 	}
 
@@ -32,5 +28,7 @@ func hasRole(roles []string, role string) bool {
 }
 
 func canSupport(roles []string) bool {
-	return hasRole(roles, RoleVeteran) || hasRole(roles, RoleTherapist) || hasRole(roles, RoleSupport)
+	return hasRole(roles, string(usersdomain.RoleVeteran)) ||
+		hasRole(roles, string(usersdomain.RoleTherapist)) ||
+		hasRole(roles, string(usersdomain.RoleSupport))
 }

@@ -9,14 +9,6 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type userRoleReader struct {
-	db *sql.DB
-}
-
-func NewUserRoleReader(db *sql.DB) UserRoleReader {
-	return &userRoleReader{db: db}
-}
-
 func (r *userRoleReader) GetRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
 	var rawRoles []byte
 

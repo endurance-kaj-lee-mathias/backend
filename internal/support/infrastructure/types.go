@@ -19,6 +19,14 @@ type Repository interface {
 	Delete(ctx context.Context, veteranID, supportID uuid.UUID) error
 }
 
+type userRoleReader struct {
+	db *sql.DB
+}
+
+func NewUserRoleReader(db *sql.DB) UserRoleReader {
+	return &userRoleReader{db: db}
+}
+
 type repository struct {
 	db *sql.DB
 }
