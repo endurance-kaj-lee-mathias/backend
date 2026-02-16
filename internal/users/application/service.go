@@ -10,19 +10,15 @@ import (
 )
 
 func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email string, firstName string, lastName string, roles []domain.Role) (domain.User, error) {
-	// First try to load the user from the database. If it exists, that record
-	// is the source of truth and we ignore the JWT payload.
 	usr, err := s.GetByID(ctx, id)
 	if err == nil {
 		return usr, nil
 	}
 
-	// If the error was something other than "not found", bubble it up.
 	if !errors.Is(err, infrastructure.NotFound) {
 		return domain.User{}, err
 	}
 
-	// User does not exist yet: we need at least an email to create the record.
 	if email == "" {
 		return domain.User{}, errors.New("email required")
 	}

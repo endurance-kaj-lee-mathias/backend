@@ -107,23 +107,11 @@ Authorization: Bearer {{veteranToken}}
 ### 10. Constraint: recipient must have VETERAN role
 # Call as SUPPORT (or any allowed supporter) but with :veteranId pointing to
 # a user who does NOT have the VETERAN role. Should return ErrVeteranMustHaveVeteranRole.
-POST {{baseUrl}}/users/:nonVeteranId/support
-Authorization: Bearer {{supportToken}}
-
-### 11. Constraint: supporter must have VETERAN/THERAPIST/SUPPORT role
-# Caller has no valid roles for supporting. Should return ErrSupporterMustBeAbleToSupport.
-POST {{baseUrl}}/users/:veteranId/support
-Authorization: Bearer {{noSupportRolesToken}}
-
-### 12. NEW Constraint: recipient cannot have THERAPIST or SUPPORT role
-# :veteranId must be a user that has VETERAN + THERAPIST (or VETERAN + SUPPORT).
-# This should now be rejected with ErrVeteranMustHaveVeteranRole, matching the
-# "THERAPIST and SUPPORT cannot be supported" message.
-POST {{baseUrl}}/users/:veteranTherapistId/support
+POST {{baseUrl}}/users/88285809-e7af-49bf-9dc6-cddf16be423b/support
 Authorization: Bearer {{supportToken}}
 
 
 ### 13. Delete a specific supporter from current VETERAN
 # Caller must be the VETERAN; :supportId is the supporter’s user id.
-DELETE {{baseUrl}}/users/support/:supportId
+DELETE {{baseUrl}}/users/support/6e58b8a2-2e53-4bbd-b8d1-2bd13d3959b4
 Authorization: Bearer {{veteranToken}}

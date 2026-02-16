@@ -8,8 +8,6 @@ import (
 )
 
 type Service interface {
-	// AddMember adds a supporter to a veteran. Both veteran and supporter roles
-	// are loaded from the database so that the DB remains the source of truth.
 	AddMember(ctx context.Context, veteranID domain.VeteranId, memberId domain.MemberId) (domain.Member, error)
 	GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error)
 	GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error)
