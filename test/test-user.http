@@ -1,0 +1,117 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameSupport = Mathias
+@usernameVeteran = Kaj
+@usernameTherapist = Lee
+@password = password
+
+### =====================================================
+### Get access token from Keycloak
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&
+client_id={{clientId}}&
+client_secret={{clientSecret}}&
+username={{usernameVeteran}}&
+password={{password}}&
+scope=openid
+
+> {%
+  client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### Get access token from Keycloak
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&
+client_id={{clientId}}&
+client_secret={{clientSecret}}&
+username={{usernameSupport}}&
+password={{password}}&
+scope=openid
+
+> {%
+  client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### Get access token from Keycloak
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&
+client_id={{clientId}}&
+client_secret={{clientSecret}}&
+username={{usernameTherapist}}&
+password={{password}}&
+scope=openid
+
+> {%
+  client.global.set("therapistToken", response.body.access_token);
+%}
+
+
+### 1. Get or create the current user (VETERAN)  – "add a new person"
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
+### 2. Get or create the current user (THERAPIST)
+GET {{baseUrl}}/users
+Authorization: Bearer {{therapistToken}}
+
+### 3. Get or create the current user (SUPPORT)
+GET {{baseUrl}}/users
+Authorization: Bearer {{supportToken}}
+
+### 4. Get a user by id (replace :id with a real user id)
+GET {{baseUrl}}/users/:id
+Authorization: Bearer {{veteranToken}}
+
+### 5. Delete current user ("me")
+DELETE {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+
+### 6. List all supporters for current VETERAN
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
+
+### 7. Add SUPPORT as supporter for a VETERAN (happy path)
+# Path id must be the VETERAN's user id (veteranId).
+# The caller (Authorization) is the supporter.
+POST {{baseUrl}}/users/2e808133-794d-4ba3-8da0-e562131692fb/support
+Authorization: Bearer {{supportToken}}
+
+### 8. Add THERAPIST as supporter for a VETERAN (happy path)
+POST {{baseUrl}}/users/2e808133-794d-4ba3-8da0-e562131692fb/support
+Authorization: Bearer {{therapistToken}}
+
+### 9. Add VETERAN as supporter for another VETERAN (happy path)
+POST {{baseUrl}}/users/2e808133-794d-4ba3-8da0-e562131692fb/support
+Authorization: Bearer {{veteranToken}}
+
+
+### 10. Constraint: recipient must have VETERAN role
+# Call as SUPPORT (or any allowed supporter) but with :veteranId pointing to
+# a user who does NOT have the VETERAN role. Should return ErrVeteranMustHaveVeteranRole.
+POST {{baseUrl}}/users/88285809-e7af-49bf-9dc6-cddf16be423b/support
+Authorization: Bearer {{supportToken}}
+
+
+### 13. Delete a specific supporter from current VETERAN
+# Caller must be the VETERAN; :supportId is the supporter’s user id.
+DELETE {{baseUrl}}/users/support/6e58b8a2-2e53-4bbd-b8d1-2bd13d3959b4
+Authorization: Bearer {{veteranToken}}
