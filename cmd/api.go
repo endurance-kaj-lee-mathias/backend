@@ -41,6 +41,9 @@ func (server *server) mount() http.Handler {
 			r.Delete("/support/{supportId}", supportHandler.DeleteSupporter)
 			r.Get("/{id}", userHandler.GetUser)
 			r.Post("/{id}/support", supportHandler.AddMember)
+			r.Patch("/{id}/phone-number", userHandler.PatchPhoneNumber)
+			r.Put("/{id}/address", userHandler.UpsertAddress)
+			r.Get("/{id}/address", userHandler.GetAddress)
 		})
 	})
 

@@ -72,3 +72,32 @@ func (s *service) GetByEmail(ctx context.Context, email string) (domain.User, er
 func (s *service) DeleteUser(ctx context.Context, id domain.UserId) error {
 	return s.repo.Delete(ctx, id.UUID)
 }
+
+func (s *service) UpdatePhoneNumber(ctx context.Context, id domain.UserId, phoneNumber *string) error {
+	return s.repo.UpdatePhoneNumber(ctx, id.UUID, phoneNumber)
+}
+
+func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, street string, houseNumber string, postalCode string, city string, country string) (domain.Address, error) {
+	addrID, err := domain.NewAddressId()
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	addr := domain.NewAddress(addrID, userID, street, houseNumber, postalCode, city, country)
+	ent := entities.AddressToEntity(addr)
+
+	if err := s.repo.InsertAddress(ctx, ent); err != nil {
+		return domain.Address{}, err
+	}
+
+	return s.GetAddress(ctx, userID)
+}
+
+func (s *service) GetAddress(ctx context.Context, userID domain.UserId) (domain.Address, error) {
+	ent, err := s.repo.FindAddressByUserID(ctx, userID.UUID)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	return entities.AddressFromEntity(ent)
+}

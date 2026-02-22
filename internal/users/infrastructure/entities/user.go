@@ -9,13 +9,14 @@ import (
 )
 
 type UserEntity struct {
-	ID        uuid.UUID       `db:"id"`
-	Email     string          `db:"email"`
-	FirstName string          `db:"first_name"`
-	LastName  string          `db:"last_name"`
-	Roles     json.RawMessage `db:"roles"`
-	CreatedAt time.Time       `db:"created_at"`
-	UpdatedAt time.Time       `db:"updated_at"`
+	ID          uuid.UUID       `db:"id"`
+	Email       string          `db:"email"`
+	FirstName   string          `db:"first_name"`
+	LastName    string          `db:"last_name"`
+	PhoneNumber *string         `db:"phone_number"`
+	Roles       json.RawMessage `db:"roles"`
+	CreatedAt   time.Time       `db:"created_at"`
+	UpdatedAt   time.Time       `db:"updated_at"`
 }
 
 func FromEntity(ent UserEntity) (domain.User, error) {
@@ -34,13 +35,14 @@ func FromEntity(ent UserEntity) (domain.User, error) {
 	}
 
 	return domain.User{
-		ID:        id,
-		Email:     ent.Email,
-		FirstName: ent.FirstName,
-		LastName:  ent.LastName,
-		Roles:     roles,
-		CreatedAt: ent.CreatedAt,
-		UpdatedAt: ent.UpdatedAt,
+		ID:          id,
+		Email:       ent.Email,
+		FirstName:   ent.FirstName,
+		LastName:    ent.LastName,
+		PhoneNumber: ent.PhoneNumber,
+		Roles:       roles,
+		CreatedAt:   ent.CreatedAt,
+		UpdatedAt:   ent.UpdatedAt,
 	}, nil
 }
 
@@ -68,12 +70,13 @@ func ToEntity(usr domain.User) (UserEntity, error) {
 	}
 
 	return UserEntity{
-		ID:        usr.ID.UUID,
-		Email:     usr.Email,
-		FirstName: usr.FirstName,
-		LastName:  usr.LastName,
-		Roles:     roles,
-		CreatedAt: usr.CreatedAt,
-		UpdatedAt: usr.UpdatedAt,
+		ID:          usr.ID.UUID,
+		Email:       usr.Email,
+		FirstName:   usr.FirstName,
+		LastName:    usr.LastName,
+		PhoneNumber: usr.PhoneNumber,
+		Roles:       roles,
+		CreatedAt:   usr.CreatedAt,
+		UpdatedAt:   usr.UpdatedAt,
 	}, nil
 }

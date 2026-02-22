@@ -1,15 +1,139 @@
 package transport
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/transport/models"
 )
+
+func (h *Handler) PatchPhoneNumber(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseId(chi.URLParam(r, "id"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if claims.Sub != id.UUID.String() {
+		response.WriteError(w, http.StatusForbidden, Forbidden)
+		return
+	}
+
+	var body models.PhoneNumberModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.service.UpdatePhoneNumber(r.Context(), id, body.PhoneNumber); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) UpsertAddress(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseId(chi.URLParam(r, "id"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if claims.Sub != id.UUID.String() {
+		response.WriteError(w, http.StatusForbidden, Forbidden)
+		return
+	}
+
+	var body models.UpsertAddressModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	addr, err := h.service.UpsertAddress(r.Context(), id, body.Street, body.HouseNumber, body.PostalCode, body.City, body.Country)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.AddressModel{
+		ID:          addr.ID.UUID,
+		UserID:      addr.UserID.UUID,
+		Street:      addr.Street,
+		HouseNumber: addr.HouseNumber,
+		PostalCode:  addr.PostalCode,
+		City:        addr.City,
+		Country:     addr.Country,
+	})
+}
+
+func (h *Handler) GetAddress(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseId(chi.URLParam(r, "id"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if claims.Sub != id.UUID.String() {
+		response.WriteError(w, http.StatusForbidden, Forbidden)
+		return
+	}
+
+	addr, err := h.service.GetAddress(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, infrastructure.AddressNotFound) {
+			response.WriteError(w, http.StatusNotFound, AddressNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.AddressModel{
+		ID:          addr.ID.UUID,
+		UserID:      addr.UserID.UUID,
+		Street:      addr.Street,
+		HouseNumber: addr.HouseNumber,
+		PostalCode:  addr.PostalCode,
+		City:        addr.City,
+		Country:     addr.Country,
+	})
+}
 
 func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())

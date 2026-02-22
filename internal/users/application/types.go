@@ -12,6 +12,9 @@ type Service interface {
 	GetByID(ctx context.Context, id domain.UserId) (domain.User, error)
 	GetByEmail(ctx context.Context, email string) (domain.User, error)
 	DeleteUser(ctx context.Context, id domain.UserId) error
+	UpdatePhoneNumber(ctx context.Context, id domain.UserId, phoneNumber *string) error
+	UpsertAddress(ctx context.Context, userID domain.UserId, street string, houseNumber string, postalCode string, city string, country string) (domain.Address, error)
+	GetAddress(ctx context.Context, userID domain.UserId) (domain.Address, error)
 }
 
 type service struct {
