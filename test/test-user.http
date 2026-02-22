@@ -63,20 +63,32 @@ scope=openid
 %}
 
 
-### 1. Get or create the current user (VETERAN)  – "add a new person"
+### 1. Get or create the current user (VETERAN) – stores veteranId for use in later requests
 GET {{baseUrl}}/users
 Authorization: Bearer {{veteranToken}}
 
-### 2. Get or create the current user (THERAPIST)
+> {%
+  client.global.set("veteranId", response.body.id);
+%}
+
+### 2. Get or create the current user (THERAPIST) – stores therapistId
 GET {{baseUrl}}/users
 Authorization: Bearer {{therapistToken}}
 
-### 3. Get or create the current user (SUPPORT)
+> {%
+  client.global.set("therapistId", response.body.id);
+%}
+
+### 3. Get or create the current user (SUPPORT) – stores supportId
 GET {{baseUrl}}/users
 Authorization: Bearer {{supportToken}}
 
-### 4. Get a user by id (replace :id with a real user id)
-GET {{baseUrl}}/users/:id
+> {%
+  client.global.set("supportId", response.body.id);
+%}
+
+### 4. Get a user by id
+GET {{baseUrl}}/users/{{veteranId}}
 Authorization: Bearer {{veteranToken}}
 
 ### 5. Delete current user ("me")
@@ -90,28 +102,105 @@ Authorization: Bearer {{veteranToken}}
 
 
 ### 7. Add SUPPORT as supporter for a VETERAN (happy path)
-# Path id must be the VETERAN's user id (veteranId).
-# The caller (Authorization) is the supporter.
-POST {{baseUrl}}/users/2e808133-794d-4ba3-8da0-e562131692fb/support
+# Run requests 1–3 first so all users exist in the DB with the correct roles.
+POST {{baseUrl}}/users/{{veteranId}}/support
 Authorization: Bearer {{supportToken}}
 
 ### 8. Add THERAPIST as supporter for a VETERAN (happy path)
-POST {{baseUrl}}/users/2e808133-794d-4ba3-8da0-e562131692fb/support
+POST {{baseUrl}}/users/{{veteranId}}/support
 Authorization: Bearer {{therapistToken}}
 
 ### 9. Add VETERAN as supporter for another VETERAN (happy path)
-POST {{baseUrl}}/users/2e808133-794d-4ba3-8da0-e562131692fb/support
+POST {{baseUrl}}/users/{{veteranId}}/support
 Authorization: Bearer {{veteranToken}}
 
 
 ### 10. Constraint: recipient must have VETERAN role
-# Call as SUPPORT (or any allowed supporter) but with :veteranId pointing to
-# a user who does NOT have the VETERAN role. Should return ErrVeteranMustHaveVeteranRole.
-POST {{baseUrl}}/users/88285809-e7af-49bf-9dc6-cddf16be423b/support
-Authorization: Bearer {{supportToken}}
+# supportId points to a SUPPORT user who does NOT have the VETERAN role.
+# Should return ErrVeteranMustHaveVeteranRole.
+POST {{baseUrl}}/users/{{supportId}}/support
+Authorization: Bearer {{veteranToken}}
 
 
 ### 13. Delete a specific supporter from current VETERAN
-# Caller must be the VETERAN; :supportId is the supporter’s user id.
-DELETE {{baseUrl}}/users/support/6e58b8a2-2e53-4bbd-b8d1-2bd13d3959b4
+DELETE {{baseUrl}}/users/support/{{supportId}}
 Authorization: Bearer {{veteranToken}}
+
+
+### =====================================================
+### Phone number
+### =====================================================
+
+### 14. Set phone number for current user (VETERAN)
+PATCH {{baseUrl}}/users/me/phone-number
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "phoneNumber": "+32 470 12 34 56"
+}
+
+### 15. Remove phone number for current user (VETERAN) – set to null
+PATCH {{baseUrl}}/users/me/phone-number
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "phoneNumber": null
+}
+
+### 16. Verify phone number is returned in user profile
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
+
+### =====================================================
+### Address
+### =====================================================
+
+### 17. Create or update address for current user (VETERAN)
+PUT {{baseUrl}}/users/me/address
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "street": "Nationalestraat",
+  "houseNumber": "5",
+  "postalCode": "2000",
+  "city": "Antwerpen",
+  "country": "België"
+}
+
+### 18. Update address for current user (VETERAN) – upsert changes city
+PUT {{baseUrl}}/users/me/address
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "street": "Nationalestraat",
+  "houseNumber": "5",
+  "postalCode": "2000",
+  "city": "Gent",
+  "country": "België"
+}
+
+### 19. Get address for current user (VETERAN)
+GET {{baseUrl}}/users/me/address
+Authorization: Bearer {{veteranToken}}
+
+### 20. Get address – 404 when no address set yet (SUPPORT)
+GET {{baseUrl}}/users/me/address
+Authorization: Bearer {{supportToken}}
+
+### 21. Validation: missing required field – should return 422
+PUT {{baseUrl}}/users/me/address
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "street": "Nationalestraat",
+  "houseNumber": "5",
+  "postalCode": "2000",
+  "city": "",
+  "country": "België"
+}

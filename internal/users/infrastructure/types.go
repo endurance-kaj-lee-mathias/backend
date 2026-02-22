@@ -13,6 +13,9 @@ type Repository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (entities.UserEntity, error)
 	FindByEmail(ctx context.Context, email string) (entities.UserEntity, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	UpdatePhoneNumber(ctx context.Context, id uuid.UUID, phoneNumber *string) error
+	InsertAddress(ctx context.Context, ent entities.AddressEntity) error
+	FindAddressByUserID(ctx context.Context, userID uuid.UUID) (entities.AddressEntity, error)
 }
 
 type repository struct {

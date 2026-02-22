@@ -5,13 +5,14 @@ import (
 )
 
 type User struct {
-	ID        UserId    `json:"id"`
-	Email     string    `json:"email"`
-	FirstName string    `json:"firstName"`
-	LastName  string    `json:"lastName"`
-	Roles     []Role    `json:"roles"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID          UserId    `json:"id"`
+	Email       string    `json:"email"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName"`
+	PhoneNumber *string   `json:"phoneNumber"`
+	Roles       []Role    `json:"roles"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 func NewUser(id UserId, email string, firstName string, lastName string, roles []Role) User {
