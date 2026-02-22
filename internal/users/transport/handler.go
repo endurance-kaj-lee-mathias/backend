@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
@@ -21,14 +20,9 @@ func (h *Handler) PatchPhoneNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := domain.ParseId(chi.URLParam(r, "id"))
+	id, err := domain.ParseId(claims.Sub)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, InvalidId)
-		return
-	}
-
-	if claims.Sub != id.UUID.String() {
-		response.WriteError(w, http.StatusForbidden, Forbidden)
 		return
 	}
 
@@ -57,14 +51,9 @@ func (h *Handler) UpsertAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := domain.ParseId(chi.URLParam(r, "id"))
+	id, err := domain.ParseId(claims.Sub)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, InvalidId)
-		return
-	}
-
-	if claims.Sub != id.UUID.String() {
-		response.WriteError(w, http.StatusForbidden, Forbidden)
 		return
 	}
 
@@ -103,14 +92,9 @@ func (h *Handler) GetAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := domain.ParseId(chi.URLParam(r, "id"))
+	id, err := domain.ParseId(claims.Sub)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, InvalidId)
-		return
-	}
-
-	if claims.Sub != id.UUID.String() {
-		response.WriteError(w, http.StatusForbidden, Forbidden)
 		return
 	}
 
