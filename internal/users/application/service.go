@@ -9,7 +9,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure/entities"
 )
 
-func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email string, firstName string, lastName string, roles []domain.Role) (domain.User, error) {
+func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email string, username string, firstName string, lastName string, roles []domain.Role) (domain.User, error) {
 	usr, err := s.GetByID(ctx, id)
 	if err == nil {
 		return usr, nil
@@ -23,7 +23,7 @@ func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email strin
 		return domain.User{}, errors.New("email required")
 	}
 
-	usr = domain.NewUser(id, email, firstName, lastName, roles)
+	usr = domain.NewUser(id, email, username, firstName, lastName, roles)
 
 	userKey, err := s.enc.GenerateUserEncryptionKey()
 	if err != nil {
@@ -65,6 +65,22 @@ func (s *service) GetByID(ctx context.Context, id domain.UserId) (domain.User, e
 
 func (s *service) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	ent, err := s.repo.FindByEmail(ctx, email)
+
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	usr, err := entities.FromEntity(ent, s.enc)
+
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return usr, nil
+}
+
+func (s *service) GetByUsername(ctx context.Context, username string) (domain.User, error) {
+	ent, err := s.repo.FindByUsername(ctx, username)
 
 	if err != nil {
 		return domain.User{}, err

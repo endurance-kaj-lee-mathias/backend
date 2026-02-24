@@ -40,6 +40,7 @@ func (server *server) mount() http.Handler {
 			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
 			r.Put("/me/address", userHandler.UpsertAddress)
 			r.Get("/me/address", userHandler.GetAddress)
+			r.Get("/{username}", userHandler.GetUserByUsername)
 			r.Get("/support", supportHandler.GetAll)
 			r.Delete("/support/{supportId}", supportHandler.DeleteSupporter)
 			r.Get("/{id}", userHandler.GetUser)

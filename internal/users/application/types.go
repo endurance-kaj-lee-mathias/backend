@@ -9,9 +9,10 @@ import (
 )
 
 type Service interface {
-	GetOrCreate(ctx context.Context, id domain.UserId, email string, firstName string, lastName string, roles []domain.Role) (domain.User, error)
+	GetOrCreate(ctx context.Context, id domain.UserId, email string, username string, firstName string, lastName string, roles []domain.Role) (domain.User, error)
 	GetByID(ctx context.Context, id domain.UserId) (domain.User, error)
 	GetByEmail(ctx context.Context, email string) (domain.User, error)
+	GetByUsername(ctx context.Context, username string) (domain.User, error)
 	DeleteUser(ctx context.Context, id domain.UserId) error
 	UpdatePhoneNumber(ctx context.Context, id domain.UserId, phoneNumber *string) error
 	UpsertAddress(ctx context.Context, userID domain.UserId, street string, houseNumber string, postalCode string, city string, country string) (domain.Address, error)

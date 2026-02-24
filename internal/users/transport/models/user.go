@@ -8,6 +8,7 @@ import (
 type UserModel struct {
 	ID          uuid.UUID     `json:"id"`
 	Email       string        `json:"email"`
+	Username    string        `json:"username"`
 	FirstName   string        `json:"firstName"`
 	LastName    string        `json:"lastName"`
 	PhoneNumber *string       `json:"phoneNumber"`
@@ -18,6 +19,7 @@ func ToModel(usr domain.User) UserModel {
 	return UserModel{
 		ID:          usr.ID.UUID,
 		Email:       usr.Email,
+		Username:    usr.Username,
 		FirstName:   usr.FirstName,
 		LastName:    usr.LastName,
 		PhoneNumber: usr.PhoneNumber,

@@ -139,6 +139,10 @@ func GetUserClaims(ctx context.Context) (*Claims, bool) {
 		c.Email = email
 	}
 
+	if username, ok := raw["preferred_username"].(string); ok {
+		c.Username = username
+	}
+
 	if firstName, ok := raw["given_name"].(string); ok {
 		c.FirstName = firstName
 	}

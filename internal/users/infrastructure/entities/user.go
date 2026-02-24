@@ -12,8 +12,10 @@ import (
 type UserEntity struct {
 	ID                   uuid.UUID `db:"id"`
 	EmailHash            string    `db:"email_hash"`
+	UsernameHash         string    `db:"username_hash"`
 	PhoneNumberHash      *string   `db:"phone_number_hash"`
 	EncryptedEmail       []byte    `db:"encrypted_email"`
+	EncryptedUsername    []byte    `db:"encrypted_username"`
 	EncryptedFirstName   []byte    `db:"encrypted_first_name"`
 	EncryptedLastName    []byte    `db:"encrypted_last_name"`
 	EncryptedPhoneNumber []byte    `db:"encrypted_phone_number"`
@@ -31,6 +33,11 @@ func FromEntity(ent UserEntity, enc encryption.Service) (domain.User, error) {
 	}
 
 	emailBytes, err := enc.Decrypt(ent.EncryptedEmail, userKey)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	usernameBytes, err := enc.Decrypt(ent.EncryptedUsername, userKey)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -75,6 +82,7 @@ func FromEntity(ent UserEntity, enc encryption.Service) (domain.User, error) {
 	return domain.User{
 		ID:          id,
 		Email:       string(emailBytes),
+		Username:    string(usernameBytes),
 		FirstName:   string(firstNameBytes),
 		LastName:    string(lastNameBytes),
 		PhoneNumber: phoneNumber,
@@ -86,6 +94,11 @@ func FromEntity(ent UserEntity, enc encryption.Service) (domain.User, error) {
 
 func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, userKey []byte) (UserEntity, error) {
 	encEmail, err := enc.Encrypt([]byte(usr.Email), userKey)
+	if err != nil {
+		return UserEntity{}, err
+	}
+
+	encUsername, err := enc.Encrypt([]byte(usr.Username), userKey)
 	if err != nil {
 		return UserEntity{}, err
 	}
@@ -125,8 +138,10 @@ func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, 
 	return UserEntity{
 		ID:                   usr.ID.UUID,
 		EmailHash:            enc.Hash(usr.Email),
+		UsernameHash:         enc.Hash(usr.Username),
 		PhoneNumberHash:      phoneNumberHash,
 		EncryptedEmail:       encEmail,
+		EncryptedUsername:    encUsername,
 		EncryptedFirstName:   encFirstName,
 		EncryptedLastName:    encLastName,
 		EncryptedPhoneNumber: encPhoneNumber,
