@@ -15,7 +15,7 @@ func (s *service) GenerateUserEncryptionKey() ([]byte, error) {
 	key := make([]byte, 32)
 
 	if _, err := io.ReadFull(rand.Reader, key); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrEncryptionFailed, err)
+		return nil, fmt.Errorf("%w: %v", EncryptionFailed, err)
 	}
 
 	return key, nil
@@ -32,17 +32,17 @@ func (s *service) DecryptUserKey(encrypted []byte) ([]byte, error) {
 func (s *service) Encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrEncryptionFailed, err)
+		return nil, fmt.Errorf("%w: %v", EncryptionFailed, err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrEncryptionFailed, err)
+		return nil, fmt.Errorf("%w: %v", EncryptionFailed, err)
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrEncryptionFailed, err)
+		return nil, fmt.Errorf("%w: %v", EncryptionFailed, err)
 	}
 
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
@@ -51,24 +51,24 @@ func (s *service) Encrypt(plaintext []byte, key []byte) ([]byte, error) {
 func (s *service) Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDecryptionFailed, err)
+		return nil, fmt.Errorf("%w: %v", DecryptionFailed, err)
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDecryptionFailed, err)
+		return nil, fmt.Errorf("%w: %v", DecryptionFailed, err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return nil, ErrCiphertextTooShort
+		return nil, CiphertextTooShort
 	}
 
 	nonce, ct := ciphertext[:nonceSize], ciphertext[nonceSize:]
 
 	plaintext, err := gcm.Open(nil, nonce, ct, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDecryptionFailed, err)
+		return nil, fmt.Errorf("%w: %v", DecryptionFailed, err)
 	}
 
 	return plaintext, nil

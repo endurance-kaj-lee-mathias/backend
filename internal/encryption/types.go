@@ -15,7 +15,7 @@ type service struct {
 
 func NewService(masterKey []byte) (Service, error) {
 	if len(masterKey) != 32 {
-		return nil, ErrInvalidMasterKey
+		return nil, InvalidMasterKey
 	}
 
 	return &service{masterKey: masterKey}, nil

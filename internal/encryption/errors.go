@@ -2,7 +2,7 @@ package encryption
 
 import "errors"
 
-var ErrInvalidMasterKey = errors.New("master key must be exactly 32 bytes")
-var ErrEncryptionFailed = errors.New("encryption failed")
-var ErrDecryptionFailed = errors.New("decryption failed")
-var ErrCiphertextTooShort = errors.New("ciphertext is too short")
+var InvalidMasterKey = errors.New("master key must be exactly 32 bytes")
+var EncryptionFailed = errors.New("encryption failed")
+var DecryptionFailed = errors.New("decryption failed")
+var CiphertextTooShort = errors.New("ciphertext is too short")

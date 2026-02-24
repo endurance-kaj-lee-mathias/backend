@@ -125,7 +125,7 @@ Authorization: Bearer {{veteranToken}}
 
 ### 10. Constraint: recipient must have VETERAN role
 # supportId points to a SUPPORT user who does NOT have the VETERAN role.
-# Should return ErrVeteranMustHaveVeteranRole.
+
 POST {{baseUrl}}/users/{{supportId}}/support
 Authorization: Bearer {{veteranToken}}
 
