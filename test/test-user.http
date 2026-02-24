@@ -212,3 +212,74 @@ Content-Type: application/json
   "city": "",
   "country": "België"
 }
+
+### =====================================================
+### Introduction
+### =====================================================
+
+### 22. Update introduction for current user (VETERAN)
+PATCH {{baseUrl}}/users/me/introduction
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "introduction": "Hey everyone! I'm Kaj, a veteran finding my way through life with the support of this amazing community."
+}
+
+### 23. Validation: introduction exceeds 500 characters – should return 400
+PATCH {{baseUrl}}/users/me/introduction
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "introduction": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+
+### =====================================================
+### About
+### =====================================================
+
+### 24. Update about for current user (VETERAN)
+PATCH {{baseUrl}}/users/me/about
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "about": "I'm a veteran who served for 10 years. I joined Endurance to share my experiences and support fellow veterans dealing with PTSD."
+}
+
+### 25. Validation: about exceeds 500 characters – should return 400
+PATCH {{baseUrl}}/users/me/about
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "about": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+
+### =====================================================
+### Image
+### =====================================================
+
+### 26. Update image for current user (VETERAN)
+PATCH {{baseUrl}}/users/me/image
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "image": "https://example.com/my-profile-picture.jpg"
+}
+
+### 27. Validation: empty image – should return 400
+PATCH {{baseUrl}}/users/me/image
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "image": ""
+}
+
+### 28. Verify profile fields are returned after updates
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
