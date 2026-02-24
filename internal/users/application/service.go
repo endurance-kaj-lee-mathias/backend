@@ -103,6 +103,48 @@ func (s *service) UpdatePhoneNumber(ctx context.Context, id domain.UserId, phone
 	return s.repo.UpdatePhoneNumber(ctx, id.UUID, phoneNumber)
 }
 
+func (s *service) UpdateIntroduction(ctx context.Context, id domain.UserId, introduction string) error {
+	encryptedUserKey, err := s.repo.GetEncryptedUserKey(ctx, id.UUID)
+	if err != nil {
+		return err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return err
+	}
+
+	encrypted, err := s.enc.Encrypt([]byte(introduction), userKey)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.UpdateIntroduction(ctx, id.UUID, encrypted)
+}
+
+func (s *service) UpdateAbout(ctx context.Context, id domain.UserId, about string) error {
+	encryptedUserKey, err := s.repo.GetEncryptedUserKey(ctx, id.UUID)
+	if err != nil {
+		return err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return err
+	}
+
+	encrypted, err := s.enc.Encrypt([]byte(about), userKey)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.UpdateAbout(ctx, id.UUID, encrypted)
+}
+
+func (s *service) UpdateImage(ctx context.Context, id domain.UserId, image string) error {
+	return s.repo.UpdateImage(ctx, id.UUID, image)
+}
+
 func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, street string, houseNumber string, postalCode string, city string, country string) (domain.Address, error) {
 	addrID, err := domain.NewAddressId()
 	if err != nil {
