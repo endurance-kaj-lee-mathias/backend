@@ -9,14 +9,15 @@ import (
 )
 
 type MemberEntity struct {
-	ID               uuid.UUID `db:"id"`
-	Veteran          uuid.UUID `db:"veteran"`
-	EncryptedEmail   []byte    `db:"encrypted_email"`
-	EncryptedFirst   []byte    `db:"encrypted_first_name"`
-	EncryptedLast    []byte    `db:"encrypted_last_name"`
-	EncryptedUserKey []byte    `db:"encrypted_user_key"`
-	CreatedAt        time.Time `db:"created_at"`
-	UpdatedAt        time.Time `db:"updated_at"`
+	ID                uuid.UUID `db:"id"`
+	Veteran           uuid.UUID `db:"veteran"`
+	EncryptedEmail    []byte    `db:"encrypted_email"`
+	EncryptedUsername []byte    `db:"encrypted_username"`
+	EncryptedFirst    []byte    `db:"encrypted_first_name"`
+	EncryptedLast     []byte    `db:"encrypted_last_name"`
+	EncryptedUserKey  []byte    `db:"encrypted_user_key"`
+	CreatedAt         time.Time `db:"created_at"`
+	UpdatedAt         time.Time `db:"updated_at"`
 }
 
 func FromEntity(ent MemberEntity, enc encryption.Service) (domain.Member, error) {
@@ -26,6 +27,11 @@ func FromEntity(ent MemberEntity, enc encryption.Service) (domain.Member, error)
 	}
 
 	emailBytes, err := enc.Decrypt(ent.EncryptedEmail, userKey)
+	if err != nil {
+		return domain.Member{}, err
+	}
+
+	usernameBytes, err := enc.Decrypt(ent.EncryptedUsername, userKey)
 	if err != nil {
 		return domain.Member{}, err
 	}
@@ -54,6 +60,7 @@ func FromEntity(ent MemberEntity, enc encryption.Service) (domain.Member, error)
 		memberId,
 		veteranId,
 		string(emailBytes),
+		string(usernameBytes),
 		string(firstNameBytes),
 		string(lastNameBytes),
 		ent.CreatedAt,

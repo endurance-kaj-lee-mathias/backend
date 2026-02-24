@@ -20,7 +20,7 @@ func (r *repository) Create(ctx context.Context, veteranID, memberId uuid.UUID) 
 			RETURNING veteran_id, support_id, created_at
 		)
 		SELECT ins.veteran_id, ins.support_id, ins.created_at,
-			u.encrypted_email, u.encrypted_first_name, u.encrypted_last_name,
+			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
 			u.encrypted_user_key, u.updated_at
 		FROM users u
 		LEFT JOIN ins ON u.id = ins.support_id
@@ -30,7 +30,7 @@ func (r *repository) Create(ctx context.Context, veteranID, memberId uuid.UUID) 
 
 	err := r.db.QueryRowContext(ctx, query, veteranID, memberId, time.Now().UTC()).Scan(
 		&ent.Veteran, &ent.ID, &ent.CreatedAt,
-		&ent.EncryptedEmail, &ent.EncryptedFirst, &ent.EncryptedLast,
+		&ent.EncryptedEmail, &ent.EncryptedUsername, &ent.EncryptedFirst, &ent.EncryptedLast,
 		&ent.EncryptedUserKey, &ent.UpdatedAt,
 	)
 
@@ -44,14 +44,14 @@ func (r *repository) Create(ctx context.Context, veteranID, memberId uuid.UUID) 
 func (r *repository) ReadAll(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error) {
 	query := `
 		SELECT u.id, s.veteran_id,
-			u.encrypted_email, u.encrypted_first_name, u.encrypted_last_name,
+			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
 			u.encrypted_user_key, s.created_at, u.updated_at
 		FROM users u
 		JOIN user_supports s ON u.id = s.support_id
 		WHERE s.veteran_id = $1
 		UNION
 		SELECT u.id, s.veteran_id,
-			u.encrypted_email, u.encrypted_first_name, u.encrypted_last_name,
+			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
 			u.encrypted_user_key, s.created_at, u.updated_at
 		FROM users u
 		JOIN user_supports s ON u.id = s.veteran_id
@@ -77,7 +77,7 @@ func (r *repository) ReadAll(ctx context.Context, id uuid.UUID) ([]entities.Memb
 
 		err := rows.Scan(
 			&ent.ID, &ent.Veteran,
-			&ent.EncryptedEmail, &ent.EncryptedFirst, &ent.EncryptedLast,
+			&ent.EncryptedEmail, &ent.EncryptedUsername, &ent.EncryptedFirst, &ent.EncryptedLast,
 			&ent.EncryptedUserKey, &ent.CreatedAt, &ent.UpdatedAt,
 		)
 
@@ -98,7 +98,7 @@ func (r *repository) ReadAll(ctx context.Context, id uuid.UUID) ([]entities.Memb
 func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error) {
 	query := `
 		SELECT u.id, s.veteran_id,
-			u.encrypted_email, u.encrypted_first_name, u.encrypted_last_name,
+			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
 			u.encrypted_user_key, s.created_at, u.updated_at
 		FROM users u
 		JOIN user_supports s ON u.id = s.veteran_id
@@ -124,7 +124,7 @@ func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entit
 
 		err := rows.Scan(
 			&ent.ID, &ent.Veteran,
-			&ent.EncryptedEmail, &ent.EncryptedFirst, &ent.EncryptedLast,
+			&ent.EncryptedEmail, &ent.EncryptedUsername, &ent.EncryptedFirst, &ent.EncryptedLast,
 			&ent.EncryptedUserKey, &ent.CreatedAt, &ent.UpdatedAt,
 		)
 
