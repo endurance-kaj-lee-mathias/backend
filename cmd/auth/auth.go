@@ -94,6 +94,7 @@ func extractToken(request *http.Request) (string, error) {
 func validateToken(tokenString string, jwks *keyfunc.JWKS, issuer, audience string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, jwks.Keyfunc,
 		jwt.WithIssuer(issuer),
+		jwt.WithAudience(audience),
 		jwt.WithValidMethods([]string{"RS256"}),
 	)
 
@@ -107,11 +108,6 @@ func validateToken(tokenString string, jwks *keyfunc.JWKS, issuer, audience stri
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, ClaimsInvalid
-	}
-
-	azp, ok := claims["azp"].(string)
-	if !ok || azp != audience {
 		return nil, ClaimsInvalid
 	}
 
