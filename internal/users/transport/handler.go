@@ -196,6 +196,114 @@ func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToModel(usr))
 }
 
+func (h *Handler) PatchIntroduction(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseId(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	var body models.UpdateIntroductionModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.service.UpdateIntroduction(r.Context(), id, body.Introduction); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) PatchAbout(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseId(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	var body models.UpdateAboutModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.service.UpdateAbout(r.Context(), id, body.About); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) PatchImage(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	id, err := domain.ParseId(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	var body models.UpdateImageModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.service.UpdateImage(r.Context(), id, body.Image); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
 
