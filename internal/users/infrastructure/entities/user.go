@@ -5,78 +5,135 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
 type UserEntity struct {
-	ID          uuid.UUID       `db:"id"`
-	Email       string          `db:"email"`
-	FirstName   string          `db:"first_name"`
-	LastName    string          `db:"last_name"`
-	PhoneNumber *string         `db:"phone_number"`
-	Roles       json.RawMessage `db:"roles"`
-	CreatedAt   time.Time       `db:"created_at"`
-	UpdatedAt   time.Time       `db:"updated_at"`
+	ID                   uuid.UUID `db:"id"`
+	EmailHash            string    `db:"email_hash"`
+	PhoneNumberHash      *string   `db:"phone_number_hash"`
+	EncryptedEmail       []byte    `db:"encrypted_email"`
+	EncryptedFirstName   []byte    `db:"encrypted_first_name"`
+	EncryptedLastName    []byte    `db:"encrypted_last_name"`
+	EncryptedPhoneNumber []byte    `db:"encrypted_phone_number"`
+	EncryptedRoles       []byte    `db:"encrypted_roles"`
+	EncryptedUserKey     []byte    `db:"encrypted_user_key"`
+	KeyVersion           int       `db:"key_version"`
+	CreatedAt            time.Time `db:"created_at"`
+	UpdatedAt            time.Time `db:"updated_at"`
 }
 
-func FromEntity(ent UserEntity) (domain.User, error) {
-	roles := make([]domain.Role, 0)
+func FromEntity(ent UserEntity, enc encryption.Service) (domain.User, error) {
+	userKey, err := enc.DecryptUserKey(ent.EncryptedUserKey)
+	if err != nil {
+		return domain.User{}, err
+	}
 
-	if len(ent.Roles) > 0 {
-		if err := json.Unmarshal(ent.Roles, &roles); err != nil {
+	emailBytes, err := enc.Decrypt(ent.EncryptedEmail, userKey)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	firstNameBytes, err := enc.Decrypt(ent.EncryptedFirstName, userKey)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	lastNameBytes, err := enc.Decrypt(ent.EncryptedLastName, userKey)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	var phoneNumber *string
+	if len(ent.EncryptedPhoneNumber) > 0 {
+		phoneBytes, err := enc.Decrypt(ent.EncryptedPhoneNumber, userKey)
+		if err != nil {
+			return domain.User{}, err
+		}
+		phone := string(phoneBytes)
+		phoneNumber = &phone
+	}
+
+	rolesBytes, err := enc.Decrypt(ent.EncryptedRoles, userKey)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	roles := make([]domain.Role, 0)
+	if len(rolesBytes) > 0 {
+		if err := json.Unmarshal(rolesBytes, &roles); err != nil {
 			return domain.User{}, InvalidRoles
 		}
 	}
 
 	id, err := domain.ParseId(ent.ID.String())
-
 	if err != nil {
 		return domain.User{}, err
 	}
 
 	return domain.User{
 		ID:          id,
-		Email:       ent.Email,
-		FirstName:   ent.FirstName,
-		LastName:    ent.LastName,
-		PhoneNumber: ent.PhoneNumber,
+		Email:       string(emailBytes),
+		FirstName:   string(firstNameBytes),
+		LastName:    string(lastNameBytes),
+		PhoneNumber: phoneNumber,
 		Roles:       roles,
 		CreatedAt:   ent.CreatedAt,
 		UpdatedAt:   ent.UpdatedAt,
 	}, nil
 }
 
-func FromEntities(entities []UserEntity) []domain.User {
-	output := make([]domain.User, 0, len(entities))
-
-	for _, entity := range entities {
-		entity, err := FromEntity(entity)
-
-		if err != nil {
-			continue
-		}
-
-		output = append(output, entity)
+func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, userKey []byte) (UserEntity, error) {
+	encEmail, err := enc.Encrypt([]byte(usr.Email), userKey)
+	if err != nil {
+		return UserEntity{}, err
 	}
 
-	return output
-}
+	encFirstName, err := enc.Encrypt([]byte(usr.FirstName), userKey)
+	if err != nil {
+		return UserEntity{}, err
+	}
 
-func ToEntity(usr domain.User) (UserEntity, error) {
-	roles, err := json.Marshal(usr.Roles)
+	encLastName, err := enc.Encrypt([]byte(usr.LastName), userKey)
+	if err != nil {
+		return UserEntity{}, err
+	}
 
+	var encPhoneNumber []byte
+	var phoneNumberHash *string
+	if usr.PhoneNumber != nil {
+		encPhone, err := enc.Encrypt([]byte(*usr.PhoneNumber), userKey)
+		if err != nil {
+			return UserEntity{}, err
+		}
+		encPhoneNumber = encPhone
+		hash := enc.Hash(*usr.PhoneNumber)
+		phoneNumberHash = &hash
+	}
+
+	rolesJSON, err := json.Marshal(usr.Roles)
 	if err != nil {
 		return UserEntity{}, InvalidRoles
 	}
 
+	encRoles, err := enc.Encrypt(rolesJSON, userKey)
+	if err != nil {
+		return UserEntity{}, err
+	}
+
 	return UserEntity{
-		ID:          usr.ID.UUID,
-		Email:       usr.Email,
-		FirstName:   usr.FirstName,
-		LastName:    usr.LastName,
-		PhoneNumber: usr.PhoneNumber,
-		Roles:       roles,
-		CreatedAt:   usr.CreatedAt,
-		UpdatedAt:   usr.UpdatedAt,
+		ID:                   usr.ID.UUID,
+		EmailHash:            enc.Hash(usr.Email),
+		PhoneNumberHash:      phoneNumberHash,
+		EncryptedEmail:       encEmail,
+		EncryptedFirstName:   encFirstName,
+		EncryptedLastName:    encLastName,
+		EncryptedPhoneNumber: encPhoneNumber,
+		EncryptedRoles:       encRoles,
+		EncryptedUserKey:     encryptedUserKey,
+		KeyVersion:           1,
+		CreatedAt:            usr.CreatedAt,
+		UpdatedAt:            usr.UpdatedAt,
 	}, nil
 }

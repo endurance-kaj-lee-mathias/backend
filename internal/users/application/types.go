@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
 )
@@ -19,8 +20,9 @@ type Service interface {
 
 type service struct {
 	repo infrastructure.Repository
+	enc  encryption.Service
 }
 
-func NewService(repo infrastructure.Repository) Service {
-	return &service{repo: repo}
+func NewService(repo infrastructure.Repository, enc encryption.Service) Service {
+	return &service{repo: repo, enc: enc}
 }

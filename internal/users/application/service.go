@@ -24,8 +24,18 @@ func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email strin
 	}
 
 	usr = domain.NewUser(id, email, firstName, lastName, roles)
-	ent, err := entities.ToEntity(usr)
 
+	userKey, err := s.enc.GenerateUserEncryptionKey()
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	encryptedUserKey, err := s.enc.EncryptUserKey(userKey)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	ent, err := entities.ToEntity(usr, s.enc, encryptedUserKey, userKey)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -44,7 +54,7 @@ func (s *service) GetByID(ctx context.Context, id domain.UserId) (domain.User, e
 		return domain.User{}, err
 	}
 
-	usr, err := entities.FromEntity(ent)
+	usr, err := entities.FromEntity(ent, s.enc)
 
 	if err != nil {
 		return domain.User{}, err
@@ -60,7 +70,7 @@ func (s *service) GetByEmail(ctx context.Context, email string) (domain.User, er
 		return domain.User{}, err
 	}
 
-	usr, err := entities.FromEntity(ent)
+	usr, err := entities.FromEntity(ent, s.enc)
 
 	if err != nil {
 		return domain.User{}, err
@@ -83,8 +93,22 @@ func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, stree
 		return domain.Address{}, err
 	}
 
+	encryptedUserKey, err := s.repo.GetEncryptedUserKey(ctx, userID.UUID)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
 	addr := domain.NewAddress(addrID, userID, street, houseNumber, postalCode, city, country)
-	ent := entities.AddressToEntity(addr)
+
+	ent, err := entities.AddressToEntity(addr, userKey, s.enc)
+	if err != nil {
+		return domain.Address{}, err
+	}
 
 	if err := s.repo.InsertAddress(ctx, ent); err != nil {
 		return domain.Address{}, err
@@ -99,5 +123,15 @@ func (s *service) GetAddress(ctx context.Context, userID domain.UserId) (domain.
 		return domain.Address{}, err
 	}
 
-	return entities.AddressFromEntity(ent)
+	encryptedUserKey, err := s.repo.GetEncryptedUserKey(ctx, userID.UUID)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	return entities.AddressFromEntity(ent, userKey, s.enc)
 }

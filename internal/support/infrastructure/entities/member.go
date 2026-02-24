@@ -4,28 +4,48 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
 )
 
 type MemberEntity struct {
-	ID        uuid.UUID `db:"id"`
-	Veteran   uuid.UUID `db:"veteran"`
-	Email     string    `db:"email"`
-	FirstName string    `db:"first_name"`
-	LastName  string    `db:"last_name"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ID               uuid.UUID `db:"id"`
+	Veteran          uuid.UUID `db:"veteran"`
+	EncryptedEmail   []byte    `db:"encrypted_email"`
+	EncryptedFirst   []byte    `db:"encrypted_first_name"`
+	EncryptedLast    []byte    `db:"encrypted_last_name"`
+	EncryptedUserKey []byte    `db:"encrypted_user_key"`
+	CreatedAt        time.Time `db:"created_at"`
+	UpdatedAt        time.Time `db:"updated_at"`
 }
 
-func FromEntity(ent MemberEntity) (domain.Member, error) {
-	memberId, err := domain.ParseMemberId(ent.ID.String())
+func FromEntity(ent MemberEntity, enc encryption.Service) (domain.Member, error) {
+	userKey, err := enc.DecryptUserKey(ent.EncryptedUserKey)
+	if err != nil {
+		return domain.Member{}, err
+	}
 
+	emailBytes, err := enc.Decrypt(ent.EncryptedEmail, userKey)
+	if err != nil {
+		return domain.Member{}, err
+	}
+
+	firstNameBytes, err := enc.Decrypt(ent.EncryptedFirst, userKey)
+	if err != nil {
+		return domain.Member{}, err
+	}
+
+	lastNameBytes, err := enc.Decrypt(ent.EncryptedLast, userKey)
+	if err != nil {
+		return domain.Member{}, err
+	}
+
+	memberId, err := domain.ParseMemberId(ent.ID.String())
 	if err != nil {
 		return domain.Member{}, err
 	}
 
 	veteranId, err := domain.ParseVeteranId(ent.Veteran.String())
-
 	if err != nil {
 		return domain.Member{}, err
 	}
@@ -33,38 +53,25 @@ func FromEntity(ent MemberEntity) (domain.Member, error) {
 	return domain.NewMember(
 		memberId,
 		veteranId,
-		ent.Email,
-		ent.FirstName,
-		ent.LastName,
+		string(emailBytes),
+		string(firstNameBytes),
+		string(lastNameBytes),
 		ent.CreatedAt,
 		ent.UpdatedAt,
 	), nil
 }
 
-func FromEntities(ents []MemberEntity) []domain.Member {
+func FromEntities(ents []MemberEntity, enc encryption.Service) ([]domain.Member, error) {
 	out := make([]domain.Member, 0, len(ents))
 
 	for _, ent := range ents {
-		ent, err := FromEntity(ent)
-
+		member, err := FromEntity(ent, enc)
 		if err != nil {
-			continue
+			return nil, err
 		}
 
-		out = append(out, ent)
+		out = append(out, member)
 	}
 
-	return out
-}
-
-func ToEntity(mem domain.Member) (MemberEntity, error) {
-	return MemberEntity{
-		ID:        mem.ID.UUID,
-		Veteran:   mem.Veteran.UUID,
-		Email:     mem.Email,
-		FirstName: mem.FirstName,
-		LastName:  mem.LastName,
-		CreatedAt: mem.CreatedAt,
-		UpdatedAt: mem.UpdatedAt,
-	}, nil
+	return out, nil
 }
