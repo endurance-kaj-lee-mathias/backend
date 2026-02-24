@@ -21,8 +21,8 @@ func (server *server) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(time.Minute))
 
-	userHandler := users.Wire(server.db)
-	supportHandler := support.Wire(server.db)
+	userHandler := users.Wire(server.db, server.enc)
+	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db)
 
 	r.Use(func(next http.Handler) http.Handler {

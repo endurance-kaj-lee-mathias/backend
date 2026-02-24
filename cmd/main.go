@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/config"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 
 	"github.com/joho/godotenv"
 )
@@ -17,8 +18,14 @@ func main() {
 	cfg := config.LoadConfig()
 	idp := config.LoadIdp()
 
+	enc, err := encryption.NewService(cfg.MasterKey)
+	if err != nil {
+		slog.Error("failed to initialize encryption service", "error", err)
+		os.Exit(1)
+	}
+
 	db := loadDatabase(cfg.Url, cfg.Schema)
-	api := server{cfg, idp, db}
+	api := server{cfg, idp, db, enc}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
