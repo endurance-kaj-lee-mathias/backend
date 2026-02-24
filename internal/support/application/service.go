@@ -27,7 +27,7 @@ func (s *service) AddMember(ctx context.Context, veteranID domain.VeteranId, mem
 		return domain.Member{}, err
 	}
 
-	return entities.FromEntity(ent)
+	return entities.FromEntity(ent, s.enc)
 }
 
 func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error) {
@@ -37,7 +37,7 @@ func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Mem
 		return nil, err
 	}
 
-	return entities.FromEntities(ents), nil
+	return entities.FromEntities(ents, s.enc)
 }
 
 func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error) {
@@ -47,7 +47,7 @@ func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]dom
 		return nil, err
 	}
 
-	return entities.FromEntities(ents), nil
+	return entities.FromEntities(ents, s.enc)
 }
 
 func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error {

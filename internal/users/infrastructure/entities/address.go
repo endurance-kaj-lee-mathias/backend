@@ -4,21 +4,47 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
 type AddressEntity struct {
-	ID          uuid.UUID `db:"id"`
-	UserID      uuid.UUID `db:"user_id"`
-	Street      string    `db:"street"`
-	HouseNumber string    `db:"house_number"`
-	PostalCode  string    `db:"postal_code"`
-	City        string    `db:"city"`
-	Country     string    `db:"country"`
-	CreatedAt   time.Time `db:"created_at"`
+	ID                   uuid.UUID `db:"id"`
+	UserID               uuid.UUID `db:"user_id"`
+	EncryptedStreet      []byte    `db:"encrypted_street"`
+	EncryptedHouseNumber []byte    `db:"encrypted_house_number"`
+	EncryptedPostalCode  []byte    `db:"encrypted_postal_code"`
+	EncryptedCity        []byte    `db:"encrypted_city"`
+	EncryptedCountry     []byte    `db:"encrypted_country"`
+	CreatedAt            time.Time `db:"created_at"`
 }
 
-func AddressFromEntity(ent AddressEntity) (domain.Address, error) {
+func AddressFromEntity(ent AddressEntity, userKey []byte, enc encryption.Service) (domain.Address, error) {
+	streetBytes, err := enc.Decrypt(ent.EncryptedStreet, userKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	houseNumberBytes, err := enc.Decrypt(ent.EncryptedHouseNumber, userKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	postalCodeBytes, err := enc.Decrypt(ent.EncryptedPostalCode, userKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	cityBytes, err := enc.Decrypt(ent.EncryptedCity, userKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	countryBytes, err := enc.Decrypt(ent.EncryptedCountry, userKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
 	id, err := domain.ParseAddressId(ent.ID.String())
 	if err != nil {
 		return domain.Address{}, err
@@ -32,24 +58,49 @@ func AddressFromEntity(ent AddressEntity) (domain.Address, error) {
 	return domain.Address{
 		ID:          id,
 		UserID:      userID,
-		Street:      ent.Street,
-		HouseNumber: ent.HouseNumber,
-		PostalCode:  ent.PostalCode,
-		City:        ent.City,
-		Country:     ent.Country,
+		Street:      string(streetBytes),
+		HouseNumber: string(houseNumberBytes),
+		PostalCode:  string(postalCodeBytes),
+		City:        string(cityBytes),
+		Country:     string(countryBytes),
 		CreatedAt:   ent.CreatedAt,
 	}, nil
 }
 
-func AddressToEntity(a domain.Address) AddressEntity {
-	return AddressEntity{
-		ID:          a.ID.UUID,
-		UserID:      a.UserID.UUID,
-		Street:      a.Street,
-		HouseNumber: a.HouseNumber,
-		PostalCode:  a.PostalCode,
-		City:        a.City,
-		Country:     a.Country,
-		CreatedAt:   a.CreatedAt,
+func AddressToEntity(a domain.Address, userKey []byte, enc encryption.Service) (AddressEntity, error) {
+	encStreet, err := enc.Encrypt([]byte(a.Street), userKey)
+	if err != nil {
+		return AddressEntity{}, err
 	}
+
+	encHouseNumber, err := enc.Encrypt([]byte(a.HouseNumber), userKey)
+	if err != nil {
+		return AddressEntity{}, err
+	}
+
+	encPostalCode, err := enc.Encrypt([]byte(a.PostalCode), userKey)
+	if err != nil {
+		return AddressEntity{}, err
+	}
+
+	encCity, err := enc.Encrypt([]byte(a.City), userKey)
+	if err != nil {
+		return AddressEntity{}, err
+	}
+
+	encCountry, err := enc.Encrypt([]byte(a.Country), userKey)
+	if err != nil {
+		return AddressEntity{}, err
+	}
+
+	return AddressEntity{
+		ID:                   a.ID.UUID,
+		UserID:               a.UserID.UUID,
+		EncryptedStreet:      encStreet,
+		EncryptedHouseNumber: encHouseNumber,
+		EncryptedPostalCode:  encPostalCode,
+		EncryptedCity:        encCity,
+		EncryptedCountry:     encCountry,
+		CreatedAt:            a.CreatedAt,
+	}, nil
 }

@@ -10,23 +10,34 @@ import (
 )
 
 func (r *userRoleReader) GetRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
-	var rawRoles []byte
+	var encryptedRoles []byte
+	var encryptedUserKey []byte
 
-	query := `SELECT roles FROM users WHERE id = $1`
+	query := `SELECT encrypted_roles, encrypted_user_key FROM users WHERE id = $1`
 
-	if err := r.db.QueryRowContext(ctx, query, userID).Scan(&rawRoles); err != nil {
+	if err := r.db.QueryRowContext(ctx, query, userID).Scan(&encryptedRoles, &encryptedUserKey); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, UserNotFound
 		}
 		return nil, err
 	}
 
+	userKey, err := r.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return nil, err
+	}
+
+	rolesBytes, err := r.enc.Decrypt(encryptedRoles, userKey)
+	if err != nil {
+		return nil, err
+	}
+
 	var roles []string
-	if len(rawRoles) == 0 {
+	if len(rolesBytes) == 0 {
 		return roles, nil
 	}
 
-	if err := json.Unmarshal(rawRoles, &roles); err != nil {
+	if err := json.Unmarshal(rolesBytes, &roles); err != nil {
 		return nil, err
 	}
 

@@ -21,8 +21,8 @@ func (server *server) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(time.Minute))
 
-	userHandler := users.Wire(server.db)
-	supportHandler := support.Wire(server.db)
+	userHandler := users.Wire(server.db, server.enc)
+	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db)
 
 	r.Use(func(next http.Handler) http.Handler {
@@ -36,12 +36,17 @@ func (server *server) mount() http.Handler {
 
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/", userHandler.GetOrCreate)
+
 			r.Delete("/me", userHandler.DeleteMe)
 			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
 			r.Put("/me/address", userHandler.UpsertAddress)
 			r.Get("/me/address", userHandler.GetAddress)
+
+			r.Get("/search/{username}", userHandler.GetUserByUsername)
+
 			r.Get("/support", supportHandler.GetAll)
 			r.Delete("/support/{supportId}", supportHandler.DeleteSupporter)
+
 			r.Get("/{id}", userHandler.GetUser)
 			r.Post("/{id}/support", supportHandler.AddMember)
 		})

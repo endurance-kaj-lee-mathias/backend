@@ -143,12 +143,17 @@ func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 		r.Context(),
 		id,
 		claims.Email,
+		claims.Username,
 		claims.FirstName,
 		claims.LastName,
 		roles,
 	)
 
 	if err != nil {
+		if errors.Is(err, infrastructure.UsernameAlreadyExists) {
+			response.WriteError(w, http.StatusConflict, UsernameAlreadyExists)
+			return
+		}
 		response.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
@@ -168,6 +173,23 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		response.WriteError(w, http.StatusNotFound, NotFound)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToModel(usr))
+}
+
+func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+
+	usr, err := h.service.GetByUsername(r.Context(), username)
+
+	if err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 

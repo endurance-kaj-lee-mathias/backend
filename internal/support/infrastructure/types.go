@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/gofrs/uuid"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/infrastructure/entities"
 )
 
@@ -20,17 +21,19 @@ type Repository interface {
 }
 
 type userRoleReader struct {
-	db *sql.DB
+	db  *sql.DB
+	enc encryption.Service
 }
 
-func NewUserRoleReader(db *sql.DB) UserRoleReader {
-	return &userRoleReader{db: db}
+func NewUserRoleReader(db *sql.DB, enc encryption.Service) UserRoleReader {
+	return &userRoleReader{db: db, enc: enc}
 }
 
 type repository struct {
-	db *sql.DB
+	db  *sql.DB
+	enc encryption.Service
 }
 
-func NewRepository(db *sql.DB) Repository {
-	return &repository{db}
+func NewRepository(db *sql.DB, enc encryption.Service) Repository {
+	return &repository{db: db, enc: enc}
 }
