@@ -7,6 +7,7 @@ import (
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
 
@@ -24,6 +25,7 @@ func (server *server) mount() http.Handler {
 	userHandler := users.Wire(server.db, server.enc)
 	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db)
+	stressHandler := stress.Wire(server.db, server.enc)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,6 +54,10 @@ func (server *server) mount() http.Handler {
 
 			r.Get("/{id}", userHandler.GetUser)
 			r.Post("/{id}/support", supportHandler.AddMember)
+		})
+
+		r.Route("/stress", func(r chi.Router) {
+			r.Post("/samples", stressHandler.IngestSample)
 		})
 	})
 

@@ -1,9 +1,9 @@
 stages:
-    - test
-    - secret-detection
+  - test
+  - secret-detection
 variables:
-    SECRET_DETECTION_ENABLED: "true"
+  SECRET_DETECTION_ENABLED: "true"
 secret_detection:
-    stage: secret-detection
+  stage: secret-detection
 include:
-    - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
