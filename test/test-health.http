@@ -1,0 +1,220 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@password = password
+
+### =====================================================
+### Step 1: Get access token (VETERAN)
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### Step 2: Ensure the veteran user exists in the DB
+### =====================================================
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    client.global.set("veteranId", response.body.id);
+%}
+
+### =====================================================
+### Stress sample tests
+### =====================================================
+
+### 1. Happy path – required fields only
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 72.4,
+  "rmssd_ms": 38.7
+}
+
+### 2. Happy path – all fields including optional ones
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:05:00Z",
+  "window_minutes": 10,
+  "mean_hr": 68.0,
+  "rmssd_ms": 45.2,
+  "resting_hr": 58.0,
+  "steps": 312,
+  "sleep_debt_hours": 1.5
+}
+
+### 3. Happy path – only resting_hr provided as optional
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:10:00Z",
+  "window_minutes": 15,
+  "mean_hr": 80.1,
+  "rmssd_ms": 28.9,
+  "resting_hr": 62.5
+}
+
+### 4. Happy path – only steps and sleep_debt_hours provided as optional
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:15:00Z",
+  "window_minutes": 5,
+  "mean_hr": 75.3,
+  "rmssd_ms": 33.1,
+  "steps": 89,
+  "sleep_debt_hours": 0.5
+}
+
+### =====================================================
+### Validation errors – should return 422
+### =====================================================
+
+### 5. Missing user_id – should return 422
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 72.4,
+  "rmssd_ms": 38.7
+}
+
+### 6. Missing timestamp_utc – should return 422
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "window_minutes": 5,
+  "mean_hr": 72.4,
+  "rmssd_ms": 38.7
+}
+
+### 7. Invalid window_minutes (zero) – should return 422
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 0,
+  "mean_hr": 72.4,
+  "rmssd_ms": 38.7
+}
+
+### 8. Invalid mean_hr (zero) – should return 422
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 0,
+  "rmssd_ms": 38.7
+}
+
+### 9. Invalid rmssd_ms (negative) – should return 422
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 72.4,
+  "rmssd_ms": -1.0
+}
+
+### =====================================================
+### Auth / ownership errors
+### =====================================================
+
+### 10. No token – should return 401
+POST {{baseUrl}}/stress/samples
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 72.4,
+  "rmssd_ms": 38.7
+}
+
+### 11. user_id does not match authenticated user – should return 403
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "00000000-0000-0000-0000-000000000000",
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 72.4,
+  "rmssd_ms": 38.7
+}
+
+### =====================================================
+### Input errors – should return 400
+### =====================================================
+
+### 13. Empty body – should return 400
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+### 14. Unknown field – should return 400
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-02-25T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 72.4,
+  "rmssd_ms": 38.7,
+  "unknown_field": "oops"
+}
+
+
