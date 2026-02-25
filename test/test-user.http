@@ -17,15 +17,15 @@
 POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
-grant_type=password&
-client_id={{clientId}}&
-client_secret={{clientSecret}}&
-username={{usernameVeteran}}&
-password={{password}}&
-scope=openid
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
 
 > {%
-  client.global.set("veteranToken", response.body.access_token);
+    client.global.set("veteranToken", response.body.access_token);
 %}
 
 ### =====================================================
@@ -34,15 +34,15 @@ scope=openid
 POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
-grant_type=password&
-client_id={{clientId}}&
-client_secret={{clientSecret}}&
-username={{usernameSupport}}&
-password={{password}}&
-scope=openid
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
 
 > {%
-  client.global.set("supportToken", response.body.access_token);
+    client.global.set("supportToken", response.body.access_token);
 %}
 
 ### =====================================================
@@ -51,15 +51,15 @@ scope=openid
 POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
-grant_type=password&
-client_id={{clientId}}&
-client_secret={{clientSecret}}&
-username={{usernameTherapist}}&
-password={{password}}&
-scope=openid
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
 
 > {%
-  client.global.set("therapistToken", response.body.access_token);
+    client.global.set("therapistToken", response.body.access_token);
 %}
 
 
@@ -68,8 +68,8 @@ GET {{baseUrl}}/users
 Authorization: Bearer {{veteranToken}}
 
 > {%
-  client.global.set("veteranId", response.body.id);
-  client.global.set("veteranUsername", response.body.username);
+    client.global.set("veteranId", response.body.id);
+    client.global.set("veteranUsername", response.body.username);
 %}
 
 ### 2. Get or create the current user (THERAPIST) – stores therapistId and therapistUsername
@@ -77,8 +77,8 @@ GET {{baseUrl}}/users
 Authorization: Bearer {{therapistToken}}
 
 > {%
-  client.global.set("therapistId", response.body.id);
-  client.global.set("therapistUsername", response.body.username);
+    client.global.set("therapistId", response.body.id);
+    client.global.set("therapistUsername", response.body.username);
 %}
 
 ### 3. Get or create the current user (SUPPORT) – stores supportId and supportUsername
@@ -86,8 +86,8 @@ GET {{baseUrl}}/users
 Authorization: Bearer {{supportToken}}
 
 > {%
-  client.global.set("supportId", response.body.id);
-  client.global.set("supportUsername", response.body.username);
+    client.global.set("supportId", response.body.id);
+    client.global.set("supportUsername", response.body.username);
 %}
 
 ### 4. Get a user by id
