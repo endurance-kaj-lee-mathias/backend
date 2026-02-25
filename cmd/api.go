@@ -39,6 +39,9 @@ func (server *server) mount() http.Handler {
 
 			r.Delete("/me", userHandler.DeleteMe)
 			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
+			r.Patch("/me/introduction", userHandler.PatchIntroduction)
+			r.Patch("/me/about", userHandler.PatchAbout)
+			r.Patch("/me/image", userHandler.PatchImage)
 			r.Put("/me/address", userHandler.UpsertAddress)
 			r.Get("/me/address", userHandler.GetAddress)
 

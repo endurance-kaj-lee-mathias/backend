@@ -10,20 +10,23 @@ import (
 )
 
 type UserEntity struct {
-	ID                   uuid.UUID `db:"id"`
-	EmailHash            string    `db:"email_hash"`
-	UsernameHash         string    `db:"username_hash"`
-	PhoneNumberHash      *string   `db:"phone_number_hash"`
-	EncryptedEmail       []byte    `db:"encrypted_email"`
-	EncryptedUsername    []byte    `db:"encrypted_username"`
-	EncryptedFirstName   []byte    `db:"encrypted_first_name"`
-	EncryptedLastName    []byte    `db:"encrypted_last_name"`
-	EncryptedPhoneNumber []byte    `db:"encrypted_phone_number"`
-	EncryptedRoles       []byte    `db:"encrypted_roles"`
-	EncryptedUserKey     []byte    `db:"encrypted_user_key"`
-	KeyVersion           int       `db:"key_version"`
-	CreatedAt            time.Time `db:"created_at"`
-	UpdatedAt            time.Time `db:"updated_at"`
+	ID                    uuid.UUID `db:"id"`
+	EmailHash             string    `db:"email_hash"`
+	UsernameHash          string    `db:"username_hash"`
+	PhoneNumberHash       *string   `db:"phone_number_hash"`
+	EncryptedEmail        []byte    `db:"encrypted_email"`
+	EncryptedUsername     []byte    `db:"encrypted_username"`
+	EncryptedFirstName    []byte    `db:"encrypted_first_name"`
+	EncryptedLastName     []byte    `db:"encrypted_last_name"`
+	EncryptedPhoneNumber  []byte    `db:"encrypted_phone_number"`
+	EncryptedRoles        []byte    `db:"encrypted_roles"`
+	EncryptedAbout        []byte    `db:"encrypted_about"`
+	EncryptedIntroduction []byte    `db:"encrypted_introduction"`
+	Image                 *string   `db:"image"`
+	EncryptedUserKey      []byte    `db:"encrypted_user_key"`
+	KeyVersion            int       `db:"key_version"`
+	CreatedAt             time.Time `db:"created_at"`
+	UpdatedAt             time.Time `db:"updated_at"`
 }
 
 func FromEntity(ent UserEntity, enc encryption.Service) (domain.User, error) {
@@ -80,16 +83,37 @@ func FromEntity(ent UserEntity, enc encryption.Service) (domain.User, error) {
 	}
 
 	return domain.User{
-		ID:          id,
-		Email:       string(emailBytes),
-		Username:    string(usernameBytes),
-		FirstName:   string(firstNameBytes),
-		LastName:    string(lastNameBytes),
-		PhoneNumber: phoneNumber,
-		Roles:       roles,
-		CreatedAt:   ent.CreatedAt,
-		UpdatedAt:   ent.UpdatedAt,
+		ID:           id,
+		Email:        string(emailBytes),
+		Username:     string(usernameBytes),
+		FirstName:    string(firstNameBytes),
+		LastName:     string(lastNameBytes),
+		PhoneNumber:  phoneNumber,
+		Roles:        roles,
+		About:        decryptOptional(ent.EncryptedAbout, userKey, enc),
+		Introduction: decryptOptional(ent.EncryptedIntroduction, userKey, enc),
+		Image:        derefString(ent.Image),
+		CreatedAt:    ent.CreatedAt,
+		UpdatedAt:    ent.UpdatedAt,
 	}, nil
+}
+
+func decryptOptional(ciphertext []byte, userKey []byte, enc encryption.Service) string {
+	if len(ciphertext) == 0 {
+		return ""
+	}
+	plaintext, err := enc.Decrypt(ciphertext, userKey)
+	if err != nil {
+		return ""
+	}
+	return string(plaintext)
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, userKey []byte) (UserEntity, error) {
@@ -135,20 +159,35 @@ func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, 
 		return UserEntity{}, err
 	}
 
+	encAbout, err := enc.Encrypt([]byte(usr.About), userKey)
+	if err != nil {
+		return UserEntity{}, err
+	}
+
+	encIntroduction, err := enc.Encrypt([]byte(usr.Introduction), userKey)
+	if err != nil {
+		return UserEntity{}, err
+	}
+
+	image := usr.Image
+
 	return UserEntity{
-		ID:                   usr.ID.UUID,
-		EmailHash:            enc.Hash(usr.Email),
-		UsernameHash:         enc.Hash(usr.Username),
-		PhoneNumberHash:      phoneNumberHash,
-		EncryptedEmail:       encEmail,
-		EncryptedUsername:    encUsername,
-		EncryptedFirstName:   encFirstName,
-		EncryptedLastName:    encLastName,
-		EncryptedPhoneNumber: encPhoneNumber,
-		EncryptedRoles:       encRoles,
-		EncryptedUserKey:     encryptedUserKey,
-		KeyVersion:           1,
-		CreatedAt:            usr.CreatedAt,
-		UpdatedAt:            usr.UpdatedAt,
+		ID:                    usr.ID.UUID,
+		EmailHash:             enc.Hash(usr.Email),
+		UsernameHash:          enc.Hash(usr.Username),
+		PhoneNumberHash:       phoneNumberHash,
+		EncryptedEmail:        encEmail,
+		EncryptedUsername:     encUsername,
+		EncryptedFirstName:    encFirstName,
+		EncryptedLastName:     encLastName,
+		EncryptedPhoneNumber:  encPhoneNumber,
+		EncryptedRoles:        encRoles,
+		EncryptedAbout:        encAbout,
+		EncryptedIntroduction: encIntroduction,
+		Image:                 &image,
+		EncryptedUserKey:      encryptedUserKey,
+		KeyVersion:            1,
+		CreatedAt:             usr.CreatedAt,
+		UpdatedAt:             usr.UpdatedAt,
 	}, nil
 }
