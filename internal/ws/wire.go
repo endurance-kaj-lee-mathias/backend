@@ -9,6 +9,5 @@ import (
 
 func Wire(idp config.Idp, allowedOrigins []string) *transport.Handler {
 	manager := application.NewManager()
-	authenticate := auth.Authenticate(idp)
-	return transport.NewHandler(manager, authenticate, allowedOrigins)
+	return transport.NewHandler(manager, auth.AuthenticateClaims(idp), allowedOrigins)
 }
