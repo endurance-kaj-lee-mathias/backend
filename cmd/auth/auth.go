@@ -27,6 +27,11 @@ func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
 
 	jwks := initialize(url, config.Refresh)
 
+	issuers := make([]string, len(config.Issuers))
+	for i, iss := range config.Issuers {
+		issuers[i] = fmt.Sprintf("%s/realms/%s", iss, config.Realm)
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, err := extractToken(r)
@@ -36,13 +41,7 @@ func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
 				return
 			}
 
-			var issuer = fmt.Sprintf(
-				"%s/realms/%s",
-				config.Url,
-				config.Realm,
-			)
-
-			claims, err := validateToken(token, jwks, issuer, config.Client)
+			claims, err := validateToken(token, jwks, issuers, config.Client)
 
 			if err != nil {
 				response.WriteError(w, http.StatusUnauthorized, err)
@@ -91,9 +90,8 @@ func extractToken(request *http.Request) (string, error) {
 	return token, nil
 }
 
-func validateToken(tokenString string, jwks *keyfunc.JWKS, issuer, audience string) (jwt.MapClaims, error) {
+func validateToken(tokenString string, jwks *keyfunc.JWKS, issuers []string, audience string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, jwks.Keyfunc,
-		jwt.WithIssuer(issuer),
 		jwt.WithAudience(audience),
 		jwt.WithValidMethods([]string{"RS256"}),
 	)
@@ -109,6 +107,21 @@ func validateToken(tokenString string, jwks *keyfunc.JWKS, issuer, audience stri
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, ClaimsInvalid
+	}
+
+	iss, err := claims.GetIssuer()
+	if err != nil {
+		return nil, err
+	}
+	validIssuer := false
+	for _, allowed := range issuers {
+		if iss == allowed {
+			validIssuer = true
+			break
+		}
+	}
+	if !validIssuer {
+		return nil, IssuerInvalid
 	}
 
 	return claims, nil
