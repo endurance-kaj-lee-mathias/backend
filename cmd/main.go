@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/config"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
@@ -30,7 +33,13 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	if err := api.run(api.mount()); err != nil {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	h, scheduler := api.mount()
+	go scheduler.Start(ctx)
+
+	if err := api.run(h); err != nil {
 		slog.Error("server has crashed", "error", err)
 		os.Exit(1)
 	}
