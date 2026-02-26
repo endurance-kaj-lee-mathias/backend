@@ -14,7 +14,6 @@ CREATE TABLE mood_entries
     encrypted_notes  BYTEA,
     created_at       TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at       TIMESTAMP WITH TIME ZONE NOT NULL,
-    UNIQUE (user_id, date),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 

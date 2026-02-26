@@ -14,10 +14,6 @@ func (r *repository) Upsert(ctx context.Context, ent entities.MoodEntryEntity) e
 	query := `
 		INSERT INTO mood_entries (id, user_id, date, mood_score, encrypted_notes, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		ON CONFLICT (user_id, date) DO UPDATE
-		SET mood_score       = EXCLUDED.mood_score,
-		    encrypted_notes  = EXCLUDED.encrypted_notes,
-		    updated_at       = EXCLUDED.updated_at
 	`
 
 	_, err := r.db.ExecContext(
