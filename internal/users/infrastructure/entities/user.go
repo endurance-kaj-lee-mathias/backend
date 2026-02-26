@@ -14,6 +14,7 @@ type UserEntity struct {
 	EmailHash             string    `db:"email_hash"`
 	UsernameHash          string    `db:"username_hash"`
 	PhoneNumberHash       *string   `db:"phone_number_hash"`
+	RoleHash              string    `db:"role_hash"`
 	EncryptedEmail        []byte    `db:"encrypted_email"`
 	EncryptedUsername     []byte    `db:"encrypted_username"`
 	EncryptedFirstName    []byte    `db:"encrypted_first_name"`
@@ -159,6 +160,11 @@ func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, 
 		return UserEntity{}, err
 	}
 
+	var roleHash string
+	if len(usr.Roles) > 0 {
+		roleHash = enc.Hash(string(usr.Roles[0]))
+	}
+
 	encAbout, err := enc.Encrypt([]byte(usr.About), userKey)
 	if err != nil {
 		return UserEntity{}, err
@@ -176,6 +182,7 @@ func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, 
 		EmailHash:             enc.Hash(usr.Email),
 		UsernameHash:          enc.Hash(usr.Username),
 		PhoneNumberHash:       phoneNumberHash,
+		RoleHash:              roleHash,
 		EncryptedEmail:        encEmail,
 		EncryptedUsername:     encUsername,
 		EncryptedFirstName:    encFirstName,

@@ -13,12 +13,13 @@ import (
 
 func (r *repository) Create(ctx context.Context, ent entities.UserEntity) error {
 	query := `
-		INSERT INTO users (id, email_hash, username_hash, phone_number_hash, encrypted_email, encrypted_username, encrypted_first_name, encrypted_last_name, encrypted_phone_number, encrypted_roles, encrypted_about, encrypted_introduction, image, encrypted_user_key, key_version, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		INSERT INTO users (id, email_hash, username_hash, phone_number_hash, role_hash, encrypted_email, encrypted_username, encrypted_first_name, encrypted_last_name, encrypted_phone_number, encrypted_roles, encrypted_about, encrypted_introduction, image, encrypted_user_key, key_version, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 		ON CONFLICT (id) DO UPDATE
 		SET email_hash             = EXCLUDED.email_hash,
 			username_hash          = EXCLUDED.username_hash,
 			phone_number_hash      = EXCLUDED.phone_number_hash,
+			role_hash              = EXCLUDED.role_hash,
 			encrypted_email        = EXCLUDED.encrypted_email,
 			encrypted_username     = EXCLUDED.encrypted_username,
 			encrypted_first_name   = EXCLUDED.encrypted_first_name,
@@ -40,6 +41,7 @@ func (r *repository) Create(ctx context.Context, ent entities.UserEntity) error 
 		ent.EmailHash,
 		ent.UsernameHash,
 		ent.PhoneNumberHash,
+		ent.RoleHash,
 		ent.EncryptedEmail,
 		ent.EncryptedUsername,
 		ent.EncryptedFirstName,
