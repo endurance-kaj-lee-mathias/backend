@@ -18,8 +18,8 @@ type contextKey string
 
 const claimsKey contextKey = "claims"
 
-func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
-	var url = fmt.Sprintf(
+func Authenticate(config config.Idp) func(*http.Request) (*Claims, error) {
+	url := fmt.Sprintf(
 		"%s/realms/%s/protocol/openid-connect/certs",
 		config.Url,
 		config.Realm,
@@ -27,23 +27,29 @@ func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
 
 	jwks := initialize(url, config.Refresh)
 
+	issuer := fmt.Sprintf("%s/realms/%s", config.Url, config.Realm)
+
+	return func(r *http.Request) (*Claims, error) {
+		token, err := extractToken(r)
+		if err != nil {
+			return nil, err
+		}
+
+		raw, err := validateToken(token, jwks, issuer, config.Client)
+		if err != nil {
+			return nil, err
+		}
+
+		return mapClaims(raw)
+	}
+}
+
+func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
+	authenticate := Authenticate(config)
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := extractToken(r)
-
-			if err != nil {
-				response.WriteError(w, http.StatusUnauthorized, err)
-				return
-			}
-
-			var issuer = fmt.Sprintf(
-				"%s/realms/%s",
-				config.Url,
-				config.Realm,
-			)
-
-			claims, err := validateToken(token, jwks, issuer, config.Client)
-
+			claims, err := authenticate(r)
 			if err != nil {
 				response.WriteError(w, http.StatusUnauthorized, err)
 				return
@@ -114,17 +120,7 @@ func validateToken(tokenString string, jwks *keyfunc.JWKS, issuer, audience stri
 	return claims, nil
 }
 
-func getClaims(context context.Context) (jwt.MapClaims, bool) {
-	claims, ok := context.Value(claimsKey).(jwt.MapClaims)
-	return claims, ok
-}
-
-func GetUserClaims(ctx context.Context) (*Claims, bool) {
-	raw, ok := getClaims(ctx)
-	if !ok {
-		return nil, false
-	}
-
+func mapClaims(raw jwt.MapClaims) (*Claims, error) {
 	c := &Claims{}
 
 	if sub, ok := raw["sub"].(string); ok {
@@ -158,8 +154,17 @@ func GetUserClaims(ctx context.Context) (*Claims, bool) {
 	}
 
 	if c.Sub == "" {
-		return nil, false
+		return nil, ClaimsInvalid
 	}
 
-	return c, true
+	return c, nil
+}
+
+func getClaims(ctx context.Context) (*Claims, bool) {
+	claims, ok := ctx.Value(claimsKey).(*Claims)
+	return claims, ok
+}
+
+func GetUserClaims(ctx context.Context) (*Claims, bool) {
+	return getClaims(ctx)
 }
