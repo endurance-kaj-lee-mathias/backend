@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/env"
 )
 
 type Config struct {
-	Port      string
-	Url       string
-	Schema    string
-	MasterKey []byte
+	Port           string
+	Url            string
+	Schema         string
+	MasterKey      []byte
+	AllowedOrigins []string
 }
 
 func LoadConfig() Config {
@@ -21,6 +23,8 @@ func LoadConfig() Config {
 	url := env.Get("DB_URL", "postgresql://user:password@localhost:5432/endurance?sslmode=disable")
 	schema := env.Get("DB_SCHEMA", "endurance")
 	masterKeyHex := env.Get("MASTER_KEY", "")
+	rawOrigins := env.Get("WS_ALLOWED_ORIGINS", "localhost:3000")
+	allowedOrigins := strings.Split(rawOrigins, ",")
 
 	masterKey, err := hex.DecodeString(masterKeyHex)
 	if err != nil || len(masterKey) != 32 {
@@ -29,9 +33,10 @@ func LoadConfig() Config {
 	}
 
 	return Config{
-		Port:      fmt.Sprintf(":%s", port),
-		Url:       url,
-		Schema:    schema,
-		MasterKey: masterKey,
+		Port:           fmt.Sprintf(":%s", port),
+		Url:            url,
+		Schema:         schema,
+		MasterKey:      masterKey,
+		AllowedOrigins: allowedOrigins,
 	}
 }
