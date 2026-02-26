@@ -69,3 +69,15 @@ func (m *Manager) Broadcast(channelID string, msg domain.OutboundMessage) {
 func NewClient(userID string) *Client {
 	return newClient(userID)
 }
+
+func (m *Manager) GetChannelSubscribers(channelID string) int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.channels[channelID])
+}
+
+func (m *Manager) GetChannels() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return len(m.channels)
+}
