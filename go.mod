@@ -4,6 +4,7 @@ go 1.24.9
 
 require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0
+	github.com/coder/websocket v1.8.14
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt/v5 v5.3.1

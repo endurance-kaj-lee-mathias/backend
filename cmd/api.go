@@ -6,10 +6,12 @@ import (
 	"time"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -26,6 +28,8 @@ func (server *server) mount() http.Handler {
 	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db)
 	stressHandler := stress.Wire(server.db, server.enc)
+	chatsHandler := chats.Wire(server.db, server.enc)
+	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -59,9 +63,16 @@ func (server *server) mount() http.Handler {
 		r.Route("/stress", func(r chi.Router) {
 			r.Post("/samples", stressHandler.IngestSample)
 		})
+
+		r.Route("/chats", func(r chi.Router) {
+			r.Post("/", chatsHandler.StartConversation)
+			r.Post("/{conversationId}/messages", chatsHandler.SendMessage)
+			r.Get("/{conversationId}/messages", chatsHandler.GetMessages)
+		})
 	})
 
 	r.Get("/health", healthHandler.Health)
+	r.Get("/ws", wsHandler.ServeWS)
 
 	return r
 }

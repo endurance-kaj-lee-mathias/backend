@@ -18,8 +18,8 @@ type contextKey string
 
 const claimsKey contextKey = "claims"
 
-func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
-	var url = fmt.Sprintf(
+func Authenticate(config config.Idp) func(*http.Request) (jwt.MapClaims, error) {
+	url := fmt.Sprintf(
 		"%s/realms/%s/protocol/openid-connect/certs",
 		config.Url,
 		config.Realm,
@@ -32,17 +32,37 @@ func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
 		issuers[i] = fmt.Sprintf("%s/realms/%s", iss, config.Realm)
 	}
 
+	return func(r *http.Request) (jwt.MapClaims, error) {
+		token, err := extractToken(r)
+		if err != nil {
+			return nil, err
+		}
+
+		return validateToken(token, jwks, issuers, config.Client)
+	}
+}
+
+func AuthenticateClaims(config config.Idp) func(*http.Request) (*Claims, error) {
+	raw := Authenticate(config)
+	return func(r *http.Request) (*Claims, error) {
+		mapClaims, err := raw(r)
+		if err != nil {
+			return nil, err
+		}
+		c := claimsFromMap(mapClaims)
+		if c.Sub == "" {
+			return nil, ClaimsInvalid
+		}
+		return c, nil
+	}
+}
+
+func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
+	authenticate := Authenticate(config)
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := extractToken(r)
-
-			if err != nil {
-				response.WriteError(w, http.StatusUnauthorized, err)
-				return
-			}
-
-			claims, err := validateToken(token, jwks, issuers, config.Client)
-
+			claims, err := authenticate(r)
 			if err != nil {
 				response.WriteError(w, http.StatusUnauthorized, err)
 				return
@@ -113,6 +133,7 @@ func validateToken(tokenString string, jwks *keyfunc.JWKS, issuers []string, aud
 	if err != nil {
 		return nil, err
 	}
+
 	validIssuer := false
 	for _, allowed := range issuers {
 		if iss == allowed {
@@ -127,39 +148,28 @@ func validateToken(tokenString string, jwks *keyfunc.JWKS, issuers []string, aud
 	return claims, nil
 }
 
-func getClaims(context context.Context) (jwt.MapClaims, bool) {
-	claims, ok := context.Value(claimsKey).(jwt.MapClaims)
+func getClaims(ctx context.Context) (jwt.MapClaims, bool) {
+	claims, ok := ctx.Value(claimsKey).(jwt.MapClaims)
 	return claims, ok
 }
 
-func GetUserClaims(ctx context.Context) (*Claims, bool) {
-	raw, ok := getClaims(ctx)
-	if !ok {
-		return nil, false
-	}
-
+func claimsFromMap(raw jwt.MapClaims) *Claims {
 	c := &Claims{}
-
 	if sub, ok := raw["sub"].(string); ok {
 		c.Sub = sub
 	}
-
 	if email, ok := raw["email"].(string); ok {
 		c.Email = email
 	}
-
 	if username, ok := raw["preferred_username"].(string); ok {
 		c.Username = username
 	}
-
 	if firstName, ok := raw["given_name"].(string); ok {
 		c.FirstName = firstName
 	}
-
 	if lastName, ok := raw["family_name"].(string); ok {
 		c.LastName = lastName
 	}
-
 	if ra, ok := raw["realm_access"].(map[string]any); ok {
 		if roles, ok := ra["roles"].([]any); ok {
 			for _, r := range roles {
@@ -169,7 +179,16 @@ func GetUserClaims(ctx context.Context) (*Claims, bool) {
 			}
 		}
 	}
+	return c
+}
 
+func GetUserClaims(ctx context.Context) (*Claims, bool) {
+	raw, ok := getClaims(ctx)
+	if !ok {
+		return nil, false
+	}
+
+	c := claimsFromMap(raw)
 	if c.Sub == "" {
 		return nil, false
 	}

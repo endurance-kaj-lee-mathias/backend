@@ -1,0 +1,215 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameSupport = Lee
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – SUPPORT
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Get access token – THERAPIST
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+%}
+
+### =====================================================
+### 4. Ensure users exist in DB & capture their IDs
+### Run these before any chat requests.
+### =====================================================
+
+### 4a. Get or create VETERAN – stores veteranId
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    client.global.set("veteranId", response.body.id);
+%}
+
+### 4b. Get or create SUPPORT – stores supportId
+GET {{baseUrl}}/users
+Authorization: Bearer {{supportToken}}
+
+> {%
+    client.global.set("supportId", response.body.id);
+%}
+
+### 4c. Get or create THERAPIST – stores therapistId
+GET {{baseUrl}}/users
+Authorization: Bearer {{therapistToken}}
+
+> {%
+    client.global.set("therapistId", response.body.id);
+%}
+
+### =====================================================
+### 5. Ensure a support relationship exists
+### (SUPPORT added as supporter for VETERAN)
+### =====================================================
+POST {{baseUrl}}/users/{{veteranId}}/support
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Chat – Happy paths
+### =====================================================
+
+### 6. VETERAN starts (or retrieves) a conversation with SUPPORT
+# Stores conversationId for use in subsequent requests.
+POST {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "participantId": "{{supportId}}"
+}
+
+> {%
+    client.global.set("conversationId", response.body.id);
+%}
+
+### 7. SUPPORT starts the same conversation (must return same conversationId)
+POST {{baseUrl}}/chats
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "participantId": "{{veteranId}}"
+}
+
+> {%
+    client.global.set("conversationIdFromSupport", response.body.id);
+    // conversationId and conversationIdFromSupport should be identical
+%}
+
+### 8. VETERAN sends a message
+POST {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "content": "Hey, how are you doing?"
+}
+
+### 9. SUPPORT replies
+POST {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "content": "I'm doing well, thanks for asking!"
+}
+
+### 10. VETERAN retrieves messages (page 1 – default limit 20, offset 0)
+GET {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{veteranToken}}
+
+### 11. SUPPORT retrieves messages (same conversation, same decrypted content)
+GET {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{supportToken}}
+
+### 12. Pagination – second page (limit 5, offset 5)
+GET {{baseUrl}}/chats/{{conversationId}}/messages?limit=5&offset=5
+Authorization: Bearer {{veteranToken}}
+
+### 13. Pagination – custom page size
+GET {{baseUrl}}/chats/{{conversationId}}/messages?limit=1&offset=0
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Chat – Error / constraint paths
+### =====================================================
+
+### 14. Start conversation without a support relationship
+# VETERAN and THERAPIST have no user_supports row → expect 403 Forbidden
+POST {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "participantId": "{{therapistId}}"
+}
+
+### 15. Send message to a conversation you are not part of
+# Using therapistToken on a conversation between VETERAN and SUPPORT → expect 403
+POST {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "content": "I shouldn't be able to send this"
+}
+
+### 16. Get messages for a conversation you are not part of → expect 403
+GET {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{therapistToken}}
+
+### 17. Send message with empty content → expect 400
+POST {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "content": ""
+}
+
+### 18. Start conversation with missing participantId → expect 400
+POST {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{}
+
+### 19. Get messages for a non-existent conversationId → expect 403 or 500
+GET {{baseUrl}}/chats/00000000-0000-0000-0000-000000000000/messages
+Authorization: Bearer {{veteranToken}}
+
