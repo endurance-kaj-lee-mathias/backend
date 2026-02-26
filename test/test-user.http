@@ -6,9 +6,9 @@
 @realm = endurance
 @clientId = backend
 @clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
-@usernameSupport = Mathias
-@usernameVeteran = Kaj
-@usernameTherapist = Lee
+@usernameSupport = Lee
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
 @password = password
 
 ### =====================================================

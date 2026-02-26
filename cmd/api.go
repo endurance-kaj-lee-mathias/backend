@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
@@ -26,6 +27,7 @@ func (server *server) mount() http.Handler {
 	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db)
 	stressHandler := stress.Wire(server.db, server.enc)
+	chatsHandler := chats.Wire(server.db, server.enc)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +42,7 @@ func (server *server) mount() http.Handler {
 			r.Get("/", userHandler.GetOrCreate)
 
 			r.Delete("/me", userHandler.DeleteMe)
-			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
+			// r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
 			r.Patch("/me/introduction", userHandler.PatchIntroduction)
 			r.Patch("/me/about", userHandler.PatchAbout)
 			r.Patch("/me/image", userHandler.PatchImage)
@@ -58,6 +60,12 @@ func (server *server) mount() http.Handler {
 
 		r.Route("/stress", func(r chi.Router) {
 			r.Post("/samples", stressHandler.IngestSample)
+		})
+
+		r.Route("/chats", func(r chi.Router) {
+			r.Post("/", chatsHandler.StartConversation)
+			r.Post("/{conversationId}/messages", chatsHandler.SendMessage)
+			r.Get("/{conversationId}/messages", chatsHandler.GetMessages)
 		})
 	})
 
