@@ -42,6 +42,21 @@ func Authenticate(config config.Idp) func(*http.Request) (jwt.MapClaims, error) 
 	}
 }
 
+func AuthenticateClaims(config config.Idp) func(*http.Request) (*Claims, error) {
+	raw := Authenticate(config)
+	return func(r *http.Request) (*Claims, error) {
+		mapClaims, err := raw(r)
+		if err != nil {
+			return nil, err
+		}
+		c := claimsFromMap(mapClaims)
+		if c.Sub == "" {
+			return nil, ClaimsInvalid
+		}
+		return c, nil
+	}
+}
+
 func TokenAuthentication(config config.Idp) func(http.Handler) http.Handler {
 	authenticate := Authenticate(config)
 
@@ -138,14 +153,8 @@ func getClaims(ctx context.Context) (jwt.MapClaims, bool) {
 	return claims, ok
 }
 
-func GetUserClaims(ctx context.Context) (*Claims, bool) {
-	raw, ok := getClaims(ctx)
-	if !ok {
-		return nil, false
-	}
-
+func claimsFromMap(raw jwt.MapClaims) *Claims {
 	c := &Claims{}
-
 	if sub, ok := raw["sub"].(string); ok {
 		c.Sub = sub
 	}
@@ -170,7 +179,16 @@ func GetUserClaims(ctx context.Context) (*Claims, bool) {
 			}
 		}
 	}
+	return c
+}
 
+func GetUserClaims(ctx context.Context) (*Claims, bool) {
+	raw, ok := getClaims(ctx)
+	if !ok {
+		return nil, false
+	}
+
+	c := claimsFromMap(raw)
 	if c.Sub == "" {
 		return nil, false
 	}
