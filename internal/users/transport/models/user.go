@@ -6,17 +6,18 @@ import (
 )
 
 type UserModel struct {
-	ID           uuid.UUID `json:"id"`
-	FirstName    string    `json:"first-name"`
-	LastName     string    `json:"last-name"`
-	Username     string    `json:"username"`
-	About        string    `json:"about"`
-	Introduction string    `json:"introduction"`
-	Image        string    `json:"image"`
+	ID           uuid.UUID     `json:"id"`
+	FirstName    string        `json:"first-name"`
+	LastName     string        `json:"last-name"`
+	Username     string        `json:"username"`
+	About        string        `json:"about"`
+	Introduction string        `json:"introduction"`
+	Image        string        `json:"image"`
+	Address      *AddressModel `json:"address,omitempty"`
 }
 
-func ToModel(usr domain.User) UserModel {
-	return UserModel{
+func ToModel(usr domain.User, addr *domain.Address) UserModel {
+	m := UserModel{
 		ID:           usr.ID.UUID,
 		FirstName:    usr.FirstName,
 		LastName:     usr.LastName,
@@ -25,4 +26,9 @@ func ToModel(usr domain.User) UserModel {
 		Introduction: usr.Introduction,
 		Image:        usr.Image,
 	}
+	if addr != nil {
+		a := ToAddressModel(*addr)
+		m.Address = &a
+	}
+	return m
 }

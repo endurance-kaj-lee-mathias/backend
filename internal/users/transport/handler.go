@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
@@ -14,15 +13,8 @@ import (
 )
 
 func (h *Handler) PatchPhoneNumber(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
+	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	id, err := domain.ParseId(claims.Sub)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
@@ -45,15 +37,8 @@ func (h *Handler) PatchPhoneNumber(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpsertAddress(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
+	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	id, err := domain.ParseId(claims.Sub)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
@@ -74,27 +59,12 @@ func (h *Handler) UpsertAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.AddressModel{
-		ID:          addr.ID.UUID,
-		UserID:      addr.UserID.UUID,
-		Street:      addr.Street,
-		HouseNumber: addr.HouseNumber,
-		PostalCode:  addr.PostalCode,
-		City:        addr.City,
-		Country:     addr.Country,
-	})
+	response.Write(w, http.StatusOK, models.ToAddressModel(addr))
 }
 
 func (h *Handler) GetAddress(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
+	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	id, err := domain.ParseId(claims.Sub)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
@@ -108,29 +78,12 @@ func (h *Handler) GetAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.AddressModel{
-		ID:          addr.ID.UUID,
-		UserID:      addr.UserID.UUID,
-		Street:      addr.Street,
-		HouseNumber: addr.HouseNumber,
-		PostalCode:  addr.PostalCode,
-		City:        addr.City,
-		Country:     addr.Country,
-	})
+	response.Write(w, http.StatusOK, models.ToAddressModel(addr))
 }
 
 func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
-
+	id, claims, ok := h.authenticatedID(w, r)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	id, err := domain.ParseId(claims.Sub)
-
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
@@ -139,16 +92,7 @@ func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 		roles = append(roles, domain.Role(role))
 	}
 
-	usr, err := h.service.GetOrCreate(
-		r.Context(),
-		id,
-		claims.Email,
-		claims.Username,
-		claims.FirstName,
-		claims.LastName,
-		roles,
-	)
-
+	usr, err := h.service.GetOrCreate(r.Context(), id, claims.Email, claims.Username, claims.FirstName, claims.LastName, roles)
 	if err != nil {
 		if errors.Is(err, infrastructure.UsernameAlreadyExists) {
 			response.WriteError(w, http.StatusConflict, UsernameAlreadyExists)
@@ -158,32 +102,39 @@ func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToModel(usr))
+	addr, ok := h.optionalAddress(r.Context(), w, id)
+	if !ok {
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToModel(usr, addr))
 }
 
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	id, err := domain.ParseId(chi.URLParam(r, "id"))
-
 	if err != nil {
-		response.WriteError(w, http.StatusInternalServerError, InvalidId)
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
 	usr, err := h.service.GetByID(r.Context(), id)
-
 	if err != nil {
 		response.WriteError(w, http.StatusNotFound, NotFound)
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToModel(usr))
+	addr, ok := h.optionalAddress(r.Context(), w, id)
+	if !ok {
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToModel(usr, addr))
 }
 
 func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
 
 	usr, err := h.service.GetByUsername(r.Context(), username)
-
 	if err != nil {
 		if errors.Is(err, infrastructure.NotFound) {
 			response.WriteError(w, http.StatusNotFound, NotFound)
@@ -193,19 +144,17 @@ func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToModel(usr))
-}
-
-func (h *Handler) PatchIntroduction(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
+	addr, ok := h.optionalAddress(r.Context(), w, usr.ID)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
 		return
 	}
 
-	id, err := domain.ParseId(claims.Sub)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
+	response.Write(w, http.StatusOK, models.ToModel(usr, addr))
+}
+
+func (h *Handler) PatchIntroduction(w http.ResponseWriter, r *http.Request) {
+	id, _, ok := h.authenticatedID(w, r)
+	if !ok {
 		return
 	}
 
@@ -233,15 +182,8 @@ func (h *Handler) PatchIntroduction(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) PatchAbout(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
+	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	id, err := domain.ParseId(claims.Sub)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
@@ -269,15 +211,8 @@ func (h *Handler) PatchAbout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) PatchImage(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
+	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	id, err := domain.ParseId(claims.Sub)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
@@ -305,17 +240,8 @@ func (h *Handler) PatchImage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
-
+	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	id, err := domain.ParseId(claims.Sub)
-
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
