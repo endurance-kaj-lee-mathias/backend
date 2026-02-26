@@ -23,7 +23,7 @@ func LoadConfig() Config {
 	url := env.Get("DB_URL", "postgresql://user:password@localhost:5432/endurance?sslmode=disable")
 	schema := env.Get("DB_SCHEMA", "endurance")
 	masterKeyHex := env.Get("MASTER_KEY", "")
-	rawOrigins := env.Get("WS_ALLOWED_ORIGINS", "localhost:3000")
+	rawOrigins := env.Get("WS_ALLOWED_ORIGINS", "localhost:5173")
 	allowedOrigins := strings.Split(rawOrigins, ",")
 
 	masterKey, err := hex.DecodeString(masterKeyHex)

@@ -44,7 +44,7 @@ func (server *server) mount() http.Handler {
 			r.Get("/", userHandler.GetOrCreate)
 
 			r.Delete("/me", userHandler.DeleteMe)
-			// r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
+			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
 			r.Patch("/me/introduction", userHandler.PatchIntroduction)
 			r.Patch("/me/about", userHandler.PatchAbout)
 			r.Patch("/me/image", userHandler.PatchImage)
