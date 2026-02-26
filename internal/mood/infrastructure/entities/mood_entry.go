@@ -31,7 +31,7 @@ func ToEntity(entry domain.MoodEntry, enc encryption.Service, userKey []byte) (M
 
 	return MoodEntryEntity{
 		ID:             entry.ID.UUID,
-		UserID:         entry.UserID,
+		UserID:         entry.UserID.UUID,
 		Date:           entry.Date,
 		MoodScore:      entry.MoodScore,
 		EncryptedNotes: encryptedNotes,
