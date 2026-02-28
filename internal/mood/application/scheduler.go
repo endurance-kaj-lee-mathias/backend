@@ -35,20 +35,20 @@ func (s *Scheduler) Start(ctx context.Context) {
 func (s *Scheduler) run(ctx context.Context) {
 	ids, err := s.repo.FindVeteransWithoutEntryInLast24Hours(ctx, s.roleHash)
 	if err != nil {
-		slog.Warn("mood scheduler: failed to query veterans", "error", err)
+		slog.Error("failed to query veterans", "error", err)
 		return
 	}
 
 	for _, id := range ids {
 		tokens, err := s.repo.FindDeviceTokensByUserID(ctx, id)
 		if err != nil {
-			slog.Warn("mood scheduler: failed to fetch device tokens", "user_id", id, "error", err)
+			slog.Warn("failed to fetch device tokens", "user_id", id, "error", err)
 			continue
 		}
 
 		for _, token := range tokens {
 			if err := notify(ctx, s.notifier, token); err != nil {
-				slog.Warn("mood scheduler: failed to notify device after retries", "user_id", id, "error", err)
+				slog.Warn("failed to notify device after retries", "user_id", id, "error", err)
 			}
 		}
 	}
