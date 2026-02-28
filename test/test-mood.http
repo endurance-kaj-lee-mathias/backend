@@ -1,0 +1,198 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameSupport = Lee
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – SUPPORT
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Ensure users exist in DB
+### =====================================================
+
+### 3a. Get or create VETERAN
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
+### 3b. Get or create SUPPORT
+GET {{baseUrl}}/users
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Mood – Happy paths
+### =====================================================
+
+### 4. Submit mood entry for today (with notes)
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 7,
+  "notes": "Feeling pretty good today, went for a walk."
+}
+
+### 5. Submit mood entry for today without notes
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 5
+}
+
+### 6. Submit a second mood entry for the same day – both are stored
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 9,
+  "notes": "Actually had a great day!"
+}
+
+### 7. Submit mood entry for a different day
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-25",
+  "moodScore": 3,
+  "notes": "Yesterday was tough."
+}
+
+### 8. Submit mood entry with minimum score (1)
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-24",
+  "moodScore": 1
+}
+
+### 9. Submit mood entry with maximum score (10)
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-23",
+  "moodScore": 10,
+  "notes": "Best day ever."
+}
+
+### =====================================================
+### Mood – Error / constraint paths
+### =====================================================
+
+### 10. No auth token → expect 401
+POST {{baseUrl}}/mood/entries
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 7
+}
+
+### 11. moodScore below range (0) → expect 422
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 0
+}
+
+### 12. moodScore above range (11) → expect 422
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 11
+}
+
+### 13. Missing moodScore → expect 422
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26"
+}
+
+### 14. Missing date → expect 422
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "moodScore": 7
+}
+
+### 15. Invalid date format → expect 422
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "26-02-2026",
+  "moodScore": 7
+}
+
+### 16. Notes exceeding 500 characters → expect 422
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 6,
+  "notes": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+

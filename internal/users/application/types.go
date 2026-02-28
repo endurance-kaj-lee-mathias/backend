@@ -20,6 +20,8 @@ type Service interface {
 	UpdateImage(ctx context.Context, id domain.UserId, image string) error
 	UpsertAddress(ctx context.Context, userID domain.UserId, street string, houseNumber string, postalCode string, city string, country string) (domain.Address, error)
 	GetAddress(ctx context.Context, userID domain.UserId) (domain.Address, error)
+	UpsertDevice(ctx context.Context, userID domain.UserId, deviceToken string, platform string) error
+	DeleteDevice(ctx context.Context, deviceToken string) error
 }
 
 type service struct {

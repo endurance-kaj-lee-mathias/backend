@@ -3,7 +3,9 @@ package application
 import (
 	"context"
 	"errors"
+	"time"
 
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure/entities"
@@ -192,4 +194,28 @@ func (s *service) GetAddress(ctx context.Context, userID domain.UserId) (domain.
 	}
 
 	return entities.AddressFromEntity(ent, userKey, s.enc)
+}
+
+func (s *service) UpsertDevice(ctx context.Context, userID domain.UserId, deviceToken string, platform string) error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+
+	ent := entities.UserDeviceEntity{
+		ID:          id,
+		UserID:      userID.UUID,
+		DeviceToken: deviceToken,
+		Platform:    platform,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	return s.repo.UpsertDevice(ctx, ent)
+}
+
+func (s *service) DeleteDevice(ctx context.Context, deviceToken string) error {
+	return s.repo.DeleteDevice(ctx, deviceToken)
 }

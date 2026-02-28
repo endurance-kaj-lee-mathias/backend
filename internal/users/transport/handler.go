@@ -252,3 +252,57 @@ func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) PutDevice(w http.ResponseWriter, r *http.Request) {
+	id, _, ok := h.authenticatedID(w, r)
+	if !ok {
+		return
+	}
+
+	var body models.UpsertDeviceModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if err := h.service.UpsertDevice(r.Context(), id, body.Token, body.Platform); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) DeleteDevice(w http.ResponseWriter, r *http.Request) {
+	_, _, ok := h.authenticatedID(w, r)
+	if !ok {
+		return
+	}
+
+	var body models.DeleteDeviceModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if err := h.service.DeleteDevice(r.Context(), body.Token); err != nil {
+		if errors.Is(err, infrastructure.DeviceNotFound) {
+			response.WriteError(w, http.StatusNotFound, DeviceNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

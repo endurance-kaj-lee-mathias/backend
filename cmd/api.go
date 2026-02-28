@@ -8,6 +8,8 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood"
+	moodapp "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
@@ -17,7 +19,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func (server *server) mount() http.Handler {
+func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
@@ -30,6 +32,7 @@ func (server *server) mount() http.Handler {
 	stressHandler := stress.Wire(server.db, server.enc)
 	chatsHandler := chats.Wire(server.db, server.enc)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
+	moodHandler, moodScheduler := mood.Wire(server.db, server.enc)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +54,9 @@ func (server *server) mount() http.Handler {
 			r.Put("/me/address", userHandler.UpsertAddress)
 			r.Get("/me/address", userHandler.GetAddress)
 
+			r.Put("/device", userHandler.PutDevice)
+			r.Delete("/device", userHandler.DeleteDevice)
+
 			r.Get("/search/{username}", userHandler.GetUserByUsername)
 
 			r.Get("/support", supportHandler.GetAll)
@@ -69,12 +75,16 @@ func (server *server) mount() http.Handler {
 			r.Post("/{conversationId}/messages", chatsHandler.SendMessage)
 			r.Get("/{conversationId}/messages", chatsHandler.GetMessages)
 		})
+
+		r.Route("/mood", func(r chi.Router) {
+			r.Post("/entries", moodHandler.UpsertMoodEntry)
+		})
 	})
 
 	r.Get("/health", healthHandler.Health)
 	r.Get("/ws", wsHandler.ServeWS)
 
-	return r
+	return r, moodScheduler
 }
 
 func (server *server) run(h http.Handler) error {
