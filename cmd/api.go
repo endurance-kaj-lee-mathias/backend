@@ -54,6 +54,9 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Put("/me/address", userHandler.UpsertAddress)
 			r.Get("/me/address", userHandler.GetAddress)
 
+			r.Put("/device", userHandler.PutDevice)
+			r.Delete("/device", userHandler.DeleteDevice)
+
 			r.Get("/search/{username}", userHandler.GetUserByUsername)
 
 			r.Get("/support", supportHandler.GetAll)

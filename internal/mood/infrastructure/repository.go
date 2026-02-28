@@ -67,3 +67,24 @@ func (r *repository) FindVeteransWithoutEntryInLast24Hours(ctx context.Context, 
 
 	return ids, rows.Err()
 }
+
+func (r *repository) FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := `SELECT device_token FROM user_devices WHERE user_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tokens []string
+	for rows.Next() {
+		var token string
+		if err := rows.Scan(&token); err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, token)
+	}
+
+	return tokens, rows.Err()
+}

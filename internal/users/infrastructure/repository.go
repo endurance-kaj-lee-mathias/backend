@@ -330,3 +330,56 @@ func (r *repository) GetEncryptedUserKey(ctx context.Context, userID uuid.UUID) 
 
 	return encryptedUserKey, nil
 }
+
+func (r *repository) UpsertDevice(ctx context.Context, ent entities.UserDeviceEntity) error {
+	query := `
+		INSERT INTO user_devices (id, user_id, device_token, platform, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (device_token) DO UPDATE
+		SET updated_at = EXCLUDED.updated_at
+	`
+
+	_, err := r.db.ExecContext(ctx, query, ent.ID, ent.UserID, ent.DeviceToken, ent.Platform, ent.CreatedAt, ent.UpdatedAt)
+	return err
+}
+
+func (r *repository) DeleteDevice(ctx context.Context, deviceToken string) error {
+	query := `DELETE FROM user_devices WHERE device_token = $1`
+
+	result, err := r.db.ExecContext(ctx, query, deviceToken)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return DeviceNotFound
+	}
+
+	return nil
+}
+
+func (r *repository) FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := `SELECT device_token FROM user_devices WHERE user_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tokens []string
+	for rows.Next() {
+		var token string
+		if err := rows.Scan(&token); err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, token)
+	}
+
+	return tokens, rows.Err()
+}

@@ -22,6 +22,9 @@ type Repository interface {
 	InsertAddress(ctx context.Context, ent entities.AddressEntity) error
 	FindAddressByUserID(ctx context.Context, userID uuid.UUID) (entities.AddressEntity, error)
 	GetEncryptedUserKey(ctx context.Context, userID uuid.UUID) ([]byte, error)
+	UpsertDevice(ctx context.Context, ent entities.UserDeviceEntity) error
+	DeleteDevice(ctx context.Context, deviceToken string) error
+	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
 }
 
 type repository struct {

@@ -40,8 +40,16 @@ func (s *Scheduler) run(ctx context.Context) {
 	}
 
 	for _, id := range ids {
-		if err := notify(ctx, s.notifier, ""); err != nil {
-			slog.Warn("mood scheduler: failed to notify user after retries", "user_id", id, "error", err)
+		tokens, err := s.repo.FindDeviceTokensByUserID(ctx, id)
+		if err != nil {
+			slog.Warn("mood scheduler: failed to fetch device tokens", "user_id", id, "error", err)
+			continue
+		}
+
+		for _, token := range tokens {
+			if err := notify(ctx, s.notifier, token); err != nil {
+				slog.Warn("mood scheduler: failed to notify device after retries", "user_id", id, "error", err)
+			}
 		}
 	}
 }

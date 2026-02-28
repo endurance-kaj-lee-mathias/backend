@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	Upsert(ctx context.Context, ent entities.MoodEntryEntity) error
 	FindVeteransWithoutEntryInLast24Hours(ctx context.Context, veteranRoleHash string) ([]uuid.UUID, error)
+	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
 }
 
 type UserKeyReader interface {
