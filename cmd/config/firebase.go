@@ -2,17 +2,27 @@ package config
 
 import (
 	"context"
-	"log"
+	"fmt"
 
-	firebase "firebase.google.com/go"
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/messaging"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/env"
 	"google.golang.org/api/option"
 )
 
-func initializeFirebase() *firebase.App {
-	opt := option.WithAuthCredentialsFile(option.ServiceAccount, "../../endurance-credentials.json")
+func NewFirebaseMessagingClient() (*messaging.Client, error) {
+	credentialsFile := env.Get("FIREBASE_CREDENTIALS_FILE", "endurance-credentials.json")
+
+	opt := option.WithAuthCredentialsFile(option.ServiceAccount, credentialsFile)
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
-		log.Fatalf("Error initializing app: %v\n", err)
+		return nil, fmt.Errorf("initializing firebase app: %w", err)
 	}
-	return app
+
+	client, err := app.Messaging(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("initializing firebase messaging client: %w", err)
+	}
+
+	return client, nil
 }

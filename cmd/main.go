@@ -27,8 +27,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	messagingClient, err := config.NewFirebaseMessagingClient()
+	if err != nil {
+		slog.Error("failed to initialize firebase messaging client", "error", err)
+		os.Exit(1)
+	}
+
 	db := loadDatabase(cfg.Url, cfg.Schema)
-	api := server{cfg, idp, db, enc}
+	api := server{cfg, idp, db, enc, config.NewFirebaseNotifier(messagingClient)}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)

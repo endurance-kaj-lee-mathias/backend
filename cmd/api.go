@@ -32,7 +32,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	stressHandler := stress.Wire(server.db, server.enc)
 	chatsHandler := chats.Wire(server.db, server.enc)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
-	moodHandler, moodScheduler := mood.Wire(server.db, server.enc)
+	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
