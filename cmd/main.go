@@ -34,7 +34,14 @@ func main() {
 	}
 
 	db := loadDatabase(cfg.Url, cfg.Schema)
-	api := server{cfg, idp, db, enc, config.NewFirebaseNotifier(messagingClient)}
+	api := server{
+		config:          cfg,
+		idp:             idp,
+		db:              db,
+		enc:             enc,
+		notifier:        config.NewFirebaseNotifier(messagingClient),
+		messagingClient: messagingClient,
+	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
