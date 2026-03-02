@@ -1,0 +1,227 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameSupport = Lee
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+@password = password
+
+### =====================================================
+### Auth – get tokens for all three users
+### =====================================================
+
+### Get VETERAN token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### Get SUPPORT token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### Get THERAPIST token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+%}
+
+### =====================================================
+### Seed – ensure all users exist in the DB
+### =====================================================
+
+### Ensure VETERAN exists – stores veteranId
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    client.global.set("veteranId", response.body.id);
+%}
+
+### Ensure SUPPORT exists – stores supportId
+GET {{baseUrl}}/users
+Authorization: Bearer {{supportToken}}
+
+> {%
+    client.global.set("supportId", response.body.id);
+%}
+
+### Ensure THERAPIST exists – stores therapistId
+GET {{baseUrl}}/users
+Authorization: Bearer {{therapistToken}}
+
+> {%
+    client.global.set("therapistId", response.body.id);
+%}
+
+### =====================================================
+### 1. Happy path – SUPPORT sends invite to VETERAN
+###    Run seed requests above first.
+###    Expected: 201 Created, status = PENDING
+### =====================================================
+POST {{baseUrl}}/support-invites
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "receiverId": "{{veteranId}}"
+}
+
+> {%
+    client.global.set("inviteId", response.body.id);
+%}
+
+### =====================================================
+### 2. VETERAN lists pending invites
+###    Expected: 200 – invite appears in incoming[]
+### =====================================================
+GET {{baseUrl}}/support-invites
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 3. SUPPORT lists pending invites
+###    Expected: 200 – invite appears in outgoing[]
+### =====================================================
+GET {{baseUrl}}/support-invites
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### 4. VETERAN accepts the invite
+###    Expected: 200, status = ACCEPTED
+### =====================================================
+PATCH {{baseUrl}}/support-invites/{{inviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 5. VETERAN's support list now contains SUPPORT
+###    Expected: 200 – SUPPORT appears in the list
+### =====================================================
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 6. Error – duplicate pending invite
+###    THERAPIST sends a second invite to VETERAN while
+###    one is already pending.
+###    Expected: 409 Conflict
+### (Run request 1 first and do NOT accept yet for this to apply)
+### =====================================================
+POST {{baseUrl}}/support-invites
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "receiverId": "{{veteranId}}"
+}
+
+### =====================================================
+### 7. Error – self invite
+###    Expected: 400 Bad Request
+### =====================================================
+POST {{baseUrl}}/support-invites
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "receiverId": "{{veteranId}}"
+}
+
+### =====================================================
+### 8. Error – wrong role (VETERAN tries to invite another VETERAN)
+###    Expected: 403 Forbidden
+### =====================================================
+POST {{baseUrl}}/support-invites
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "receiverId": "{{therapistId}}"
+}
+
+### =====================================================
+### 9. Happy path – THERAPIST sends invite to VETERAN,
+###    VETERAN declines it.
+###    Run seed requests first.
+###    Expected: 204 No Content
+### =====================================================
+POST {{baseUrl}}/support-invites
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "receiverId": "{{veteranId}}"
+}
+
+> {%
+    client.global.set("therapistInviteId", response.body.id);
+%}
+
+### VETERAN declines – Expected: 204 No Content
+PATCH {{baseUrl}}/support-invites/{{therapistInviteId}}/decline
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 10. After decline, THERAPIST can send a new invite
+###     Expected: 201 Created (row was deleted, re-invite allowed)
+### =====================================================
+POST {{baseUrl}}/support-invites
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "receiverId": "{{veteranId}}"
+}
+
+> {%
+    client.global.set("therapistInviteId", response.body.id);
+%}
+
+### =====================================================
+### 11. Error – wrong user tries to accept
+###     SUPPORT tries to accept THERAPIST's invite to VETERAN.
+###     Expected: 403 Forbidden
+### =====================================================
+PATCH {{baseUrl}}/support-invites/{{therapistInviteId}}/accept
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### 12. Error – invite not found
+###     Expected: 404 Not Found
+### =====================================================
+PATCH {{baseUrl}}/support-invites/00000000-0000-0000-0000-000000000000/accept
+Authorization: Bearer {{veteranToken}}
+

@@ -63,7 +63,13 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Delete("/support/{supportId}", supportHandler.DeleteSupporter)
 
 			r.Get("/{id}", userHandler.GetUser)
-			r.Post("/{id}/support", supportHandler.AddMember)
+		})
+
+		r.Route("/support-invites", func(r chi.Router) {
+			r.Post("/", supportHandler.PostInvite)
+			r.Patch("/{inviteId}/accept", supportHandler.AcceptInvite)
+			r.Patch("/{inviteId}/decline", supportHandler.DeclineInvite)
+			r.Get("/", supportHandler.ListInvites)
 		})
 
 		r.Route("/stress", func(r chi.Router) {
