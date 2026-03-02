@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
 	"firebase.google.com/go/v4/messaging"
 )
@@ -26,7 +26,7 @@ func (n *FirebaseNotifier) Notify(ctx context.Context, deviceToken string) error
 
 	_, err := n.client.Send(ctx, msg)
 	if err != nil {
-		return fmt.Errorf("sending firebase notification: %w", err)
+		slog.Error("sending firebase notification: %w", err)
 	}
 
 	return nil
