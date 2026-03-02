@@ -7,49 +7,147 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/infrastructure/entities"
 )
 
-func (s *service) AddMember(ctx context.Context, veteranID domain.VeteranId, memberId domain.MemberId) (domain.Member, error) {
-	veteranRoles, err := s.userRoleRead.GetRoles(ctx, veteranID.UUID)
-	if err != nil {
-		return domain.Member{}, err
-	}
-
-	supporterRoles, err := s.userRoleRead.GetRoles(ctx, memberId.UUID)
-	if err != nil {
-		return domain.Member{}, err
-	}
-
-	if err := domain.ValidateSupportRelationship(veteranRoles, supporterRoles, veteranID.UUID.String(), memberId.UUID.String()); err != nil {
-		return domain.Member{}, err
-	}
-
-	ent, err := s.repo.Create(ctx, veteranID.UUID, memberId.UUID)
-	if err != nil {
-		return domain.Member{}, err
-	}
-
-	return entities.FromEntity(ent, s.enc)
-}
-
 func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error) {
 	ents, err := s.repo.ReadAll(ctx, id.UUID)
-
 	if err != nil {
 		return nil, err
 	}
-
 	return entities.FromEntities(ents, s.enc)
 }
 
 func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error) {
 	ents, err := s.repo.ReadAllByMember(ctx, id.UUID)
-
 	if err != nil {
 		return nil, err
 	}
-
 	return entities.FromEntities(ents, s.enc)
 }
 
 func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error {
 	return s.repo.Delete(ctx, veteranID.UUID, supportID.UUID)
+}
+
+func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, receiverID domain.MemberId) (domain.Invite, error) {
+	if senderID.UUID == receiverID.UUID {
+		return domain.Invite{}, domain.ErrSelfInvite
+	}
+
+	senderRoles, err := s.userRoleRead.GetRoles(ctx, senderID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	receiverRoles, err := s.userRoleRead.GetRoles(ctx, receiverID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	veteranID, err := domain.ParseVeteranId(receiverID.UUID.String())
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	if err := domain.ValidateSupportRelationship(receiverRoles, senderRoles, veteranID.UUID.String(), senderID.UUID.String()); err != nil {
+		return domain.Invite{}, err
+	}
+
+	_, pending, err := s.inviteRepo.FindPendingBySenderReceiver(ctx, senderID.UUID, receiverID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+	if pending {
+		return domain.Invite{}, domain.ErrDuplicatePendingInvite
+	}
+
+	accepted, err := s.inviteRepo.FindAcceptedBySenderReceiver(ctx, senderID.UUID, receiverID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+	if accepted {
+		return domain.Invite{}, domain.ErrAlreadyAccepted
+	}
+
+	senderUser := domain.InviteUser{ID: senderID}
+	receiverUser := domain.InviteUser{ID: receiverID}
+	inv := domain.NewInvite(senderUser, receiverUser)
+
+	if err := s.inviteRepo.CreateInvite(ctx, inv); err != nil {
+		return domain.Invite{}, err
+	}
+
+	ent, err := s.inviteRepo.FindInviteByID(ctx, inv.ID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	return entities.FromInviteEntity(ent, s.enc)
+}
+
+func (s *service) AcceptInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) (domain.Invite, error) {
+	ent, err := s.inviteRepo.FindInviteByID(ctx, inviteID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	if ent.ReceiverID != callerID.UUID {
+		return domain.Invite{}, domain.ErrNotReceiver
+	}
+
+	if err := s.inviteRepo.UpdateInviteStatus(ctx, inviteID.UUID, domain.InviteStatusAccepted); err != nil {
+		return domain.Invite{}, err
+	}
+
+	if _, err := s.repo.Create(ctx, ent.ReceiverID, ent.SenderID); err != nil {
+		return domain.Invite{}, err
+	}
+
+	updated, err := s.inviteRepo.FindInviteByID(ctx, inviteID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	return entities.FromInviteEntity(updated, s.enc)
+}
+
+func (s *service) DeclineInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) error {
+	ent, err := s.inviteRepo.FindInviteByID(ctx, inviteID.UUID)
+	if err != nil {
+		return err
+	}
+
+	if ent.ReceiverID != callerID.UUID {
+		return domain.ErrNotReceiver
+	}
+
+	return s.inviteRepo.DeleteInvite(ctx, inviteID.UUID)
+}
+
+func (s *service) ListInvites(ctx context.Context, callerID domain.MemberId) ([]domain.Invite, []domain.Invite, error) {
+	ents, err := s.inviteRepo.ListPendingForUser(ctx, callerID.UUID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var incoming, outgoing []domain.Invite
+
+	for _, ent := range ents {
+		inv, err := entities.FromInviteEntity(ent, s.enc)
+		if err != nil {
+			return nil, nil, err
+		}
+		if ent.ReceiverID == callerID.UUID {
+			incoming = append(incoming, inv)
+		} else {
+			outgoing = append(outgoing, inv)
+		}
+	}
+
+	if incoming == nil {
+		incoming = []domain.Invite{}
+	}
+	if outgoing == nil {
+		outgoing = []domain.Invite{}
+	}
+
+	return incoming, outgoing, nil
 }

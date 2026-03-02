@@ -11,7 +11,8 @@ import (
 
 func Wire(db *sql.DB, enc encryption.Service) *transport.Handler {
 	repo := infrastructure.NewRepository(db, enc)
+	inviteRepo := infrastructure.NewInviteRepository(db, enc)
 	userRoleRead := infrastructure.NewUserRoleReader(db, enc)
-	service := application.NewService(repo, userRoleRead, enc)
+	service := application.NewService(repo, inviteRepo, userRoleRead, enc)
 	return transport.NewHandler(service)
 }
