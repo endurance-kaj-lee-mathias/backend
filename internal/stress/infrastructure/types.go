@@ -46,9 +46,10 @@ func NewUserKeyReader(db *sql.DB, enc encryption.Service) UserKeyReader {
 
 type algoClient struct {
 	baseURL    string
+	apiKey     string
 	httpClient *http.Client
 }
 
-func NewAlgoClient(baseURL string, httpClient *http.Client) AlgoClient {
-	return &algoClient{baseURL: baseURL, httpClient: httpClient}
+func NewAlgoClient(baseURL string, apiKey string, httpClient *http.Client) AlgoClient {
+	return &algoClient{baseURL: baseURL, apiKey: apiKey, httpClient: httpClient}
 }

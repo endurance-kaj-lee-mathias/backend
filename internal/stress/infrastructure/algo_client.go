@@ -15,13 +15,12 @@ import (
 )
 
 type algoSample struct {
-	TimestampUTC   time.Time `json:"timestamp_utc"`
-	WindowMinutes  int       `json:"window_minutes"`
-	MeanHR         float64   `json:"mean_hr"`
-	RMSSDms        float64   `json:"rmssd_ms"`
-	RestingHR      *float64  `json:"resting_hr,omitempty"`
-	Steps          *int      `json:"steps,omitempty"`
-	SleepDebtHours *float64  `json:"sleep_debt_hours,omitempty"`
+	HeartRate        float64   `json:"heart_rate"`
+	RMSSD            float64   `json:"rmssd"`
+	RestingHeartRate float64   `json:"resting_heart_rate,omitempty"`
+	Steps            float64   `json:"steps,omitempty"`
+	SleepDebtHours   float64   `json:"sleep_debt_hours,omitempty"`
+	RecordedAt       time.Time `json:"recorded_at"`
 }
 
 type algoRequest struct {
@@ -30,11 +29,10 @@ type algoRequest struct {
 }
 
 type algoResponse struct {
-	Score        float64  `json:"score"`
-	Category     string   `json:"category"`
-	ModelVersion string   `json:"model_version"`
-	ZHR          *float64 `json:"z_hr,omitempty"`
-	ZRMSSD       *float64 `json:"z_rmssd,omitempty"`
+	Score    float64 `json:"score"`
+	Category string  `json:"category"`
+	ZHR      float64 `json:"z_hr"`
+	ZRMSSD   float64 `json:"z_rmssd"`
 }
 
 func (c *algoClient) ComputeScore(ctx context.Context, userID uuid.UUID, samples []domain.StressSample) (domain.StressScore, error) {
@@ -44,14 +42,25 @@ func (c *algoClient) ComputeScore(ctx context.Context, userID uuid.UUID, samples
 	}
 
 	for i, s := range samples {
+		var restingHR float64
+		if s.RestingHR != nil {
+			restingHR = *s.RestingHR
+		}
+		var steps float64
+		if s.Steps != nil {
+			steps = float64(*s.Steps)
+		}
+		var sleepDebt float64
+		if s.SleepDebtHours != nil {
+			sleepDebt = *s.SleepDebtHours
+		}
 		payload.Samples[i] = algoSample{
-			TimestampUTC:   s.TimestampUTC,
-			WindowMinutes:  s.WindowMinutes,
-			MeanHR:         s.MeanHR,
-			RMSSDms:        s.RMSSDms,
-			RestingHR:      s.RestingHR,
-			Steps:          s.Steps,
-			SleepDebtHours: s.SleepDebtHours,
+			HeartRate:        s.MeanHR,
+			RMSSD:            s.RMSSDms,
+			RestingHeartRate: restingHR,
+			Steps:            steps,
+			SleepDebtHours:   sleepDebt,
+			RecordedAt:       s.TimestampUTC,
 		}
 	}
 
@@ -65,6 +74,7 @@ func (c *algoClient) ComputeScore(ctx context.Context, userID uuid.UUID, samples
 		return domain.StressScore{}, fmt.Errorf("algo: create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-API-Key", c.apiKey)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -85,5 +95,5 @@ func (c *algoClient) ComputeScore(ctx context.Context, userID uuid.UUID, samples
 		return domain.StressScore{}, fmt.Errorf("algo: decode response: %w", err)
 	}
 
-	return domain.NewStressScore(userID, result.Score, result.Category, result.ModelVersion)
+	return domain.NewStressScore(userID, result.Score, result.Category, "")
 }

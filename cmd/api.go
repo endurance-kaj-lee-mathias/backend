@@ -30,7 +30,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	userHandler := users.Wire(server.db, server.enc, server.kc)
 	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
-	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL)
+	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
 	chatsHandler := chats.Wire(server.db, server.enc)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
