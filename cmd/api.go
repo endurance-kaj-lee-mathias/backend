@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood"
@@ -33,6 +34,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	chatsHandler := chats.Wire(server.db, server.enc)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
+	calendarHandler := calendar.Wire(server.db, server.config.MinUrgentMinutes)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +86,14 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/mood", func(r chi.Router) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
+		})
+
+		r.Route("/calendar", func(r chi.Router) {
+			r.Post("/slots", calendarHandler.CreateSlot)
+			r.Get("/slots", calendarHandler.GetSlots)
+			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
+			r.Post("/slots/{id}/book", calendarHandler.BookSlot)
+			r.Patch("/appointments/{id}/cancel", calendarHandler.CancelAppointment)
 		})
 	})
 

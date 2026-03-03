@@ -1,0 +1,379 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+@usernameSupport = Lee
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – THERAPIST
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Get access token – SUPPORT
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### 4. Ensure users exist in DB
+### =====================================================
+
+### 4a. Get or create VETERAN
+GET {{baseUrl}}/users
+Authorization: Bearer {{veteranToken}}
+
+### 4b. Get or create THERAPIST
+GET {{baseUrl}}/users
+Authorization: Bearer {{therapistToken}}
+
+### 4c. Get or create SUPPORT
+GET {{baseUrl}}/users
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Slot Management – Happy paths
+### =====================================================
+
+### 5. Create urgent slot (THERAPIST) – must succeed
+### Stores slotId for use in later requests
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-10T09:00:00Z",
+  "endTime": "2026-03-10T10:00:00Z",
+  "isUrgent": true
+}
+
+> {%
+    client.global.set("urgentSlotId", response.body.id);
+%}
+
+### 6. Create second urgent slot (THERAPIST) – fills the daily urgent quota
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-10T10:00:00Z",
+  "endTime": "2026-03-10T11:00:00Z",
+  "isUrgent": true
+}
+
+### 7. Create normal (non-urgent) slot (THERAPIST) – should succeed now that quota is met
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-10T14:00:00Z",
+  "endTime": "2026-03-10T15:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("normalSlotId", response.body.id);
+%}
+
+### 8. Create urgent slot (SUPPORT) – support role can also manage slots
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-11T09:00:00Z",
+  "endTime": "2026-03-11T10:00:00Z",
+  "isUrgent": true
+}
+
+> {%
+    client.global.set("supportUrgentSlotId", response.body.id);
+%}
+
+### =====================================================
+### Slot Management – Error cases
+### =====================================================
+
+### 9. Create slot as VETERAN – expect 403
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-10T11:00:00Z",
+  "endTime": "2026-03-10T12:00:00Z",
+  "isUrgent": false
+}
+
+### 10. Create non-urgent slot before daily urgent quota is met – expect 422
+### (uses a new date that has no urgent slots yet)
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-12T14:00:00Z",
+  "endTime": "2026-03-12T15:00:00Z",
+  "isUrgent": false
+}
+
+### 11. Create slot in the past – expect 422
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2024-01-01T09:00:00Z",
+  "endTime": "2024-01-01T10:00:00Z",
+  "isUrgent": true
+}
+
+### 12. Create slot with end before start – expect 422
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-10T11:00:00Z",
+  "endTime": "2026-03-10T10:00:00Z",
+  "isUrgent": true
+}
+
+### 13. Create overlapping slot (same provider, overlapping range) – expect 409
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-10T09:30:00Z",
+  "endTime": "2026-03-10T10:30:00Z",
+  "isUrgent": true
+}
+
+### =====================================================
+### Get Slots – Happy paths
+### =====================================================
+
+### 14. Get all slots in a range (no provider filter)
+GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z
+Authorization: Bearer {{therapistToken}}
+### 15. Get slots filtered by therapist provider
+GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z&providerId=2e808133-794d-4ba3-8da0-e562131692fb
+Authorization: Bearer {{veteranToken}}
+
+### 16. Get slots for a week view
+GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-16T23:59:59Z
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Get Slots – Error cases
+### =====================================================
+
+### 17. Missing from param – expect 400
+GET {{baseUrl}}/calendar/slots?to=2026-03-10T23:59:59Z
+Authorization: Bearer {{veteranToken}}
+
+### 18. Invalid providerId param – expect 400
+GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z&providerId=not-a-uuid
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Booking – Happy paths
+### =====================================================
+
+### 19. VETERAN books the normal slot
+POST {{baseUrl}}/calendar/slots/cd60a096-5924-4108-91e6-0eca05970975/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+> {%
+    client.global.set("appointmentId", response.body.id);
+%}
+
+### 20. VETERAN books the urgent slot with urgent=true
+POST {{baseUrl}}/calendar/slots/3ec75cb8-e7c4-4f96-b2ef-b233cc1c4d1e/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": true
+}
+
+> {%
+    client.global.set("urgentAppointmentId", response.body.id);
+%}
+
+### =====================================================
+### Booking – Error cases
+### =====================================================
+
+### 21. THERAPIST tries to book a slot – expect 403
+POST {{baseUrl}}/calendar/slots/{{supportUrgentSlotId}}/book
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 22. Book an already booked slot – expect 409
+POST {{baseUrl}}/calendar/slots/cd60a096-5924-4108-91e6-0eca05970975/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 23. Book an urgent slot with urgent=false – expect 422
+POST {{baseUrl}}/calendar/slots/{{urgentSlotId}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 24. Book a non-urgent slot with urgent=true – expect 201
+POST {{baseUrl}}/calendar/slots/{{normalSlotId}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": true
+}
+
+### 25. Book a slot that does not exist – expect 404
+POST {{baseUrl}}/calendar/slots/00000000-0000-0000-0000-000000000000/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### =====================================================
+### Delete Slot – Happy path
+### =====================================================
+
+### 26. Create a deletable slot (urgent, new date, no booking)
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-03-13T09:00:00Z",
+  "endTime": "2026-03-13T10:00:00Z",
+  "isUrgent": true
+}
+
+> {%
+    client.global.set("deletableSlotId", response.body.id);
+%}
+
+### 27. THERAPIST deletes their own unbooked slot – expect 204
+DELETE {{baseUrl}}/calendar/slots/{{deletableSlotId}}
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### Delete Slot – Error cases
+### =====================================================
+
+### 28. Delete a booked slot – expect 409
+DELETE {{baseUrl}}/calendar/slots/{{normalSlotId}}
+Authorization: Bearer {{therapistToken}}
+
+### 29. Delete another provider's slot – expect 403
+DELETE {{baseUrl}}/calendar/slots/{{supportUrgentSlotId}}
+Authorization: Bearer {{therapistToken}}
+
+### 30. VETERAN tries to delete a slot – expect 403
+DELETE {{baseUrl}}/calendar/slots/{{supportUrgentSlotId}}
+Authorization: Bearer {{veteranToken}}
+
+### 31. Delete a slot that does not exist – expect 404
+DELETE {{baseUrl}}/calendar/slots/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### Cancel Appointment – Happy paths
+### =====================================================
+
+### 32. VETERAN cancels their own appointment – expect 204
+PATCH {{baseUrl}}/calendar/appointments/{{appointmentId}}/cancel
+Authorization: Bearer {{veteranToken}}
+
+### 33. THERAPIST (slot owner) cancels the urgent appointment – expect 204
+PATCH {{baseUrl}}/calendar/appointments/{{urgentAppointmentId}}/cancel
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### Cancel Appointment – Error cases
+### =====================================================
+
+### 34. Cancel an appointment that does not belong to the caller – expect 403
+### (support tries to cancel veteran's appointment on a therapist's slot)
+PATCH {{baseUrl}}/calendar/appointments/{{urgentAppointmentId}}/cancel
+Authorization: Bearer {{supportToken}}
+
+### 35. Cancel an appointment that does not exist – expect 404
+PATCH {{baseUrl}}/calendar/appointments/00000000-0000-0000-0000-000000000000/cancel
+Authorization: Bearer {{veteranToken}}
+
+### 36. Cancel an already cancelled appointment – expect 404
+PATCH {{baseUrl}}/calendar/appointments/{{appointmentId}}/cancel
+Authorization: Bearer {{veteranToken}}
+

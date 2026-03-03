@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/env"
 )
 
 type Config struct {
-	Port           string
-	Url            string
-	Schema         string
-	MasterKey      []byte
-	AllowedOrigins []string
+	Port             string
+	Url              string
+	Schema           string
+	MasterKey        []byte
+	AllowedOrigins   []string
+	MinUrgentMinutes int
 }
 
 func LoadConfig() Config {
@@ -32,11 +34,18 @@ func LoadConfig() Config {
 		os.Exit(1)
 	}
 
+	minUrgent, err := strconv.Atoi(env.Get("MIN_URGENT_MINUTES", "120"))
+	if err != nil {
+		slog.Error("MIN_URGENT_MINUTES must be a valid integer")
+		os.Exit(1)
+	}
+
 	return Config{
-		Port:           fmt.Sprintf(":%s", port),
-		Url:            url,
-		Schema:         schema,
-		MasterKey:      masterKey,
-		AllowedOrigins: allowedOrigins,
+		Port:             fmt.Sprintf(":%s", port),
+		Url:              url,
+		Schema:           schema,
+		MasterKey:        masterKey,
+		AllowedOrigins:   allowedOrigins,
+		MinUrgentMinutes: minUrgent,
 	}
 }
