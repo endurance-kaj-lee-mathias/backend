@@ -36,6 +36,11 @@ type algoResponse struct {
 }
 
 func (c *algoClient) ComputeScore(ctx context.Context, userID uuid.UUID, samples []domain.StressSample) (domain.StressScore, error) {
+	const maxSamples = 30
+	if len(samples) > maxSamples {
+		samples = samples[len(samples)-maxSamples:]
+	}
+
 	payload := algoRequest{
 		UserID:  userID,
 		Samples: make([]algoSample, len(samples)),
