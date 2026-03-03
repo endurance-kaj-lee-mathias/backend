@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -31,23 +32,27 @@ func (c *client) getAdminToken(ctx context.Context) (string, error) {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(data.Encode()))
 	if err != nil {
+		slog.Error("keycloak: create token request", "error", err)
 		return "", fmt.Errorf("keycloak: create token request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		slog.Error("keycloak: token request", "error", err)
 		return "", fmt.Errorf("keycloak: token request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		slog.Error("keycloak: token request failed", "status", resp.StatusCode, "body", string(body))
 		return "", fmt.Errorf("keycloak: token request returned %d: %s", resp.StatusCode, body)
 	}
 
 	var tok tokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tok); err != nil {
+		slog.Error("keycloak: decode token", "error", err)
 		return "", fmt.Errorf("keycloak: decode token: %w", err)
 	}
 
@@ -62,23 +67,27 @@ func (c *client) getUser(ctx context.Context, token string, userID string) (keyc
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
+		slog.Error("keycloak: create get user request", "error", err)
 		return keycloakUser{}, fmt.Errorf("keycloak: create get request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		slog.Error("keycloak: get user request", "userID", userID, "error", err)
 		return keycloakUser{}, fmt.Errorf("keycloak: get user request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		slog.Error("keycloak: get user failed", "userID", userID, "status", resp.StatusCode, "body", string(body))
 		return keycloakUser{}, fmt.Errorf("keycloak: get user returned %d: %s", resp.StatusCode, body)
 	}
 
 	var user keycloakUser
 	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		slog.Error("keycloak: decode user", "userID", userID, "error", err)
 		return keycloakUser{}, fmt.Errorf("keycloak: decode user: %w", err)
 	}
 
@@ -134,6 +143,7 @@ func (c *client) UpdateUser(ctx context.Context, userID string, update UserUpdat
 
 	body, err := json.Marshal(existing)
 	if err != nil {
+		slog.Error("keycloak: marshal update payload", "userID", userID, "error", err)
 		return fmt.Errorf("keycloak: marshal payload: %w", err)
 	}
 
@@ -141,6 +151,7 @@ func (c *client) UpdateUser(ctx context.Context, userID string, update UserUpdat
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, endpoint, bytes.NewReader(body))
 	if err != nil {
+		slog.Error("keycloak: create update request", "userID", userID, "error", err)
 		return fmt.Errorf("keycloak: create update request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -148,12 +159,14 @@ func (c *client) UpdateUser(ctx context.Context, userID string, update UserUpdat
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		slog.Error("keycloak: update user request", "userID", userID, "error", err)
 		return fmt.Errorf("keycloak: update request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusNoContent {
 		respBody, _ := io.ReadAll(resp.Body)
+		slog.Error("keycloak: update user failed", "userID", userID, "status", resp.StatusCode, "body", string(respBody))
 		return fmt.Errorf("keycloak: update user returned %d: %s", resp.StatusCode, respBody)
 	}
 
