@@ -53,7 +53,7 @@ func (h *Handler) UpsertAddress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr, err := h.service.UpsertAddress(r.Context(), id, body.Street, body.HouseNumber, body.PostalCode, body.City, body.Country)
+	addr, err := h.service.UpsertAddress(r.Context(), id, body.Street, body.Locality, body.Region, body.PostalCode, body.Country)
 	if err != nil {
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -92,7 +92,7 @@ func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 		roles = append(roles, domain.Role(role))
 	}
 
-	usr, err := h.service.GetOrCreate(r.Context(), id, claims.Email, claims.Username, claims.FirstName, claims.LastName, roles)
+	usr, err := h.service.GetOrCreate(r.Context(), id, claims.Email, claims.Username, claims.FirstName, claims.LastName, claims.PhoneNumber, claims.Address.StreetAddress, claims.Address.Locality, claims.Address.Region, claims.Address.PostalCode, claims.Address.Country, roles)
 	if err != nil {
 		if errors.Is(err, infrastructure.UsernameAlreadyExists) {
 			response.WriteError(w, http.StatusConflict, UsernameAlreadyExists)

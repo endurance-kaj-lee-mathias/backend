@@ -6,14 +6,22 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/keycloak"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure/entities"
 )
 
-func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email string, username string, firstName string, lastName string, roles []domain.Role) (domain.User, error) {
+func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email string, username string, firstName string, lastName string, phoneNumber string, street string, locality string, region string, postalCode string, country string, roles []domain.Role) (domain.User, error) {
 	usr, err := s.GetByID(ctx, id)
 	if err == nil {
+		hasAddress := street != "" || locality != "" || postalCode != "" || country != ""
+		if hasAddress {
+			_, _ = s.UpsertAddress(ctx, id, street, locality, region, postalCode, country)
+		}
+		if phoneNumber != "" {
+			_ = s.repo.UpdatePhoneNumber(ctx, id.UUID, &phoneNumber)
+		}
 		return usr, nil
 	}
 
@@ -26,6 +34,9 @@ func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email strin
 	}
 
 	usr = domain.NewUser(id, email, username, firstName, lastName, roles)
+	if phoneNumber != "" {
+		usr.PhoneNumber = &phoneNumber
+	}
 
 	userKey, err := s.enc.GenerateUserEncryptionKey()
 	if err != nil {
@@ -44,6 +55,20 @@ func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email strin
 
 	if err := s.repo.Create(ctx, ent); err != nil {
 		return domain.User{}, err
+	}
+
+	hasAddress := street != "" || locality != "" || postalCode != "" || country != ""
+	if hasAddress {
+		addrID, err := domain.NewAddressId()
+		if err != nil {
+			return usr, nil
+		}
+		addr := domain.NewAddress(addrID, id, street, locality, region, postalCode, country)
+		addrEnt, err := entities.AddressToEntity(addr, userKey, s.enc)
+		if err != nil {
+			return usr, nil
+		}
+		_ = s.repo.InsertAddress(ctx, addrEnt)
 	}
 
 	return usr, nil
@@ -102,7 +127,13 @@ func (s *service) DeleteUser(ctx context.Context, id domain.UserId) error {
 }
 
 func (s *service) UpdatePhoneNumber(ctx context.Context, id domain.UserId, phoneNumber *string) error {
-	return s.repo.UpdatePhoneNumber(ctx, id.UUID, phoneNumber)
+	if err := s.repo.UpdatePhoneNumber(ctx, id.UUID, phoneNumber); err != nil {
+		return err
+	}
+
+	return s.kc.UpdateUser(ctx, id.UUID.String(), keycloak.UserUpdate{
+		PhoneNumber: phoneNumber,
+	})
 }
 
 func (s *service) UpdateIntroduction(ctx context.Context, id domain.UserId, introduction string) error {
@@ -147,7 +178,7 @@ func (s *service) UpdateImage(ctx context.Context, id domain.UserId, image strin
 	return s.repo.UpdateImage(ctx, id.UUID, image)
 }
 
-func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, street string, houseNumber string, postalCode string, city string, country string) (domain.Address, error) {
+func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, street string, locality string, region string, postalCode string, country string) (domain.Address, error) {
 	addrID, err := domain.NewAddressId()
 	if err != nil {
 		return domain.Address{}, err
@@ -163,7 +194,7 @@ func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, stree
 		return domain.Address{}, err
 	}
 
-	addr := domain.NewAddress(addrID, userID, street, houseNumber, postalCode, city, country)
+	addr := domain.NewAddress(addrID, userID, street, locality, region, postalCode, country)
 
 	ent, err := entities.AddressToEntity(addr, userKey, s.enc)
 	if err != nil {
@@ -171,6 +202,16 @@ func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, stree
 	}
 
 	if err := s.repo.InsertAddress(ctx, ent); err != nil {
+		return domain.Address{}, err
+	}
+
+	if err := s.kc.UpdateUser(ctx, userID.UUID.String(), keycloak.UserUpdate{
+		Street:     &street,
+		Locality:   &locality,
+		Region:     &region,
+		PostalCode: &postalCode,
+		Country:    &country,
+	}); err != nil {
 		return domain.Address{}, err
 	}
 
