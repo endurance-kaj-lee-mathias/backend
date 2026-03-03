@@ -503,6 +503,22 @@ Content-Type: application/json
   "sleep_debt_hours": 8.5
 }
 
+### Force Low stress scenario
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-03-04T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 56.0,
+  "rmssd_ms": 65.0,
+  "resting_hr": 55.0,
+  "steps": 600,
+  "sleep_debt_hours": 0.0
+}
+
 ### =====================================================
 ### Read back – score is auto-computed after the 13th
 ### sample upload; fetch latest persisted result here
