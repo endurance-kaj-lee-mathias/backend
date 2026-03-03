@@ -13,7 +13,7 @@ type MoodEntry struct {
 }
 
 func NewMoodEntry(userID UserId, date time.Time, moodScore int, notes *string) (MoodEntry, error) {
-	if moodScore < 1 || moodScore > 10 {
+	if moodScore < 0 || moodScore > 10 {
 		return MoodEntry{}, InvalidScore
 	}
 
