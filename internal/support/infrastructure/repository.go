@@ -58,41 +58,7 @@ func (r *repository) ReadAll(ctx context.Context, id uuid.UUID) ([]entities.Memb
 		WHERE s.support_id = $1
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err := rows.Close(); err != nil {
-			slog.Error("failed to close rows", "error", err)
-		}
-	}()
-
-	var ents []entities.MemberEntity
-
-	for rows.Next() {
-		var ent entities.MemberEntity
-
-		err := rows.Scan(
-			&ent.ID, &ent.Veteran,
-			&ent.EncryptedEmail, &ent.EncryptedUsername, &ent.EncryptedFirst, &ent.EncryptedLast,
-			&ent.EncryptedUserKey, &ent.CreatedAt, &ent.UpdatedAt,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		ents = append(ents, ent)
-	}
-
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return ents, nil
+	return r.queryMembers(ctx, query, id)
 }
 
 func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error) {
@@ -105,12 +71,14 @@ func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entit
 		WHERE s.support_id = $1
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, id)
+	return r.queryMembers(ctx, query, id)
+}
 
+func (r *repository) queryMembers(ctx context.Context, query string, args ...any) ([]entities.MemberEntity, error) {
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
-
 	defer func() {
 		if err := rows.Close(); err != nil {
 			slog.Error("failed to close rows", "error", err)
@@ -118,28 +86,19 @@ func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entit
 	}()
 
 	var ents []entities.MemberEntity
-
 	for rows.Next() {
 		var ent entities.MemberEntity
-
-		err := rows.Scan(
+		if err := rows.Scan(
 			&ent.ID, &ent.Veteran,
 			&ent.EncryptedEmail, &ent.EncryptedUsername, &ent.EncryptedFirst, &ent.EncryptedLast,
 			&ent.EncryptedUserKey, &ent.CreatedAt, &ent.UpdatedAt,
-		)
-
-		if err != nil {
+		); err != nil {
 			return nil, err
 		}
-
 		ents = append(ents, ent)
 	}
 
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	return ents, nil
+	return ents, rows.Err()
 }
 
 func (r *repository) Delete(ctx context.Context, veteranID, supportID uuid.UUID) error {

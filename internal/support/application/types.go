@@ -9,18 +9,23 @@ import (
 )
 
 type Service interface {
-	AddMember(ctx context.Context, veteranID domain.VeteranId, memberId domain.MemberId) (domain.Member, error)
 	GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error)
 	GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error)
 	DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error
+
+	SendInvite(ctx context.Context, senderID domain.MemberId, receiverID domain.MemberId) (domain.Invite, error)
+	AcceptInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) (domain.Invite, error)
+	DeclineInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) error
+	ListInvites(ctx context.Context, callerID domain.MemberId) (incoming []domain.Invite, outgoing []domain.Invite, err error)
 }
 
 type service struct {
 	repo         infrastructure.Repository
+	inviteRepo   infrastructure.InviteRepository
 	userRoleRead infrastructure.UserRoleReader
 	enc          encryption.Service
 }
 
-func NewService(repo infrastructure.Repository, userRoleRead infrastructure.UserRoleReader, enc encryption.Service) Service {
-	return &service{repo: repo, userRoleRead: userRoleRead, enc: enc}
+func NewService(repo infrastructure.Repository, inviteRepo infrastructure.InviteRepository, userRoleRead infrastructure.UserRoleReader, enc encryption.Service) Service {
+	return &service{repo: repo, inviteRepo: inviteRepo, userRoleRead: userRoleRead, enc: enc}
 }
