@@ -65,7 +65,7 @@ scope = openid
 ### =====================================================
 
 ### Ensure VETERAN exists – stores veteranId
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{veteranToken}}
 
 > {%
@@ -73,7 +73,7 @@ Authorization: Bearer {{veteranToken}}
 %}
 
 ### Ensure SUPPORT exists – stores supportId
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{supportToken}}
 
 > {%
@@ -81,7 +81,7 @@ Authorization: Bearer {{supportToken}}
 %}
 
 ### Ensure THERAPIST exists – stores therapistId
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{therapistToken}}
 
 > {%
