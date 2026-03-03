@@ -205,9 +205,9 @@ Content-Type: application/json
 
 ### 14. Get all slots in a range (no provider filter)
 GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z
-
+Authorization: Bearer {{therapistToken}}
 ### 15. Get slots filtered by therapist provider
-GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z&providerId={{client.global.get("therapistId")}}
+GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z&providerId=2e808133-794d-4ba3-8da0-e562131692fb
 Authorization: Bearer {{veteranToken}}
 
 ### 16. Get slots for a week view
@@ -231,7 +231,7 @@ Authorization: Bearer {{veteranToken}}
 ### =====================================================
 
 ### 19. VETERAN books the normal slot
-POST {{baseUrl}}/calendar/slots/{{normalSlotId}}/book
+POST {{baseUrl}}/calendar/slots/cd60a096-5924-4108-91e6-0eca05970975/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
@@ -244,7 +244,7 @@ Content-Type: application/json
 %}
 
 ### 20. VETERAN books the urgent slot with urgent=true
-POST {{baseUrl}}/calendar/slots/{{urgentSlotId}}/book
+POST {{baseUrl}}/calendar/slots/3ec75cb8-e7c4-4f96-b2ef-b233cc1c4d1e/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
@@ -270,7 +270,7 @@ Content-Type: application/json
 }
 
 ### 22. Book an already booked slot – expect 409
-POST {{baseUrl}}/calendar/slots/{{normalSlotId}}/book
+POST {{baseUrl}}/calendar/slots/cd60a096-5924-4108-91e6-0eca05970975/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
@@ -287,7 +287,7 @@ Content-Type: application/json
   "urgent": false
 }
 
-### 24. Book a non-urgent slot with urgent=true – expect 422
+### 24. Book a non-urgent slot with urgent=true – expect 201
 POST {{baseUrl}}/calendar/slots/{{normalSlotId}}/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json

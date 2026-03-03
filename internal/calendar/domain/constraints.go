@@ -27,9 +27,6 @@ func ValidateBooking(slot Slot, urgent bool) error {
 	if !urgent && slot.IsUrgent {
 		return NormalCannotBookUrgent
 	}
-	if urgent && !slot.IsUrgent {
-		return UrgentRequiresUrgentSlot
-	}
 	return nil
 }
 
