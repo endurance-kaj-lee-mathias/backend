@@ -26,7 +26,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(time.Minute))
 
-	userHandler := users.Wire(server.db, server.enc)
+	userHandler := users.Wire(server.db, server.enc, server.kc)
 	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
 	stressHandler := stress.Wire(server.db, server.enc)
@@ -44,7 +44,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 		r.Use(auth.TokenAuthentication(server.idp))
 
 		r.Route("/users", func(r chi.Router) {
-			r.Get("/", userHandler.GetOrCreate)
+			r.Get("/me", userHandler.GetOrCreate)
 
 			r.Delete("/me", userHandler.DeleteMe)
 			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)

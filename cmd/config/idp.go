@@ -8,17 +8,21 @@ import (
 )
 
 type Idp struct {
-	Url     string
-	Issuers []string
-	Realm   string
-	Client  string
-	Refresh time.Duration
+	Url           string
+	Issuers       []string
+	Realm         string
+	Client        string
+	Refresh       time.Duration
+	AdminUser     string
+	AdminPassword string
 }
 
 func LoadIdp() Idp {
 	url := env.Get("IDP_URL", "http://localhost:8180")
 	realm := env.Get("IDP_REALM", "endurance")
 	client := env.Get("IDP_CLIENT", "backend")
+	adminUser := env.Get("KEYCLOAK_ADMIN_USER", "admin")
+	adminPassword := env.Get("KEYCLOAK_ADMIN_PASSWORD", "admin")
 
 	defaultIssuers := "http://localhost:8180,https://10.0.2.2:8443"
 	issuersRaw := env.Get("IDP_ISSUERS", defaultIssuers)
@@ -32,10 +36,12 @@ func LoadIdp() Idp {
 		}
 	}
 	return Idp{
-		Url:     url,
-		Issuers: issuers,
-		Realm:   realm,
-		Client:  client,
-		Refresh: time.Hour,
+		Url:           url,
+		Issuers:       issuers,
+		Realm:         realm,
+		Client:        client,
+		Refresh:       time.Hour,
+		AdminUser:     adminUser,
+		AdminPassword: adminPassword,
 	}
 }
