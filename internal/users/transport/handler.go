@@ -62,25 +62,6 @@ func (h *Handler) UpsertAddress(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToAddressModel(addr))
 }
 
-func (h *Handler) GetAddress(w http.ResponseWriter, r *http.Request) {
-	id, _, ok := h.authenticatedID(w, r)
-	if !ok {
-		return
-	}
-
-	addr, err := h.service.GetAddress(r.Context(), id)
-	if err != nil {
-		if errors.Is(err, infrastructure.AddressNotFound) {
-			response.WriteError(w, http.StatusNotFound, AddressNotFound)
-			return
-		}
-		response.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	response.Write(w, http.StatusOK, models.ToAddressModel(addr))
-}
-
 func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 	id, claims, ok := h.authenticatedID(w, r)
 	if !ok {

@@ -18,6 +18,7 @@ type Config struct {
 	MasterKey        []byte
 	AllowedOrigins   []string
 	MinUrgentMinutes int
+	AlgoServiceURL   string
 }
 
 func LoadConfig() Config {
@@ -47,5 +48,6 @@ func LoadConfig() Config {
 		MasterKey:        masterKey,
 		AllowedOrigins:   allowedOrigins,
 		MinUrgentMinutes: minUrgent,
+		AlgoServiceURL:   env.Get("ALGO_SERVICE_URL", "http://localhost:8081"),
 	}
 }
