@@ -26,7 +26,7 @@ func (n *FirebaseNotifier) Notify(ctx context.Context, deviceToken string) error
 
 	_, err := n.client.Send(ctx, msg)
 	if err != nil {
-		slog.Error("sending firebase notification", "err", err)
+		slog.Error("sending firebase notification", "error", err)
 		return err
 	}
 
