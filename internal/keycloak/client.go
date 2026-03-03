@@ -83,12 +83,44 @@ func (c *client) getAdminToken(ctx context.Context) (string, error) {
 	return c.token, nil
 }
 
-type keycloakUserPayload struct {
-	FirstName  string              `json:"firstName,omitempty"`
-	LastName   string              `json:"lastName,omitempty"`
-	Email      string              `json:"email,omitempty"`
-	Username   string              `json:"username,omitempty"`
-	Attributes map[string][]string `json:"attributes,omitempty"`
+type keycloakUser struct {
+	FirstName  string              `json:"firstName"`
+	LastName   string              `json:"lastName"`
+	Email      string              `json:"email"`
+	Username   string              `json:"username"`
+	Attributes map[string][]string `json:"attributes"`
+}
+
+func (c *client) getUser(ctx context.Context, token string, userID string) (keycloakUser, error) {
+	endpoint := fmt.Sprintf("%s/admin/realms/%s/users/%s", c.baseURL, c.realm, userID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return keycloakUser{}, fmt.Errorf("keycloak: create get request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return keycloakUser{}, fmt.Errorf("keycloak: get user request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return keycloakUser{}, fmt.Errorf("keycloak: get user returned %d: %s", resp.StatusCode, body)
+	}
+
+	var user keycloakUser
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		return keycloakUser{}, fmt.Errorf("keycloak: decode user: %w", err)
+	}
+
+	if user.Attributes == nil {
+		user.Attributes = make(map[string][]string)
+	}
+
+	return user, nil
 }
 
 func (c *client) UpdateUser(ctx context.Context, userID string, update UserUpdate) error {
@@ -97,34 +129,44 @@ func (c *client) UpdateUser(ctx context.Context, userID string, update UserUpdat
 		return err
 	}
 
-	payload := keycloakUserPayload{
-		FirstName:  update.FirstName,
-		LastName:   update.LastName,
-		Email:      update.Email,
-		Username:   update.Username,
-		Attributes: make(map[string][]string),
+	existing, err := c.getUser(ctx, token, userID)
+	if err != nil {
+		return err
+	}
+
+	if update.FirstName != "" {
+		existing.FirstName = update.FirstName
+	}
+	if update.LastName != "" {
+		existing.LastName = update.LastName
+	}
+	if update.Email != "" {
+		existing.Email = update.Email
+	}
+	if update.Username != "" {
+		existing.Username = update.Username
 	}
 
 	if update.PhoneNumber != nil {
-		payload.Attributes["phoneNumber"] = []string{*update.PhoneNumber}
+		existing.Attributes["phoneNumber"] = []string{*update.PhoneNumber}
 	}
 	if update.Street != nil {
-		payload.Attributes["street"] = []string{*update.Street}
+		existing.Attributes["street"] = []string{*update.Street}
 	}
 	if update.Locality != nil {
-		payload.Attributes["locality"] = []string{*update.Locality}
+		existing.Attributes["locality"] = []string{*update.Locality}
 	}
 	if update.Region != nil {
-		payload.Attributes["region"] = []string{*update.Region}
+		existing.Attributes["region"] = []string{*update.Region}
 	}
 	if update.PostalCode != nil {
-		payload.Attributes["postal_code"] = []string{*update.PostalCode}
+		existing.Attributes["postal_code"] = []string{*update.PostalCode}
 	}
 	if update.Country != nil {
-		payload.Attributes["country"] = []string{*update.Country}
+		existing.Attributes["country"] = []string{*update.Country}
 	}
 
-	body, err := json.Marshal(payload)
+	body, err := json.Marshal(existing)
 	if err != nil {
 		return fmt.Errorf("keycloak: marshal payload: %w", err)
 	}
