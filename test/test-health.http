@@ -29,7 +29,7 @@ scope = openid
 ### =====================================================
 ### Step 2: Ensure the veteran user exists in the DB
 ### =====================================================
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{veteranToken}}
 
 > {%

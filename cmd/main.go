@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/config"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/keycloak"
 
 	"github.com/joho/godotenv"
 )
@@ -34,11 +35,13 @@ func main() {
 	}
 
 	db := loadDatabase(cfg.Url, cfg.Schema)
+	kc := keycloak.NewClient(idp.Url, idp.Realm, idp.AdminUser, idp.AdminPassword)
 	api := server{
 		config:          cfg,
 		idp:             idp,
 		db:              db,
 		enc:             enc,
+		kc:              kc,
 		notifier:        config.NewFirebaseNotifier(messagingClient),
 		messagingClient: messagingClient,
 	}

@@ -267,13 +267,13 @@ func (r *repository) UpdateImage(ctx context.Context, id uuid.UUID, image string
 
 func (r *repository) InsertAddress(ctx context.Context, ent entities.AddressEntity) error {
 	query := `
-		INSERT INTO user_addresses (id, user_id, encrypted_street, encrypted_house_number, encrypted_postal_code, encrypted_city, encrypted_country, created_at)
+		INSERT INTO user_addresses (id, user_id, encrypted_street, encrypted_locality, encrypted_region, encrypted_postal_code, encrypted_country, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (user_id) DO UPDATE
 		SET encrypted_street       = EXCLUDED.encrypted_street,
-			encrypted_house_number = EXCLUDED.encrypted_house_number,
+			encrypted_locality     = EXCLUDED.encrypted_locality,
+			encrypted_region       = EXCLUDED.encrypted_region,
 			encrypted_postal_code  = EXCLUDED.encrypted_postal_code,
-			encrypted_city         = EXCLUDED.encrypted_city,
 			encrypted_country      = EXCLUDED.encrypted_country
 	`
 
@@ -283,9 +283,9 @@ func (r *repository) InsertAddress(ctx context.Context, ent entities.AddressEnti
 		ent.ID,
 		ent.UserID,
 		ent.EncryptedStreet,
-		ent.EncryptedHouseNumber,
+		ent.EncryptedLocality,
+		ent.EncryptedRegion,
 		ent.EncryptedPostalCode,
-		ent.EncryptedCity,
 		ent.EncryptedCountry,
 		ent.CreatedAt,
 	)
@@ -297,14 +297,14 @@ func (r *repository) FindAddressByUserID(ctx context.Context, userID uuid.UUID) 
 	var ent entities.AddressEntity
 
 	query := `
-		SELECT id, user_id, encrypted_street, encrypted_house_number, encrypted_postal_code, encrypted_city, encrypted_country, created_at
+		SELECT id, user_id, encrypted_street, encrypted_locality, encrypted_region, encrypted_postal_code, encrypted_country, created_at
 		FROM user_addresses
 		WHERE user_id = $1
 	`
 
 	if err := r.db.
 		QueryRowContext(ctx, query, userID).
-		Scan(&ent.ID, &ent.UserID, &ent.EncryptedStreet, &ent.EncryptedHouseNumber, &ent.EncryptedPostalCode, &ent.EncryptedCity, &ent.EncryptedCountry, &ent.CreatedAt); err != nil {
+		Scan(&ent.ID, &ent.UserID, &ent.EncryptedStreet, &ent.EncryptedLocality, &ent.EncryptedRegion, &ent.EncryptedPostalCode, &ent.EncryptedCountry, &ent.CreatedAt); err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return entities.AddressEntity{}, AddressNotFound

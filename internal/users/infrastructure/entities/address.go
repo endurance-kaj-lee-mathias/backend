@@ -9,14 +9,14 @@ import (
 )
 
 type AddressEntity struct {
-	ID                   uuid.UUID `db:"id"`
-	UserID               uuid.UUID `db:"user_id"`
-	EncryptedStreet      []byte    `db:"encrypted_street"`
-	EncryptedHouseNumber []byte    `db:"encrypted_house_number"`
-	EncryptedPostalCode  []byte    `db:"encrypted_postal_code"`
-	EncryptedCity        []byte    `db:"encrypted_city"`
-	EncryptedCountry     []byte    `db:"encrypted_country"`
-	CreatedAt            time.Time `db:"created_at"`
+	ID                  uuid.UUID `db:"id"`
+	UserID              uuid.UUID `db:"user_id"`
+	EncryptedStreet     []byte    `db:"encrypted_street"`
+	EncryptedLocality   []byte    `db:"encrypted_locality"`
+	EncryptedRegion     []byte    `db:"encrypted_region"`
+	EncryptedPostalCode []byte    `db:"encrypted_postal_code"`
+	EncryptedCountry    []byte    `db:"encrypted_country"`
+	CreatedAt           time.Time `db:"created_at"`
 }
 
 func AddressFromEntity(ent AddressEntity, userKey []byte, enc encryption.Service) (domain.Address, error) {
@@ -25,17 +25,17 @@ func AddressFromEntity(ent AddressEntity, userKey []byte, enc encryption.Service
 		return domain.Address{}, err
 	}
 
-	houseNumberBytes, err := enc.Decrypt(ent.EncryptedHouseNumber, userKey)
+	localityBytes, err := enc.Decrypt(ent.EncryptedLocality, userKey)
+	if err != nil {
+		return domain.Address{}, err
+	}
+
+	regionBytes, err := enc.Decrypt(ent.EncryptedRegion, userKey)
 	if err != nil {
 		return domain.Address{}, err
 	}
 
 	postalCodeBytes, err := enc.Decrypt(ent.EncryptedPostalCode, userKey)
-	if err != nil {
-		return domain.Address{}, err
-	}
-
-	cityBytes, err := enc.Decrypt(ent.EncryptedCity, userKey)
 	if err != nil {
 		return domain.Address{}, err
 	}
@@ -56,14 +56,14 @@ func AddressFromEntity(ent AddressEntity, userKey []byte, enc encryption.Service
 	}
 
 	return domain.Address{
-		ID:          id,
-		UserID:      userID,
-		Street:      string(streetBytes),
-		HouseNumber: string(houseNumberBytes),
-		PostalCode:  string(postalCodeBytes),
-		City:        string(cityBytes),
-		Country:     string(countryBytes),
-		CreatedAt:   ent.CreatedAt,
+		ID:         id,
+		UserID:     userID,
+		Street:     string(streetBytes),
+		Locality:   string(localityBytes),
+		Region:     string(regionBytes),
+		PostalCode: string(postalCodeBytes),
+		Country:    string(countryBytes),
+		CreatedAt:  ent.CreatedAt,
 	}, nil
 }
 
@@ -73,17 +73,17 @@ func AddressToEntity(a domain.Address, userKey []byte, enc encryption.Service) (
 		return AddressEntity{}, err
 	}
 
-	encHouseNumber, err := enc.Encrypt([]byte(a.HouseNumber), userKey)
+	encLocality, err := enc.Encrypt([]byte(a.Locality), userKey)
+	if err != nil {
+		return AddressEntity{}, err
+	}
+
+	encRegion, err := enc.Encrypt([]byte(a.Region), userKey)
 	if err != nil {
 		return AddressEntity{}, err
 	}
 
 	encPostalCode, err := enc.Encrypt([]byte(a.PostalCode), userKey)
-	if err != nil {
-		return AddressEntity{}, err
-	}
-
-	encCity, err := enc.Encrypt([]byte(a.City), userKey)
 	if err != nil {
 		return AddressEntity{}, err
 	}
@@ -94,13 +94,13 @@ func AddressToEntity(a domain.Address, userKey []byte, enc encryption.Service) (
 	}
 
 	return AddressEntity{
-		ID:                   a.ID.UUID,
-		UserID:               a.UserID.UUID,
-		EncryptedStreet:      encStreet,
-		EncryptedHouseNumber: encHouseNumber,
-		EncryptedPostalCode:  encPostalCode,
-		EncryptedCity:        encCity,
-		EncryptedCountry:     encCountry,
-		CreatedAt:            a.CreatedAt,
+		ID:                  a.ID.UUID,
+		UserID:              a.UserID.UUID,
+		EncryptedStreet:     encStreet,
+		EncryptedLocality:   encLocality,
+		EncryptedRegion:     encRegion,
+		EncryptedPostalCode: encPostalCode,
+		EncryptedCountry:    encCountry,
+		CreatedAt:           a.CreatedAt,
 	}, nil
 }

@@ -170,6 +170,26 @@ func claimsFromMap(raw jwt.MapClaims) *Claims {
 	if lastName, ok := raw["family_name"].(string); ok {
 		c.LastName = lastName
 	}
+	if phone, ok := raw["phoneNumber"].(string); ok {
+		c.PhoneNumber = phone
+	}
+	if addr, ok := raw["address"].(map[string]any); ok {
+		if v, ok := addr["street_address"].(string); ok {
+			c.Address.StreetAddress = v
+		}
+		if v, ok := addr["locality"].(string); ok {
+			c.Address.Locality = v
+		}
+		if v, ok := addr["region"].(string); ok {
+			c.Address.Region = v
+		}
+		if v, ok := addr["postal_code"].(string); ok {
+			c.Address.PostalCode = v
+		}
+		if v, ok := addr["country"].(string); ok {
+			c.Address.Country = v
+		}
+	}
 	if ra, ok := raw["realm_access"].(map[string]any); ok {
 		if roles, ok := ra["roles"].([]any); ok {
 			for _, r := range roles {

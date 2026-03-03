@@ -49,11 +49,11 @@ scope = openid
 ### =====================================================
 
 ### 3a. Get or create VETERAN
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{veteranToken}}
 
 ### 3b. Get or create SUPPORT
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
