@@ -9,34 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 )
-
-type client struct {
-	baseURL       string
-	realm         string
-	adminUser     string
-	adminPassword string
-
-	mu          sync.Mutex
-	token       string
-	tokenExpiry time.Time
-}
-
-func NewClient(baseURL string, realm string, adminUser string, adminPassword string) Client {
-	return &client{
-		baseURL:       baseURL,
-		realm:         realm,
-		adminUser:     adminUser,
-		adminPassword: adminPassword,
-	}
-}
-
-type tokenResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-}
 
 func (c *client) getAdminToken(ctx context.Context) (string, error) {
 	c.mu.Lock()
@@ -81,14 +55,6 @@ func (c *client) getAdminToken(ctx context.Context) (string, error) {
 	c.tokenExpiry = time.Now().Add(time.Duration(tok.ExpiresIn-30) * time.Second)
 
 	return c.token, nil
-}
-
-type keycloakUser struct {
-	FirstName  string              `json:"firstName"`
-	LastName   string              `json:"lastName"`
-	Email      string              `json:"email"`
-	Username   string              `json:"username"`
-	Attributes map[string][]string `json:"attributes"`
 }
 
 func (c *client) getUser(ctx context.Context, token string, userID string) (keycloakUser, error) {
