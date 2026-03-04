@@ -9,9 +9,9 @@ type MemberModel struct {
 	ID        uuid.UUID `json:"id"`
 	Veteran   uuid.UUID `json:"veteran"`
 	Email     string    `json:"email"`
-	Username  string    `json:"username"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
+	Username  string    `json:"username"`
 }
 
 func ToModel(mem domain.Member) MemberModel {

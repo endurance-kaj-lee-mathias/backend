@@ -11,8 +11,8 @@ type StressScoreResponse struct {
 	ID           uuid.UUID `json:"id"`
 	Score        float64   `json:"score"`
 	Category     string    `json:"category"`
-	ModelVersion string    `json:"model_version"`
-	ComputedAt   time.Time `json:"computed_at"`
+	ModelVersion string    `json:"modelVersion"`
+	ComputedAt   time.Time `json:"computedAt"`
 }
 
 func ToStressScoreResponse(score domain.StressScore) StressScoreResponse {
