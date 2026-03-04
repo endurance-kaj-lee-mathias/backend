@@ -3,14 +3,14 @@ package models
 import "time"
 
 type StressSampleRequest struct {
-	UserID         string    `json:"user_id"`
-	TimestampUTC   time.Time `json:"timestamp_utc"`
-	WindowMinutes  int       `json:"window_minutes"`
-	MeanHR         float64   `json:"mean_hr"`
-	RMSSDms        float64   `json:"rmssd_ms"`
-	RestingHR      *float64  `json:"resting_hr,omitempty"`
+	UserID         string    `json:"userId"`
+	TimestampUTC   time.Time `json:"timestamp"`
+	WindowMinutes  int       `json:"windowMinutes"`
+	MeanHR         float64   `json:"meanHr"`
+	RMSSDms        float64   `json:"rmssdMs"`
+	RestingHR      *float64  `json:"restingHr,omitempty"`
 	Steps          *int      `json:"steps,omitempty"`
-	SleepDebtHours *float64  `json:"sleep_debt_hours,omitempty"`
+	SleepDebtHours *float64  `json:"sleepDebtHours,omitempty"`
 }
 
 func (m *StressSampleRequest) Validate() error {

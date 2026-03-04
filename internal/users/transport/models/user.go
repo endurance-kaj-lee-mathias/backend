@@ -7,8 +7,8 @@ import (
 
 type UserModel struct {
 	ID           uuid.UUID     `json:"id"`
-	FirstName    string        `json:"first-name"`
-	LastName     string        `json:"last-name"`
+	FirstName    string        `json:"firstName"`
+	LastName     string        `json:"lastName"`
 	Username     string        `json:"username"`
 	About        string        `json:"about"`
 	Introduction string        `json:"introduction"`
