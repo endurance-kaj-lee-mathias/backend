@@ -30,7 +30,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	userHandler := users.Wire(server.db, server.enc, server.kc)
 	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
-	stressHandler := stress.Wire(server.db, server.enc)
+	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
 	chatsHandler := chats.Wire(server.db, server.enc)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
@@ -54,7 +54,6 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Patch("/me/about", userHandler.PatchAbout)
 			r.Patch("/me/image", userHandler.PatchImage)
 			r.Put("/me/address", userHandler.UpsertAddress)
-			r.Get("/me/address", userHandler.GetAddress)
 
 			r.Put("/device", userHandler.PutDevice)
 			r.Delete("/device", userHandler.DeleteDevice)
@@ -76,6 +75,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/stress", func(r chi.Router) {
 			r.Post("/samples", stressHandler.IngestSample)
+			r.Get("/scores/latest", stressHandler.GetLatestScore)
 		})
 
 		r.Route("/chats", func(r chi.Router) {

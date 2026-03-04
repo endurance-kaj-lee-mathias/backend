@@ -18,6 +18,8 @@ type Config struct {
 	MasterKey        []byte
 	AllowedOrigins   []string
 	MinUrgentMinutes int
+	AlgoServiceURL   string
+	AlgoAPIKey       string
 }
 
 func LoadConfig() Config {
@@ -40,6 +42,12 @@ func LoadConfig() Config {
 		os.Exit(1)
 	}
 
+	algoAPIKey := env.Get("ALGO_API_KEY", "")
+	if algoAPIKey == "" {
+		slog.Error("ALGO_API_KEY is not set, requests to the algorithm service will fail")
+		os.Exit(1)
+	}
+
 	return Config{
 		Port:             fmt.Sprintf(":%s", port),
 		Url:              url,
@@ -47,5 +55,7 @@ func LoadConfig() Config {
 		MasterKey:        masterKey,
 		AllowedOrigins:   allowedOrigins,
 		MinUrgentMinutes: minUrgent,
+		AlgoServiceURL:   env.Get("ALGO_SERVICE_URL", "http://localhost:8081"),
+		AlgoAPIKey:       algoAPIKey,
 	}
 }

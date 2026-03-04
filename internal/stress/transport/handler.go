@@ -68,3 +68,29 @@ func (h *Handler) IngestSample(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
+
+func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	score, err := h.service.GetLatestScore(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, infrastructure.ScoreNotFound) {
+			response.WriteError(w, http.StatusNotFound, ScoreNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
+}

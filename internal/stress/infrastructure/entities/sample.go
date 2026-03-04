@@ -70,3 +70,75 @@ func ToEntity(sample domain.StressSample, enc encryption.Service, userKey []byte
 		CreatedAt:               sample.CreatedAt,
 	}, nil
 }
+
+func FromEntity(ent StressSampleEntity, enc encryption.Service, userKey []byte) (domain.StressSample, error) {
+	meanHRBytes, err := enc.Decrypt(ent.EncryptedMeanHR, userKey)
+	if err != nil {
+		return domain.StressSample{}, err
+	}
+	meanHR, err := strconv.ParseFloat(string(meanHRBytes), 64)
+	if err != nil {
+		return domain.StressSample{}, err
+	}
+
+	rmssdBytes, err := enc.Decrypt(ent.EncryptedRMSSDms, userKey)
+	if err != nil {
+		return domain.StressSample{}, err
+	}
+	rmssd, err := strconv.ParseFloat(string(rmssdBytes), 64)
+	if err != nil {
+		return domain.StressSample{}, err
+	}
+
+	var restingHR *float64
+	if len(ent.EncryptedRestingHR) > 0 {
+		b, err := enc.Decrypt(ent.EncryptedRestingHR, userKey)
+		if err != nil {
+			return domain.StressSample{}, err
+		}
+		v, err := strconv.ParseFloat(string(b), 64)
+		if err != nil {
+			return domain.StressSample{}, err
+		}
+		restingHR = &v
+	}
+
+	var steps *int
+	if len(ent.EncryptedSteps) > 0 {
+		b, err := enc.Decrypt(ent.EncryptedSteps, userKey)
+		if err != nil {
+			return domain.StressSample{}, err
+		}
+		v, err := strconv.Atoi(string(b))
+		if err != nil {
+			return domain.StressSample{}, err
+		}
+		steps = &v
+	}
+
+	var sleepDebt *float64
+	if len(ent.EncryptedSleepDebtHours) > 0 {
+		b, err := enc.Decrypt(ent.EncryptedSleepDebtHours, userKey)
+		if err != nil {
+			return domain.StressSample{}, err
+		}
+		v, err := strconv.ParseFloat(string(b), 64)
+		if err != nil {
+			return domain.StressSample{}, err
+		}
+		sleepDebt = &v
+	}
+
+	return domain.StressSample{
+		ID:             domain.SampleId{UUID: ent.ID},
+		UserID:         ent.UserID,
+		TimestampUTC:   ent.TimestampUTC,
+		WindowMinutes:  ent.WindowMinutes,
+		MeanHR:         meanHR,
+		RMSSDms:        rmssd,
+		RestingHR:      restingHR,
+		Steps:          steps,
+		SleepDebtHours: sleepDebt,
+		CreatedAt:      ent.CreatedAt,
+	}, nil
+}
