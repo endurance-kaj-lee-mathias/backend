@@ -15,24 +15,24 @@ import (
 )
 
 type algoSample struct {
-	HeartRate        float64   `json:"heart_rate"`
+	HeartRate        float64   `json:"heartRate"`
 	RMSSD            float64   `json:"rmssd"`
-	RestingHeartRate float64   `json:"resting_heart_rate,omitempty"`
+	RestingHeartRate float64   `json:"restingHeartRate,omitempty"`
 	Steps            float64   `json:"steps,omitempty"`
-	SleepDebtHours   float64   `json:"sleep_debt_hours,omitempty"`
-	RecordedAt       time.Time `json:"recorded_at"`
+	SleepDebtHours   float64   `json:"sleepDebtHours,omitempty"`
+	RecordedAt       time.Time `json:"recordedAt"`
 }
 
 type algoRequest struct {
-	UserID  uuid.UUID    `json:"user_id"`
+	UserID  uuid.UUID    `json:"userId"`
 	Samples []algoSample `json:"samples"`
 }
 
 type algoResponse struct {
 	Score    float64 `json:"score"`
 	Category string  `json:"category"`
-	ZHR      float64 `json:"z_hr"`
-	ZRMSSD   float64 `json:"z_rmssd"`
+	ZHR      float64 `json:"zHr"`
+	ZRMSSD   float64 `json:"zRmssd"`
 }
 
 func (c *algoClient) ComputeScore(ctx context.Context, userID uuid.UUID, samples []domain.StressSample) (domain.StressScore, error) {
