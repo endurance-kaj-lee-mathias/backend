@@ -16,6 +16,8 @@ type Service interface {
 	GetByUsername(ctx context.Context, username string) (domain.User, error)
 	DeleteUser(ctx context.Context, id domain.UserId) error
 	UpdatePhoneNumber(ctx context.Context, id domain.UserId, phoneNumber *string) error
+	UpdateFirstName(ctx context.Context, id domain.UserId, firstName string) error
+	UpdateLastName(ctx context.Context, id domain.UserId, lastName string) error
 	UpdateIntroduction(ctx context.Context, id domain.UserId, introduction string) error
 	UpdateAbout(ctx context.Context, id domain.UserId, about string) error
 	UpdateImage(ctx context.Context, id domain.UserId, image string) error
