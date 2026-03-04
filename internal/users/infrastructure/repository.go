@@ -205,6 +205,46 @@ func (r *repository) UpdatePhoneNumber(ctx context.Context, id uuid.UUID, phoneN
 	return nil
 }
 
+func (r *repository) UpdateFirstName(ctx context.Context, id uuid.UUID, encrypted []byte) error {
+	query := `UPDATE users SET encrypted_first_name = $1, updated_at = NOW() WHERE id = $2`
+
+	result, err := r.db.ExecContext(ctx, query, encrypted, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return NotFound
+	}
+
+	return nil
+}
+
+func (r *repository) UpdateLastName(ctx context.Context, id uuid.UUID, encrypted []byte) error {
+	query := `UPDATE users SET encrypted_last_name = $1, updated_at = NOW() WHERE id = $2`
+
+	result, err := r.db.ExecContext(ctx, query, encrypted, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return NotFound
+	}
+
+	return nil
+}
+
 func (r *repository) UpdateIntroduction(ctx context.Context, id uuid.UUID, encrypted []byte) error {
 	query := `UPDATE users SET encrypted_introduction = $1, updated_at = NOW() WHERE id = $2`
 

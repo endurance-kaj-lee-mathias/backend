@@ -16,6 +16,8 @@ type Repository interface {
 	FindByUsername(ctx context.Context, username string) (entities.UserEntity, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	UpdatePhoneNumber(ctx context.Context, id uuid.UUID, phoneNumber *string) error
+	UpdateFirstName(ctx context.Context, id uuid.UUID, encrypted []byte) error
+	UpdateLastName(ctx context.Context, id uuid.UUID, encrypted []byte) error
 	UpdateIntroduction(ctx context.Context, id uuid.UUID, encrypted []byte) error
 	UpdateAbout(ctx context.Context, id uuid.UUID, encrypted []byte) error
 	UpdateImage(ctx context.Context, id uuid.UUID, image string) error

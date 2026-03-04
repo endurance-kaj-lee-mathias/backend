@@ -50,6 +50,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 			r.Delete("/me", userHandler.DeleteMe)
 			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
+			r.Patch("/me/first-name", userHandler.PatchFirstName)
+			r.Patch("/me/last-name", userHandler.PatchLastName)
 			r.Patch("/me/introduction", userHandler.PatchIntroduction)
 			r.Patch("/me/about", userHandler.PatchAbout)
 			r.Patch("/me/image", userHandler.PatchImage)

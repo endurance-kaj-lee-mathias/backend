@@ -10,6 +10,7 @@ type UserModel struct {
 	FirstName    string        `json:"firstName"`
 	LastName     string        `json:"lastName"`
 	Username     string        `json:"username"`
+	PhoneNumber  *string       `json:"phoneNumber,omitempty"`
 	About        string        `json:"about"`
 	Introduction string        `json:"introduction"`
 	Image        string        `json:"image"`
@@ -22,6 +23,7 @@ func ToModel(usr domain.User, addr *domain.Address) UserModel {
 		FirstName:    usr.FirstName,
 		LastName:     usr.LastName,
 		Username:     usr.Username,
+		PhoneNumber:  usr.PhoneNumber,
 		About:        usr.About,
 		Introduction: usr.Introduction,
 		Image:        usr.Image,

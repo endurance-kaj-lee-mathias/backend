@@ -136,6 +136,56 @@ func (s *service) UpdatePhoneNumber(ctx context.Context, id domain.UserId, phone
 	})
 }
 
+func (s *service) UpdateFirstName(ctx context.Context, id domain.UserId, firstName string) error {
+	encryptedUserKey, err := s.repo.GetEncryptedUserKey(ctx, id.UUID)
+	if err != nil {
+		return err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return err
+	}
+
+	encrypted, err := s.enc.Encrypt([]byte(firstName), userKey)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdateFirstName(ctx, id.UUID, encrypted); err != nil {
+		return err
+	}
+
+	return s.kc.UpdateUser(ctx, id.UUID.String(), keycloak.UserUpdate{
+		FirstName: firstName,
+	})
+}
+
+func (s *service) UpdateLastName(ctx context.Context, id domain.UserId, lastName string) error {
+	encryptedUserKey, err := s.repo.GetEncryptedUserKey(ctx, id.UUID)
+	if err != nil {
+		return err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return err
+	}
+
+	encrypted, err := s.enc.Encrypt([]byte(lastName), userKey)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdateLastName(ctx, id.UUID, encrypted); err != nil {
+		return err
+	}
+
+	return s.kc.UpdateUser(ctx, id.UUID.String(), keycloak.UserUpdate{
+		LastName: lastName,
+	})
+}
+
 func (s *service) UpdateIntroduction(ctx context.Context, id domain.UserId, introduction string) error {
 	encryptedUserKey, err := s.repo.GetEncryptedUserKey(ctx, id.UUID)
 	if err != nil {

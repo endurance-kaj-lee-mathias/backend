@@ -133,6 +133,64 @@ func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToModel(usr, addr))
 }
 
+func (h *Handler) PatchFirstName(w http.ResponseWriter, r *http.Request) {
+	id, _, ok := h.authenticatedID(w, r)
+	if !ok {
+		return
+	}
+
+	var body models.UpdateFirstNameModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.service.UpdateFirstName(r.Context(), id, body.FirstName); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) PatchLastName(w http.ResponseWriter, r *http.Request) {
+	id, _, ok := h.authenticatedID(w, r)
+	if !ok {
+		return
+	}
+
+	var body models.UpdateLastNameModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.service.UpdateLastName(r.Context(), id, body.LastName); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) PatchIntroduction(w http.ResponseWriter, r *http.Request) {
 	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
