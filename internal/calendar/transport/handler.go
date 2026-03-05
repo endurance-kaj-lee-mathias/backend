@@ -173,3 +173,35 @@ func (h *Handler) CancelAppointment(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) GetSlotsByUserID(w http.ResponseWriter, r *http.Request) {
+	fromStr := r.URL.Query().Get("from")
+	toStr := r.URL.Query().Get("to")
+
+	from, err := time.Parse(time.RFC3339, fromStr)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, models.InvalidFromParam)
+		return
+	}
+
+	to, err := time.Parse(time.RFC3339, toStr)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, models.InvalidToParam)
+		return
+	}
+
+	providerID, err := uuid.FromString(chi.URLParam(r, "id"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	slots, err := h.service.GetSlots(r.Context(), from, to, &providerID)
+	if err != nil {
+		status, errMsg := mapError(err)
+		response.WriteError(w, status, errMsg)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToSlotModels(slots))
+}

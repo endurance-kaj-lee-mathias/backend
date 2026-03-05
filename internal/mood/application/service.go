@@ -25,3 +25,56 @@ func (s *service) UpsertMoodEntry(ctx context.Context, entry domain.MoodEntry) e
 
 	return s.repo.Upsert(ctx, ent)
 }
+
+func (s *service) GetEntriesByUserID(ctx context.Context, userID domain.UserId) ([]domain.MoodEntry, error) {
+	encryptedUserKey, err := s.userKeyReader.GetEncryptedUserKey(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return nil, err
+	}
+
+	rawEntries, err := s.repo.FindAllByUserID(ctx, userID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]domain.MoodEntry, 0, len(rawEntries))
+
+	for _, ent := range rawEntries {
+		entry, err := entities.FromEntity(ent, s.enc, userKey)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+func (s *service) GetTodayEntry(ctx context.Context, userID domain.UserId) (*domain.MoodEntry, error) {
+	encryptedUserKey, err := s.userKeyReader.GetEncryptedUserKey(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return nil, err
+	}
+
+	ent, err := s.repo.FindTodayByUserID(ctx, userID.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	entry, err := entities.FromEntity(*ent, s.enc, userKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entry, nil
+}

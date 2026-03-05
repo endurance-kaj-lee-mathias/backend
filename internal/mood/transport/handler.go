@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/infrastructure"
@@ -59,4 +60,76 @@ func (h *Handler) UpsertMoodEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) GetMyEntries(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := domain.NewUserId(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, InvalidId)
+		return
+	}
+
+	entries, err := h.service.GetEntriesByUserID(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, infrastructure.UserNotFound) {
+			response.WriteError(w, http.StatusNotFound, UserNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToResponseList(entries))
+}
+
+func (h *Handler) GetEntriesByUserID(w http.ResponseWriter, r *http.Request) {
+	userID, err := domain.NewUserId(chi.URLParam(r, "id"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	entries, err := h.service.GetEntriesByUserID(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, infrastructure.UserNotFound) {
+			response.WriteError(w, http.StatusNotFound, UserNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToResponseList(entries))
+}
+
+func (h *Handler) GetTodayEntry(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := domain.NewUserId(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, InvalidId)
+		return
+	}
+
+	entry, err := h.service.GetTodayEntry(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, infrastructure.MoodEntryNotFound) {
+			response.WriteError(w, http.StatusNotFound, MoodEntryNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToResponse(*entry))
 }

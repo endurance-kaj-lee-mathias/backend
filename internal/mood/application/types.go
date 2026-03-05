@@ -10,6 +10,8 @@ import (
 
 type Service interface {
 	UpsertMoodEntry(ctx context.Context, entry domain.MoodEntry) error
+	GetEntriesByUserID(ctx context.Context, userID domain.UserId) ([]domain.MoodEntry, error)
+	GetTodayEntry(ctx context.Context, userID domain.UserId) (*domain.MoodEntry, error)
 }
 
 type PhoneNotifier interface {

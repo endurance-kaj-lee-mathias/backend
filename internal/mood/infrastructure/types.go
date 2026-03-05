@@ -12,6 +12,8 @@ import (
 
 type Repository interface {
 	Upsert(ctx context.Context, ent entities.MoodEntryEntity) error
+	FindAllByUserID(ctx context.Context, userID uuid.UUID) ([]entities.MoodEntryEntity, error)
+	FindTodayByUserID(ctx context.Context, userID uuid.UUID) (*entities.MoodEntryEntity, error)
 	FindVeteransWithoutEntryInLast24Hours(ctx context.Context, veteranRoleHash string) ([]uuid.UUID, error)
 	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
 }

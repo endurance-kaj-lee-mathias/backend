@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
@@ -77,6 +78,26 @@ func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	score, err := h.service.GetLatestScore(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, infrastructure.ScoreNotFound) {
+			response.WriteError(w, http.StatusNotFound, ScoreNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
+}
+
+func (h *Handler) GetLatestScoreByUserID(w http.ResponseWriter, r *http.Request) {
+	userID, err := uuid.FromString(chi.URLParam(r, "id"))
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return

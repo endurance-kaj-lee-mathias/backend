@@ -39,3 +39,26 @@ func ToEntity(entry domain.MoodEntry, enc encryption.Service, userKey []byte) (M
 		UpdatedAt:      entry.UpdatedAt,
 	}, nil
 }
+
+func FromEntity(ent MoodEntryEntity, enc encryption.Service, userKey []byte) (domain.MoodEntry, error) {
+	var notes *string
+
+	if len(ent.EncryptedNotes) > 0 {
+		decrypted, err := enc.Decrypt(ent.EncryptedNotes, userKey)
+		if err != nil {
+			return domain.MoodEntry{}, err
+		}
+		s := string(decrypted)
+		notes = &s
+	}
+
+	return domain.MoodEntry{
+		ID:        domain.MoodId{UUID: ent.ID},
+		UserID:    domain.UserId{UUID: ent.UserID},
+		Date:      ent.Date,
+		MoodScore: ent.MoodScore,
+		Notes:     notes,
+		CreatedAt: ent.CreatedAt,
+		UpdatedAt: ent.UpdatedAt,
+	}, nil
+}
