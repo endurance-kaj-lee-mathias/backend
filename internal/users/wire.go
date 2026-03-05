@@ -10,7 +10,9 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/transport"
 )
 
-func Wire(db *sql.DB, enc encryption.Service, kc keycloak.Client) *transport.Handler {
+type Handler = transport.Handler
+
+func Wire(db *sql.DB, enc encryption.Service, kc keycloak.Client) *Handler {
 	repo := infrastructure.NewRepository(db, enc)
 	service := application.NewService(repo, enc, kc)
 	return transport.NewHandler(service)

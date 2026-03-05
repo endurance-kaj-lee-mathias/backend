@@ -16,6 +16,7 @@ type User struct {
 	About        string    `json:"about"`
 	Introduction string    `json:"introduction"`
 	Image        string    `json:"image"`
+	IsPrivate    bool      `json:"isPrivate"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 }

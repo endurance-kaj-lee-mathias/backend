@@ -8,7 +8,7 @@ import (
 )
 
 type CreateInviteRequest struct {
-	ReceiverID string `json:"receiverId"`
+	Username string `json:"username"`
 }
 
 type InviteUserModel struct {

@@ -24,10 +24,28 @@ func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]dom
 }
 
 func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error {
-	return s.repo.Delete(ctx, veteranID.UUID, supportID.UUID)
+	if err := s.repo.Delete(ctx, veteranID.UUID, supportID.UUID); err != nil {
+		return err
+	}
+
+	if err := s.authz.RevokeAll(ctx, veteranID.UUID, supportID.UUID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, receiverID domain.MemberId) (domain.Invite, error) {
+func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, username string) (domain.Invite, error) {
+	receiverUUID, err := s.userRoleRead.FindIDByUsername(ctx, username)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	receiverID, err := domain.ParseMemberId(receiverUUID.String())
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
 	if senderID.UUID == receiverID.UUID {
 		return domain.Invite{}, domain.ErrSelfInvite
 	}
