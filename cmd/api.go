@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
@@ -169,7 +170,7 @@ func extractTargetFromUsername(userHandler *users.Handler) auth.TargetExtractor 
 	}
 }
 
-func (server *server) run(h http.Handler) error {
+func (server *server) run(ctx context.Context, h http.Handler) error {
 	srv := &http.Server{
 		Addr:         server.config.Port,
 		Handler:      h,
@@ -179,5 +180,32 @@ func (server *server) run(h http.Handler) error {
 	}
 
 	slog.Info("server has started", "port", server.config.Port)
-	return srv.ListenAndServe()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- srv.ListenAndServe()
+	}()
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
+
+		err := <-errCh
+		if err != nil && err != http.ErrServerClosed {
+			return err
+		}
+
+		return nil
+	case err := <-errCh:
+		if err != nil && err != http.ErrServerClosed {
+			return err
+		}
+
+		return nil
+	}
 }

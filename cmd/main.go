@@ -55,7 +55,7 @@ func main() {
 	h, scheduler := api.mount()
 	go scheduler.Start(ctx)
 
-	if err := api.run(h); err != nil {
+	if err := api.run(ctx, h); err != nil {
 		slog.Error("server has crashed", "error", err)
 		os.Exit(1)
 	}
