@@ -24,6 +24,7 @@ type UserEntity struct {
 	EncryptedAbout        []byte    `db:"encrypted_about"`
 	EncryptedIntroduction []byte    `db:"encrypted_introduction"`
 	Image                 *string   `db:"image"`
+	IsPrivate             bool      `db:"is_private"`
 	EncryptedUserKey      []byte    `db:"encrypted_user_key"`
 	KeyVersion            int       `db:"key_version"`
 	CreatedAt             time.Time `db:"created_at"`
@@ -94,6 +95,7 @@ func FromEntity(ent UserEntity, enc encryption.Service) (domain.User, error) {
 		About:        decryptOptional(ent.EncryptedAbout, userKey, enc),
 		Introduction: decryptOptional(ent.EncryptedIntroduction, userKey, enc),
 		Image:        derefString(ent.Image),
+		IsPrivate:    ent.IsPrivate,
 		CreatedAt:    ent.CreatedAt,
 		UpdatedAt:    ent.UpdatedAt,
 	}, nil
@@ -192,6 +194,7 @@ func ToEntity(usr domain.User, enc encryption.Service, encryptedUserKey []byte, 
 		EncryptedAbout:        encAbout,
 		EncryptedIntroduction: encIntroduction,
 		Image:                 &image,
+		IsPrivate:             usr.IsPrivate,
 		EncryptedUserKey:      encryptedUserKey,
 		KeyVersion:            1,
 		CreatedAt:             usr.CreatedAt,

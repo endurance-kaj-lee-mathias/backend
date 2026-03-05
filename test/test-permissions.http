@@ -1,0 +1,427 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+@usernameSupport = Lee
+@password = password
+
+### =====================================================
+### Auth – get tokens for all three users
+### =====================================================
+
+### Get VETERAN token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### Get THERAPIST token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+%}
+
+### Get SUPPORT token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### Seed – ensure all users exist and store their IDs
+### =====================================================
+
+### Seed VETERAN – stores veteranId and veteranUsername
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    client.global.set("veteranId", response.body.id);
+    client.global.set("veteranUsername", response.body.username);
+%}
+
+### Seed THERAPIST – stores therapistId and therapistUsername
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{therapistToken}}
+
+> {%
+    client.global.set("therapistId", response.body.id);
+    client.global.set("therapistUsername", response.body.username);
+%}
+
+### Seed SUPPORT – stores supportId and supportUsername
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{supportToken}}
+
+> {%
+    client.global.set("supportId", response.body.id);
+    client.global.set("supportUsername", response.body.username);
+%}
+
+### =====================================================
+### Prerequisite – establish support relationship
+### Send invite from THERAPIST to VETERAN, then accept
+### =====================================================
+
+### THERAPIST sends invite to VETERAN
+POST {{baseUrl}}/support
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("therapistInviteId", response.body.id);
+%}
+
+### VETERAN accepts the invite
+PATCH {{baseUrl}}/support/{{therapistInviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### SUPPORT sends invite to VETERAN
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("supportInviteId", response.body.id);
+%}
+
+### VETERAN accepts the support invite
+PATCH {{baseUrl}}/support/4f183a6d-b838-45ab-82f8-a6f07a1385dc/accept
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Privacy toggle
+### =====================================================
+
+### 1. Default state – account is public (isPrivate = false)
+###    Expected: 204 No Content
+PATCH {{baseUrl}}/users/me/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": false
+}
+
+### 2. Toggle account to private
+###    Expected: 204 No Content
+PATCH {{baseUrl}}/users/me/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": true
+}
+
+### 3. Toggle account back to public
+###    Expected: 204 No Content
+PATCH {{baseUrl}}/users/me/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": false
+}
+
+### =====================================================
+### Viewing profiles – open mode (isPrivate = false)
+### =====================================================
+
+### 4. THERAPIST views VETERAN profile by ID – open mode
+###    Expected: 200 OK (support relationship exists, no deny rule)
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
+
+### 5. SUPPORT views VETERAN profile by username – open mode
+###    Expected: 200 OK
+GET {{baseUrl}}/users/search/{{veteranUsername}}
+Authorization: Bearer {{supportToken}}
+
+### 6. No relationship – VETERAN views THERAPIST profile – open mode
+###    Expected: 403 Forbidden (no support relationship between them in reverse)
+###    (Only applies if THERAPIST has no accepted relationship where VETERAN is the support side)
+GET {{baseUrl}}/users/{{therapistId}}
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Sharing rules – CRUD
+### =====================================================
+
+### 7. VETERAN creates a deny rule – blocks THERAPIST from seeing profile
+###    Expected: 201 Created
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{therapistId}}",
+  "resource": "userProfile",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("denyProfileRuleId", response.body.id);
+%}
+
+### 8. THERAPIST tries to view VETERAN profile – deny rule in place
+###    Expected: 403 Forbidden
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
+
+### 9. SUPPORT still views VETERAN profile – no deny rule for SUPPORT
+###    Expected: 200 OK
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 10. VETERAN lists their sharing rules
+###     Expected: 200 OK – contains the deny rule from request 7
+GET {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+
+### 11. VETERAN deletes the deny rule – THERAPIST should be unblocked
+###     Expected: 204 No Content
+DELETE {{baseUrl}}/sharing/rules/{{denyProfileRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+### 12. THERAPIST views VETERAN profile again – rule removed
+###     Expected: 200 OK
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### Private mode with explicit allow
+### =====================================================
+
+### 13. VETERAN sets account to private
+###     Expected: 204 No Content
+PATCH {{baseUrl}}/users/me/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": true
+}
+
+### 14. THERAPIST tries to view VETERAN profile – private, no allow rule
+###     Expected: 403 Forbidden
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
+
+### 15. SUPPORT tries to view VETERAN profile – private, no allow rule
+###     Expected: 403 Forbidden
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 16. VETERAN creates an allow rule for THERAPIST on userProfile
+###     Expected: 201 Created
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{therapistId}}",
+  "resource": "userProfile",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("allowProfileRuleId", response.body.id);
+%}
+
+### 17. THERAPIST views VETERAN profile – allow rule exists
+###     Expected: 200 OK
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
+
+### 18. SUPPORT still blocked – no allow rule for SUPPORT
+###     Expected: 403 Forbidden
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 19. VETERAN creates a wildcard allow rule for SUPPORT (all resources)
+###     Expected: 201 Created
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "*",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("allowWildcardRuleId", response.body.id);
+%}
+
+### 20. SUPPORT views VETERAN profile – wildcard allow rule covers it
+###     Expected: 200 OK
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 21. VETERAN sets account back to public and cleans up allow rules
+###     Expected: 204 No Content
+PATCH {{baseUrl}}/users/me/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": false
+}
+
+### Cleanup – delete allow rules
+DELETE {{baseUrl}}/sharing/rules/{{allowProfileRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+DELETE {{baseUrl}}/sharing/rules/{{allowWildcardRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Error cases
+### =====================================================
+
+### 22. Upsert – calling with a different effect on an existing rule updates it
+###     VETERAN creates a deny rule, then sends the same viewer+resource with allow
+###     Expected: both return 201, second call flips the effect to allow
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{therapistId}}",
+  "resource": "stressScores",
+  "effect": "deny"
+}
+
+> {%
+    client.global.set("duplicateRuleId", response.body.id);
+%}
+
+### Second call with allow – Expected: 201 Created, effect is now allow
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{therapistId}}",
+  "resource": "stressScores",
+  "effect": "allow"
+}
+
+### Cleanup
+DELETE {{baseUrl}}/sharing/rules/{{duplicateRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+### 23. Error – self rule
+###     VETERAN tries to create a rule for themselves
+###     Expected: 400 Bad Request
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{veteranId}}",
+  "resource": "userProfile",
+  "effect": "deny"
+}
+
+### 24. Error – invalid resource type
+###     Expected: 422 Unprocessable Entity
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{therapistId}}",
+  "resource": "invalidResource",
+  "effect": "deny"
+}
+
+### 25. Error – invalid effect value
+###     Expected: 422 Unprocessable Entity
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{therapistId}}",
+  "resource": "userProfile",
+  "effect": "maybe"
+}
+
+### 26. Error – THERAPIST tries to create a rule on VETERAN's behalf
+###     Expected: 403 Forbidden (actorId != ownerId enforced in service)
+###     Not directly testable via HTTP since actorId is always claims.Sub,
+###     but the rule would be created for THERAPIST's own account,
+###     which is valid. This comment documents the ownership enforcement.
+
+### 27. Error – delete a rule that does not exist
+###     Expected: 404 Not Found
+DELETE {{baseUrl}}/sharing/rules/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{veteranToken}}
+
+### 28. Error – THERAPIST tries to delete VETERAN's rule
+###     First, VETERAN creates a rule
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "moodEntries",
+  "effect": "deny"
+}
+
+> {%
+    client.global.set("veteranOwnedRuleId", response.body.id);
+%}
+
+### THERAPIST attempts to delete it – Expected: 403 Forbidden
+DELETE {{baseUrl}}/sharing/rules/{{veteranOwnedRuleId}}
+Authorization: Bearer {{therapistToken}}
+
+### Cleanup – VETERAN deletes it themselves
+DELETE {{baseUrl}}/sharing/rules/{{veteranOwnedRuleId}}
+Authorization: Bearer {{veteranToken}}
+
