@@ -14,6 +14,7 @@ type UserModel struct {
 	About        string        `json:"about"`
 	Introduction string        `json:"introduction"`
 	Image        string        `json:"image"`
+	IsPrivate    bool          `json:"isPrivate"`
 	Address      *AddressModel `json:"address,omitempty"`
 }
 
@@ -27,6 +28,7 @@ func ToModel(usr domain.User, addr *domain.Address) UserModel {
 		About:        usr.About,
 		Introduction: usr.Introduction,
 		Image:        usr.Image,
+		IsPrivate:    usr.IsPrivate,
 	}
 	if addr != nil {
 		a := ToAddressModel(*addr)

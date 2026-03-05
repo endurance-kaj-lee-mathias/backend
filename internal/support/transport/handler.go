@@ -80,13 +80,7 @@ func (h *Handler) PostInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	receiverID, err := domain.ParseMemberId(body.ReceiverID)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
-		return
-	}
-
-	inv, err := h.service.SendInvite(r.Context(), senderID, receiverID)
+	inv, err := h.service.SendInvite(r.Context(), senderID, body.Username)
 	if err != nil {
 		status, errMsg := mapInviteError(err)
 		response.WriteError(w, status, errMsg)

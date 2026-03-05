@@ -10,6 +10,8 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/application"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
+
+	"github.com/gofrs/uuid"
 )
 
 type Handler struct {
@@ -46,4 +48,12 @@ func (h *Handler) optionalAddress(ctx context.Context, w http.ResponseWriter, id
 		return nil, false
 	}
 	return &addr, true
+}
+
+func (h *Handler) ResolveUsername(ctx context.Context, username string) (uuid.UUID, error) {
+	usr, err := h.service.GetByUsername(ctx, username)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+	return usr.ID.UUID, nil
 }

@@ -21,6 +21,7 @@ type Repository interface {
 	UpdateIntroduction(ctx context.Context, id uuid.UUID, encrypted []byte) error
 	UpdateAbout(ctx context.Context, id uuid.UUID, encrypted []byte) error
 	UpdateImage(ctx context.Context, id uuid.UUID, image string) error
+	UpdatePrivacy(ctx context.Context, id uuid.UUID, isPrivate bool) error
 	InsertAddress(ctx context.Context, ent entities.AddressEntity) error
 	FindAddressByUserID(ctx context.Context, userID uuid.UUID) (entities.AddressEntity, error)
 	GetEncryptedUserKey(ctx context.Context, userID uuid.UUID) ([]byte, error)

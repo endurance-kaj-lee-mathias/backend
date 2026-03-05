@@ -278,6 +278,30 @@ func (h *Handler) PatchImage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) PatchPrivacy(w http.ResponseWriter, r *http.Request) {
+	id, _, ok := h.authenticatedID(w, r)
+	if !ok {
+		return
+	}
+
+	var body models.UpdatePrivacyModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := h.service.UpdatePrivacy(r.Context(), id, body.IsPrivate); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 	id, _, ok := h.authenticatedID(w, r)
 	if !ok {
