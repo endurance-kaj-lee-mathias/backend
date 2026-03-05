@@ -5,7 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization"
+	authzdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
@@ -15,9 +20,6 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
@@ -28,13 +30,14 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r.Use(middleware.Timeout(time.Minute))
 
 	userHandler := users.Wire(server.db, server.enc, server.kc)
-	supportHandler := support.Wire(server.db, server.enc)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
 	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
 	chatsHandler := chats.Wire(server.db, server.enc)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
 	calendarHandler := calendar.Wire(server.db, server.config.MinUrgentMinutes)
+	authzHandler, authzService := authorization.Wire(server.db)
+	supportHandler := support.Wire(server.db, server.enc, authzService)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -55,24 +58,41 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Patch("/me/introduction", userHandler.PatchIntroduction)
 			r.Patch("/me/about", userHandler.PatchAbout)
 			r.Patch("/me/image", userHandler.PatchImage)
+			r.Patch("/me/privacy", userHandler.PatchPrivacy)
 			r.Put("/me/address", userHandler.UpsertAddress)
 
 			r.Put("/device", userHandler.PutDevice)
 			r.Delete("/device", userHandler.DeleteDevice)
 
-			r.Get("/search/{username}", userHandler.GetUserByUsername)
-
 			r.Get("/support", supportHandler.GetAll)
 			r.Delete("/support/{supportId}", supportHandler.DeleteSupporter)
 
-			r.Get("/{id}", userHandler.GetUser)
+			r.Group(func(r chi.Router) {
+				r.Use(auth.WithResource(string(authzdomain.ResourceUserProfile)))
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromUsername(userHandler)))
+				r.Use(auth.RequireAuthorization(authzService))
+				r.Get("/search/{username}", userHandler.GetUserByUsername)
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.WithResource(string(authzdomain.ResourceUserProfile)))
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
+				r.Use(auth.RequireAuthorization(authzService))
+				r.Get("/{id}", userHandler.GetUser)
+			})
 		})
 
-		r.Route("/support-invites", func(r chi.Router) {
+		r.Route("/support", func(r chi.Router) {
 			r.Post("/", supportHandler.PostInvite)
 			r.Patch("/{inviteId}/accept", supportHandler.AcceptInvite)
 			r.Patch("/{inviteId}/decline", supportHandler.DeclineInvite)
 			r.Get("/", supportHandler.ListInvites)
+		})
+
+		r.Route("/sharing", func(r chi.Router) {
+			r.Post("/rules", authzHandler.CreateRule)
+			r.Delete("/rules/{id}", authzHandler.DeleteRule)
+			r.Get("/rules", authzHandler.ListRules)
 		})
 
 		r.Route("/stress", func(r chi.Router) {
@@ -103,6 +123,27 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r.Get("/ws", wsHandler.ServeWS)
 
 	return r, moodScheduler
+}
+
+func extractTargetFromPathID(r *http.Request) (uuid.UUID, error) {
+	return uuid.FromString(chi.URLParam(r, "id"))
+}
+
+func extractTargetFromUsername(userHandler *users.Handler) auth.TargetExtractor {
+	return func(r *http.Request) (uuid.UUID, error) {
+		targetID, ok := auth.GetTargetID(r.Context())
+		if ok {
+			return targetID, nil
+		}
+
+		username := chi.URLParam(r, "username")
+		usr, err := userHandler.ResolveUsername(r.Context(), username)
+		if err != nil {
+			return uuid.UUID{}, err
+		}
+
+		return usr, nil
+	}
 }
 
 func (server *server) run(h http.Handler) error {

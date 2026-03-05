@@ -228,6 +228,10 @@ func (s *service) UpdateImage(ctx context.Context, id domain.UserId, image strin
 	return s.repo.UpdateImage(ctx, id.UUID, image)
 }
 
+func (s *service) UpdatePrivacy(ctx context.Context, id domain.UserId, isPrivate bool) error {
+	return s.repo.UpdatePrivacy(ctx, id.UUID, isPrivate)
+}
+
 func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, street string, locality string, region string, postalCode string, country string) (domain.Address, error) {
 	addrID, err := domain.NewAddressId()
 	if err != nil {

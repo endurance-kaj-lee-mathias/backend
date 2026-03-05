@@ -21,6 +21,7 @@ type Service interface {
 	UpdateIntroduction(ctx context.Context, id domain.UserId, introduction string) error
 	UpdateAbout(ctx context.Context, id domain.UserId, about string) error
 	UpdateImage(ctx context.Context, id domain.UserId, image string) error
+	UpdatePrivacy(ctx context.Context, id domain.UserId, isPrivate bool) error
 	UpsertAddress(ctx context.Context, userID domain.UserId, street string, locality string, region string, postalCode string, country string) (domain.Address, error)
 	GetAddress(ctx context.Context, userID domain.UserId) (domain.Address, error)
 	UpsertDevice(ctx context.Context, userID domain.UserId, deviceToken string, platform string) error
