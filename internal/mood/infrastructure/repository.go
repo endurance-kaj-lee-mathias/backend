@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 
@@ -87,4 +88,54 @@ func (r *repository) FindDeviceTokensByUserID(ctx context.Context, userID uuid.U
 	}
 
 	return tokens, rows.Err()
+}
+
+func (r *repository) FindAllByUserID(ctx context.Context, userID uuid.UUID) ([]entities.MoodEntryEntity, error) {
+	query := `
+		SELECT id, user_id, date, mood_score, encrypted_notes, created_at, updated_at
+		FROM mood_entries
+		WHERE user_id = $1
+		ORDER BY date DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []entities.MoodEntryEntity
+
+	for rows.Next() {
+		var ent entities.MoodEntryEntity
+		if err := rows.Scan(&ent.ID, &ent.UserID, &ent.Date, &ent.MoodScore, &ent.EncryptedNotes, &ent.CreatedAt, &ent.UpdatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, ent)
+	}
+
+	return result, rows.Err()
+}
+
+func (r *repository) FindTodayByUserID(ctx context.Context, userID uuid.UUID) (*entities.MoodEntryEntity, error) {
+	query := `
+		SELECT id, user_id, date, mood_score, encrypted_notes, created_at, updated_at
+		FROM mood_entries
+		WHERE user_id = $1
+		  AND date = CURRENT_DATE
+		LIMIT 1
+	`
+
+	var ent entities.MoodEntryEntity
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+		&ent.ID, &ent.UserID, &ent.Date, &ent.MoodScore, &ent.EncryptedNotes, &ent.CreatedAt, &ent.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, MoodEntryNotFound
+		}
+		return nil, err
+	}
+
+	return &ent, nil
 }

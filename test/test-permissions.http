@@ -126,8 +126,12 @@ Content-Type: application/json
     client.global.set("supportInviteId", response.body.id);
 %}
 
+### invite list
+GET {{baseUrl}}/support
+Authorization: Bearer {{veteranToken}}
+
 ### VETERAN accepts the support invite
-PATCH {{baseUrl}}/support/4f183a6d-b838-45ab-82f8-a6f07a1385dc/accept
+PATCH {{baseUrl}}/support/ec2e8d12-5e56-47ec-b79f-33787b8ddf7c/accept
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
@@ -197,7 +201,7 @@ Content-Type: application/json
 {
   "viewerId": "{{therapistId}}",
   "resource": "userProfile",
-  "effect": "allow"
+  "effect": "deny"
 }
 
 > {%
@@ -221,7 +225,7 @@ Authorization: Bearer {{veteranToken}}
 
 ### 11. VETERAN deletes the deny rule – THERAPIST should be unblocked
 ###     Expected: 204 No Content
-DELETE {{baseUrl}}/sharing/rules/{{denyProfileRuleId}}
+DELETE {{baseUrl}}/sharing/rules/f3de63fe-b44e-411d-9477-935870ecd840
 Authorization: Bearer {{veteranToken}}
 
 ### 12. THERAPIST views VETERAN profile again – rule removed

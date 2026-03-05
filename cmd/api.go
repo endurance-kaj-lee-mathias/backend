@@ -98,6 +98,13 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 		r.Route("/stress", func(r chi.Router) {
 			r.Post("/samples", stressHandler.IngestSample)
 			r.Get("/scores/latest", stressHandler.GetLatestScore)
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.WithResource(string(authzdomain.ResourceStressScores)))
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
+				r.Use(auth.RequireAuthorization(authzService))
+				r.Get("/scores/{id}/latest", stressHandler.GetLatestScoreByUserID)
+			})
 		})
 
 		r.Route("/chats", func(r chi.Router) {
@@ -108,6 +115,15 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/mood", func(r chi.Router) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
+			r.Get("/entries/me", moodHandler.GetMyEntries)
+			r.Get("/entries/me/today", moodHandler.GetTodayEntry)
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.WithResource(string(authzdomain.ResourceMoodEntries)))
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
+				r.Use(auth.RequireAuthorization(authzService))
+				r.Get("/entries/{id}", moodHandler.GetEntriesByUserID)
+			})
 		})
 
 		r.Route("/calendar", func(r chi.Router) {
@@ -116,6 +132,13 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
 			r.Post("/slots/{id}/book", calendarHandler.BookSlot)
 			r.Patch("/appointments/{id}/cancel", calendarHandler.CancelAppointment)
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.WithResource(string(authzdomain.ResourceCalendar)))
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
+				r.Use(auth.RequireAuthorization(authzService))
+				r.Get("/slots/{id}", calendarHandler.GetSlotsByUserID)
+			})
 		})
 	})
 
