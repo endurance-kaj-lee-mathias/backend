@@ -7,6 +7,9 @@ deps:
 run:
     go run cmd/*.go
 
+fresh:
+    git pull && go run cmd/*.go
+
 up:
     goose up
 

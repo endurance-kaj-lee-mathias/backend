@@ -12,6 +12,7 @@ import (
 
 type UserRoleReader interface {
 	GetRoles(ctx context.Context, userID uuid.UUID) ([]string, error)
+	FindIDByUsername(ctx context.Context, username string) (uuid.UUID, error)
 }
 
 type Repository interface {

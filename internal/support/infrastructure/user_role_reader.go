@@ -43,3 +43,20 @@ func (r *userRoleReader) GetRoles(ctx context.Context, userID uuid.UUID) ([]stri
 
 	return roles, nil
 }
+
+func (r *userRoleReader) FindIDByUsername(ctx context.Context, username string) (uuid.UUID, error) {
+	usernameHash := r.enc.Hash(username)
+
+	var id uuid.UUID
+
+	query := `SELECT id FROM users WHERE username_hash = $1`
+
+	if err := r.db.QueryRowContext(ctx, query, usernameHash).Scan(&id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return uuid.UUID{}, UserNotFound
+		}
+		return uuid.UUID{}, err
+	}
+
+	return id, nil
+}
