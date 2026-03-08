@@ -93,12 +93,12 @@ Authorization: Bearer {{therapistToken}}
 ###    Run seed requests above first.
 ###    Expected: 201 Created, status = PENDING
 ### =====================================================
-POST {{baseUrl}}/support-invites
+POST {{baseUrl}}/support
 Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
-  "receiverId": "{{veteranId}}"
+  "username": "{{usernameVeteran}}"
 }
 
 > {%
@@ -109,21 +109,21 @@ Content-Type: application/json
 ### 2. VETERAN lists pending invites
 ###    Expected: 200 – invite appears in incoming[]
 ### =====================================================
-GET {{baseUrl}}/support-invites
+GET {{baseUrl}}/support
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
 ### 3. SUPPORT lists pending invites
 ###    Expected: 200 – invite appears in outgoing[]
 ### =====================================================
-GET {{baseUrl}}/support-invites
+GET {{baseUrl}}/support
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
 ### 4. VETERAN accepts the invite
 ###    Expected: 200, status = ACCEPTED
 ### =====================================================
-PATCH {{baseUrl}}/support-invites/{{inviteId}}/accept
+PATCH {{baseUrl}}/support/{{inviteId}}/accept
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
@@ -140,36 +140,36 @@ Authorization: Bearer {{veteranToken}}
 ###    Expected: 409 Conflict
 ### (Run request 1 first and do NOT accept yet for this to apply)
 ### =====================================================
-POST {{baseUrl}}/support-invites
+POST {{baseUrl}}/support
 Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
-  "receiverId": "{{veteranId}}"
+  "username": "{{usernameVeteran}}"
 }
 
 ### =====================================================
 ### 7. Error – self invite
 ###    Expected: 400 Bad Request
 ### =====================================================
-POST {{baseUrl}}/support-invites
+POST {{baseUrl}}/support
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "receiverId": "{{veteranId}}"
+  "username": "{{usernameVeteran}}"
 }
 
 ### =====================================================
-### 8. Error – wrong role (VETERAN tries to invite another VETERAN)
+### 8. Error – wrong role (VETERAN tries to invite a THERAPIST)
 ###    Expected: 403 Forbidden
 ### =====================================================
-POST {{baseUrl}}/support-invites
+POST {{baseUrl}}/support
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "receiverId": "{{therapistId}}"
+  "username": "{{usernameTherapist}}"
 }
 
 ### =====================================================
@@ -178,12 +178,12 @@ Content-Type: application/json
 ###    Run seed requests first.
 ###    Expected: 204 No Content
 ### =====================================================
-POST {{baseUrl}}/support-invites
+POST {{baseUrl}}/support
 Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "receiverId": "{{veteranId}}"
+  "username": "{{usernameVeteran}}"
 }
 
 > {%
@@ -191,19 +191,19 @@ Content-Type: application/json
 %}
 
 ### VETERAN declines – Expected: 204 No Content
-PATCH {{baseUrl}}/support-invites/{{therapistInviteId}}/decline
+PATCH {{baseUrl}}/support/{{therapistInviteId}}/decline
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
 ### 10. After decline, THERAPIST can send a new invite
 ###     Expected: 201 Created (row was deleted, re-invite allowed)
 ### =====================================================
-POST {{baseUrl}}/support-invites
+POST {{baseUrl}}/support
 Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "receiverId": "{{veteranId}}"
+  "username": "{{usernameVeteran}}"
 }
 
 > {%
@@ -215,13 +215,37 @@ Content-Type: application/json
 ###     SUPPORT tries to accept THERAPIST's invite to VETERAN.
 ###     Expected: 403 Forbidden
 ### =====================================================
-PATCH {{baseUrl}}/support-invites/{{therapistInviteId}}/accept
+PATCH {{baseUrl}}/support/{{therapistInviteId}}/accept
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
 ### 12. Error – invite not found
 ###     Expected: 404 Not Found
 ### =====================================================
-PATCH {{baseUrl}}/support-invites/00000000-0000-0000-0000-000000000000/accept
+PATCH {{baseUrl}}/support/00000000-0000-0000-0000-000000000000/accept
 Authorization: Bearer {{veteranToken}}
 
+### =====================================================
+### 13. Happy path – SUPPORT sends invite to VETERAN with a note
+###     Demonstrates optional note feature (max 300 chars)
+###     Expected: 201 Created, status = PENDING, note included in response
+### =====================================================
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}",
+  "note": "I would like to help you with your recovery journey."
+}
+
+> {%
+    client.global.set("inviteWithNoteId", response.body.id);
+%}
+
+### =====================================================
+### 14. Verify note is returned in invite list
+###     Expected: 200 – note field is populated
+### =====================================================
+GET {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}

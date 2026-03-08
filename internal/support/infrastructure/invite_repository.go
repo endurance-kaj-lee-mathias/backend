@@ -15,10 +15,10 @@ import (
 const inviteQuery = `
 	SELECT
 		i.id, i.sender_id,
-		s.encrypted_username, s.encrypted_first_name, s.encrypted_last_name, s.encrypted_user_key,
+		s.encrypted_username, s.encrypted_first_name, s.encrypted_last_name, s.encrypted_user_key, s.image,
 		i.receiver_id,
-		r.encrypted_username, r.encrypted_first_name, r.encrypted_last_name, r.encrypted_user_key,
-		i.status, i.created_at, i.updated_at
+		r.encrypted_username, r.encrypted_first_name, r.encrypted_last_name, r.encrypted_user_key, r.image,
+		i.status, i.note, i.created_at, i.updated_at
 	FROM support_invites i
 	JOIN users s ON s.id = i.sender_id
 	JOIN users r ON r.id = i.receiver_id
@@ -28,22 +28,22 @@ func (r *inviteRepository) scanInvite(row *sql.Row) (entities.InviteEntity, erro
 	var ent entities.InviteEntity
 	err := row.Scan(
 		&ent.ID, &ent.SenderID,
-		&ent.SenderEncryptedUsername, &ent.SenderEncryptedFirst, &ent.SenderEncryptedLast, &ent.SenderEncryptedUserKey,
+		&ent.SenderEncryptedUsername, &ent.SenderEncryptedFirst, &ent.SenderEncryptedLast, &ent.SenderEncryptedUserKey, &ent.SenderImage,
 		&ent.ReceiverID,
-		&ent.ReceiverEncryptedUsername, &ent.ReceiverEncryptedFirst, &ent.ReceiverEncryptedLast, &ent.ReceiverEncryptedUserKey,
-		&ent.Status, &ent.CreatedAt, &ent.UpdatedAt,
+		&ent.ReceiverEncryptedUsername, &ent.ReceiverEncryptedFirst, &ent.ReceiverEncryptedLast, &ent.ReceiverEncryptedUserKey, &ent.ReceiverImage,
+		&ent.Status, &ent.Note, &ent.CreatedAt, &ent.UpdatedAt,
 	)
 	return ent, err
 }
 
 func (r *inviteRepository) CreateInvite(ctx context.Context, inv domain.Invite) error {
 	query := `
-		INSERT INTO support_invites (id, sender_id, receiver_id, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO support_invites (id, sender_id, receiver_id, status, note, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		inv.ID.UUID, inv.Sender.ID.UUID, inv.Receiver.ID.UUID,
-		string(inv.Status), inv.CreatedAt, inv.UpdatedAt,
+		string(inv.Status), inv.Note, inv.CreatedAt, inv.UpdatedAt,
 	)
 	return err
 }
@@ -131,10 +131,10 @@ func (r *inviteRepository) ListPendingForUser(ctx context.Context, userID uuid.U
 		var ent entities.InviteEntity
 		if err := rows.Scan(
 			&ent.ID, &ent.SenderID,
-			&ent.SenderEncryptedUsername, &ent.SenderEncryptedFirst, &ent.SenderEncryptedLast, &ent.SenderEncryptedUserKey,
+			&ent.SenderEncryptedUsername, &ent.SenderEncryptedFirst, &ent.SenderEncryptedLast, &ent.SenderEncryptedUserKey, &ent.SenderImage,
 			&ent.ReceiverID,
-			&ent.ReceiverEncryptedUsername, &ent.ReceiverEncryptedFirst, &ent.ReceiverEncryptedLast, &ent.ReceiverEncryptedUserKey,
-			&ent.Status, &ent.CreatedAt, &ent.UpdatedAt,
+			&ent.ReceiverEncryptedUsername, &ent.ReceiverEncryptedFirst, &ent.ReceiverEncryptedLast, &ent.ReceiverEncryptedUserKey, &ent.ReceiverImage,
+			&ent.Status, &ent.Note, &ent.CreatedAt, &ent.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
