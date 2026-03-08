@@ -12,6 +12,7 @@ type MemberModel struct {
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Username  string    `json:"username"`
+	Image     string    `json:"image"`
 }
 
 func ToModel(mem domain.Member) MemberModel {
@@ -22,6 +23,7 @@ func ToModel(mem domain.Member) MemberModel {
 		Username:  mem.Username,
 		FirstName: mem.FirstName,
 		LastName:  mem.LastName,
+		Image:     mem.Image,
 	}
 }
 

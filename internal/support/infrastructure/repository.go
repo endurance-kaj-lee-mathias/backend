@@ -21,7 +21,7 @@ func (r *repository) Create(ctx context.Context, veteranID, memberId uuid.UUID) 
 		)
 		SELECT ins.veteran_id, ins.support_id, ins.created_at,
 			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
-			u.encrypted_user_key, u.updated_at
+			u.encrypted_user_key, u.updated_at, u.image
 		FROM users u
 		LEFT JOIN ins ON u.id = ins.support_id
 		LEFT JOIN user_supports s ON u.id = s.support_id AND s.veteran_id = $1
@@ -31,7 +31,7 @@ func (r *repository) Create(ctx context.Context, veteranID, memberId uuid.UUID) 
 	err := r.db.QueryRowContext(ctx, query, veteranID, memberId, time.Now().UTC()).Scan(
 		&ent.Veteran, &ent.ID, &ent.CreatedAt,
 		&ent.EncryptedEmail, &ent.EncryptedUsername, &ent.EncryptedFirst, &ent.EncryptedLast,
-		&ent.EncryptedUserKey, &ent.UpdatedAt,
+		&ent.EncryptedUserKey, &ent.UpdatedAt, &ent.Image,
 	)
 
 	if err != nil {
@@ -45,14 +45,14 @@ func (r *repository) ReadAll(ctx context.Context, id uuid.UUID) ([]entities.Memb
 	query := `
 		SELECT u.id, s.veteran_id,
 			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
-			u.encrypted_user_key, s.created_at, u.updated_at
+			u.encrypted_user_key, s.created_at, u.updated_at, u.image
 		FROM users u
 		JOIN user_supports s ON u.id = s.support_id
 		WHERE s.veteran_id = $1
 		UNION
 		SELECT u.id, s.veteran_id,
 			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
-			u.encrypted_user_key, s.created_at, u.updated_at
+			u.encrypted_user_key, s.created_at, u.updated_at, u.image
 		FROM users u
 		JOIN user_supports s ON u.id = s.veteran_id
 		WHERE s.support_id = $1
@@ -65,7 +65,7 @@ func (r *repository) ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entit
 	query := `
 		SELECT u.id, s.veteran_id,
 			u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
-			u.encrypted_user_key, s.created_at, u.updated_at
+			u.encrypted_user_key, s.created_at, u.updated_at, u.image
 		FROM users u
 		JOIN user_supports s ON u.id = s.veteran_id
 		WHERE s.support_id = $1
@@ -91,7 +91,7 @@ func (r *repository) queryMembers(ctx context.Context, query string, args ...any
 		if err := rows.Scan(
 			&ent.ID, &ent.Veteran,
 			&ent.EncryptedEmail, &ent.EncryptedUsername, &ent.EncryptedFirst, &ent.EncryptedLast,
-			&ent.EncryptedUserKey, &ent.CreatedAt, &ent.UpdatedAt,
+			&ent.EncryptedUserKey, &ent.CreatedAt, &ent.UpdatedAt, &ent.Image,
 		); err != nil {
 			return nil, err
 		}

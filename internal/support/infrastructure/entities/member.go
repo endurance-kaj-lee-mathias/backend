@@ -16,6 +16,7 @@ type MemberEntity struct {
 	EncryptedFirst    []byte    `db:"encrypted_first_name"`
 	EncryptedLast     []byte    `db:"encrypted_last_name"`
 	EncryptedUserKey  []byte    `db:"encrypted_user_key"`
+	Image             *string   `db:"image"`
 	CreatedAt         time.Time `db:"created_at"`
 	UpdatedAt         time.Time `db:"updated_at"`
 }
@@ -63,9 +64,17 @@ func FromEntity(ent MemberEntity, enc encryption.Service) (domain.Member, error)
 		string(usernameBytes),
 		string(firstNameBytes),
 		string(lastNameBytes),
+		derefString(ent.Image),
 		ent.CreatedAt,
 		ent.UpdatedAt,
 	), nil
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func FromEntities(ents []MemberEntity, enc encryption.Service) ([]domain.Member, error) {

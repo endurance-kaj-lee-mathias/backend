@@ -8,7 +8,8 @@ import (
 )
 
 type CreateInviteRequest struct {
-	Username string `json:"username"`
+	Username string  `json:"username"`
+	Note     *string `json:"note,omitempty"`
 }
 
 type InviteUserModel struct {
@@ -16,6 +17,7 @@ type InviteUserModel struct {
 	Username  string    `json:"username"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
+	Image     string    `json:"image"`
 }
 
 type InviteModel struct {
@@ -23,6 +25,7 @@ type InviteModel struct {
 	Sender    InviteUserModel `json:"sender"`
 	Receiver  InviteUserModel `json:"receiver"`
 	Status    string          `json:"status"`
+	Note      *string         `json:"note,omitempty"`
 	CreatedAt time.Time       `json:"createdAt"`
 	UpdatedAt time.Time       `json:"updatedAt"`
 }
@@ -40,14 +43,17 @@ func ToInviteModel(inv domain.Invite) InviteModel {
 			Username:  inv.Sender.Username,
 			FirstName: inv.Sender.FirstName,
 			LastName:  inv.Sender.LastName,
+			Image:     inv.Sender.Image,
 		},
 		Receiver: InviteUserModel{
 			ID:        inv.Receiver.ID.UUID,
 			Username:  inv.Receiver.Username,
 			FirstName: inv.Receiver.FirstName,
 			LastName:  inv.Receiver.LastName,
+			Image:     inv.Receiver.Image,
 		},
 		Status:    string(inv.Status),
+		Note:      inv.Note,
 		CreatedAt: inv.CreatedAt,
 		UpdatedAt: inv.UpdatedAt,
 	}

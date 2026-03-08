@@ -13,14 +13,14 @@ var Unauthorized = errors.New("unauthorized")
 
 func mapInviteError(err error) (int, error) {
 	switch {
-	case errors.Is(err, domain.ErrSelfInvite):
+	case errors.Is(err, domain.SelfInvite):
 		return http.StatusBadRequest, err
-	case errors.Is(err, domain.ErrDuplicatePendingInvite),
-		errors.Is(err, domain.ErrAlreadyAccepted):
+	case errors.Is(err, domain.DuplicatePendingInvite),
+		errors.Is(err, domain.AlreadyAccepted):
 		return http.StatusConflict, err
-	case errors.Is(err, domain.ErrNotReceiver):
+	case errors.Is(err, domain.NotReceiver):
 		return http.StatusForbidden, err
-	case errors.Is(err, domain.ErrInviteNotFound),
+	case errors.Is(err, domain.InviteNotFound),
 		errors.Is(err, infrastructure.InviteNotFound):
 		return http.StatusNotFound, err
 	case errors.Is(err, domain.VeteranMustHaveVeteranRole),

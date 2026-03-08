@@ -15,17 +15,20 @@ type InviteEntity struct {
 	SenderEncryptedFirst      []byte    `db:"sender_encrypted_first_name"`
 	SenderEncryptedLast       []byte    `db:"sender_encrypted_last_name"`
 	SenderEncryptedUserKey    []byte    `db:"sender_encrypted_user_key"`
+	SenderImage               *string   `db:"sender_image"`
 	ReceiverID                uuid.UUID `db:"receiver_id"`
 	ReceiverEncryptedUsername []byte    `db:"receiver_encrypted_username"`
 	ReceiverEncryptedFirst    []byte    `db:"receiver_encrypted_first_name"`
 	ReceiverEncryptedLast     []byte    `db:"receiver_encrypted_last_name"`
 	ReceiverEncryptedUserKey  []byte    `db:"receiver_encrypted_user_key"`
+	ReceiverImage             *string   `db:"receiver_image"`
 	Status                    string    `db:"status"`
+	Note                      *string   `db:"note"`
 	CreatedAt                 time.Time `db:"created_at"`
 	UpdatedAt                 time.Time `db:"updated_at"`
 }
 
-func decryptInviteUser(id uuid.UUID, encKey, encUsername, encFirst, encLast []byte, enc encryption.Service) (domain.InviteUser, error) {
+func decryptInviteUser(id uuid.UUID, encKey, encUsername, encFirst, encLast []byte, image *string, enc encryption.Service) (domain.InviteUser, error) {
 	userKey, err := enc.DecryptUserKey(encKey)
 	if err != nil {
 		return domain.InviteUser{}, err
@@ -56,6 +59,7 @@ func decryptInviteUser(id uuid.UUID, encKey, encUsername, encFirst, encLast []by
 		Username:  string(usernameBytes),
 		FirstName: string(firstBytes),
 		LastName:  string(lastBytes),
+		Image:     derefString(image),
 	}, nil
 }
 
@@ -64,6 +68,7 @@ func FromInviteEntity(ent InviteEntity, enc encryption.Service) (domain.Invite, 
 		ent.SenderID,
 		ent.SenderEncryptedUserKey, ent.SenderEncryptedUsername,
 		ent.SenderEncryptedFirst, ent.SenderEncryptedLast,
+		ent.SenderImage,
 		enc,
 	)
 	if err != nil {
@@ -74,6 +79,7 @@ func FromInviteEntity(ent InviteEntity, enc encryption.Service) (domain.Invite, 
 		ent.ReceiverID,
 		ent.ReceiverEncryptedUserKey, ent.ReceiverEncryptedUsername,
 		ent.ReceiverEncryptedFirst, ent.ReceiverEncryptedLast,
+		ent.ReceiverImage,
 		enc,
 	)
 	if err != nil {
@@ -90,6 +96,7 @@ func FromInviteEntity(ent InviteEntity, enc encryption.Service) (domain.Invite, 
 		Sender:    sender,
 		Receiver:  receiver,
 		Status:    domain.InviteStatus(ent.Status),
+		Note:      ent.Note,
 		CreatedAt: ent.CreatedAt,
 		UpdatedAt: ent.UpdatedAt,
 	}, nil
