@@ -35,7 +35,7 @@ func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranI
 	return nil
 }
 
-func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, username string) (domain.Invite, error) {
+func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, username string, note *string) (domain.Invite, error) {
 	receiverUUID, err := s.userRoleRead.FindIDByUsername(ctx, username)
 	if err != nil {
 		return domain.Invite{}, err
@@ -47,7 +47,7 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 	}
 
 	if senderID.UUID == receiverID.UUID {
-		return domain.Invite{}, domain.ErrSelfInvite
+		return domain.Invite{}, domain.SelfInvite
 	}
 
 	senderRoles, err := s.userRoleRead.GetRoles(ctx, senderID.UUID)
@@ -73,21 +73,26 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 	if err != nil {
 		return domain.Invite{}, err
 	}
+
 	if pending {
-		return domain.Invite{}, domain.ErrDuplicatePendingInvite
+		return domain.Invite{}, domain.DuplicatePendingInvite
 	}
 
 	accepted, err := s.inviteRepo.FindAcceptedBySenderReceiver(ctx, senderID.UUID, receiverID.UUID)
 	if err != nil {
 		return domain.Invite{}, err
 	}
+
 	if accepted {
-		return domain.Invite{}, domain.ErrAlreadyAccepted
+		return domain.Invite{}, domain.AlreadyAccepted
 	}
 
 	senderUser := domain.InviteUser{ID: senderID}
 	receiverUser := domain.InviteUser{ID: receiverID}
-	inv := domain.NewInvite(senderUser, receiverUser)
+	inv, err := domain.NewInvite(senderUser, receiverUser, note)
+	if err != nil {
+		return domain.Invite{}, err
+	}
 
 	if err := s.inviteRepo.CreateInvite(ctx, inv); err != nil {
 		return domain.Invite{}, err
@@ -108,7 +113,7 @@ func (s *service) AcceptInvite(ctx context.Context, callerID domain.MemberId, in
 	}
 
 	if ent.ReceiverID != callerID.UUID {
-		return domain.Invite{}, domain.ErrNotReceiver
+		return domain.Invite{}, domain.NotReceiver
 	}
 
 	if err := s.inviteRepo.UpdateInviteStatus(ctx, inviteID.UUID, domain.InviteStatusAccepted); err != nil {
@@ -134,7 +139,7 @@ func (s *service) DeclineInvite(ctx context.Context, callerID domain.MemberId, i
 	}
 
 	if ent.ReceiverID != callerID.UUID {
-		return domain.ErrNotReceiver
+		return domain.NotReceiver
 	}
 
 	return s.inviteRepo.DeleteInvite(ctx, inviteID.UUID)
