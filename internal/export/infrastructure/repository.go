@@ -17,7 +17,7 @@ func (r *repository) GetUserWithAddress(ctx context.Context, userID uuid.UUID) (
 			a.id, a.encrypted_street, a.encrypted_locality, a.encrypted_region,
 			a.encrypted_postal_code, a.encrypted_country, a.created_at
 		FROM users u
-		LEFT JOIN addresses a ON a.user_id = u.id
+		LEFT JOIN user_addresses a ON a.user_id = u.id
 		WHERE u.id = $1
 	`
 

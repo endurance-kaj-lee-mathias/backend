@@ -93,11 +93,25 @@ Authorization: Bearer {{therapistToken}}
 %}
 
 ### =====================================================
-### 5. Ensure a support relationship exists
-### (SUPPORT added as supporter for VETERAN)
+### 5. Ensure a support relationship exists via invite flow
 ### =====================================================
-POST {{baseUrl}}/users/{{veteranId}}/support
+
+### 5a. SUPPORT sends invite to VETERAN
+POST {{baseUrl}}/support
 Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("supportInviteId", response.body.id);
+%}
+
+### 5b. VETERAN accepts the invite
+PATCH {{baseUrl}}/support/{{supportInviteId}}/accept
+Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
 ### Chat – Happy paths
