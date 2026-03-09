@@ -14,6 +14,7 @@ import (
 	authzdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/export"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood"
 	moodapp "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
@@ -39,6 +40,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	calendarHandler := calendar.Wire(server.db, server.config.MinUrgentMinutes)
 	authzHandler, authzService := authorization.Wire(server.db)
 	supportHandler := support.Wire(server.db, server.enc, authzService)
+	exportHandler := export.Wire(server.db, server.enc)
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +53,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/me", userHandler.GetOrCreate)
+			r.Get("/me/export", exportHandler.ExportUserData)
 
 			r.Delete("/me", userHandler.DeleteMe)
 			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
