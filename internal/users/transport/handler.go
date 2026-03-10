@@ -18,7 +18,7 @@ func (h *Handler) PatchPhoneNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body models.PhoneNumberModel
+	var body models.UpdatePhoneNumberModel
 	if err := request.Decode(r, &body); err != nil {
 		response.WriteError(w, http.StatusBadRequest, err)
 		return
