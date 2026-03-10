@@ -23,9 +23,6 @@ func mapInviteError(err error) (int, error) {
 	case errors.Is(err, domain.InviteNotFound),
 		errors.Is(err, infrastructure.InviteNotFound):
 		return http.StatusNotFound, err
-	case errors.Is(err, domain.VeteranMustHaveVeteranRole),
-		errors.Is(err, domain.SupporterMustBeAbleToSupport):
-		return http.StatusForbidden, err
 	case errors.Is(err, infrastructure.UserNotFound):
 		return http.StatusNotFound, err
 	default:

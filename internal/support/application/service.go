@@ -35,6 +35,26 @@ func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranI
 	return nil
 }
 
+func (s *service) DeleteFriend(ctx context.Context, callerID domain.MemberId, friendID domain.MemberId) error {
+	if err := s.repo.Delete(ctx, callerID.UUID, friendID.UUID); err != nil {
+		return err
+	}
+
+	if err := s.repo.Delete(ctx, friendID.UUID, callerID.UUID); err != nil {
+		return err
+	}
+
+	if err := s.authz.RevokeAll(ctx, callerID.UUID, friendID.UUID); err != nil {
+		return err
+	}
+
+	if err := s.authz.RevokeAll(ctx, friendID.UUID, callerID.UUID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, username string, note *string) (domain.Invite, error) {
 	receiverUUID, err := s.userRoleRead.FindIDByUsername(ctx, username)
 	if err != nil {
