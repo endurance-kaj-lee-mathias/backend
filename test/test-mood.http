@@ -196,3 +196,112 @@ Content-Type: application/json
   "notes": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }
 
+### =====================================================
+### Mood – Update entry (PUT)
+### =====================================================
+
+### 17. Update a mood entry – full replace (happy path)
+### Replace <entry-id> with a real UUID from a previous POST response
+PUT {{baseUrl}}/mood/entries/0533fed5-e44a-4ea7-94d2-8c015ee3034f
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 8,
+  "notes": "Updated: feeling even better after reflection."
+}
+
+### 18. Update a mood entry – remove notes (omit field)
+PUT {{baseUrl}}/mood/entries/0533fed5-e44a-4ea7-94d2-8c015ee3034f
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 6,
+  "notes": "i'm feeling pretty down"
+}
+
+### 19. Update – no auth token → expect 401
+PUT {{baseUrl}}/mood/entries/<entry-id>
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 8
+}
+
+### 20. Update – entry does not exist → expect 404
+PUT {{baseUrl}}/mood/entries/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 8
+}
+
+### 21. Update – entry belongs to another user → expect 403
+PUT {{baseUrl}}/mood/entries/<entry-id>
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 8
+}
+
+### 22. Update – invalid entry ID format → expect 400
+PUT {{baseUrl}}/mood/entries/not-a-uuid
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 8
+}
+
+### 23. Update – moodScore out of range → expect 422
+PUT {{baseUrl}}/mood/entries/<entry-id>
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-26",
+  "moodScore": 11
+}
+
+### 24. Update – invalid date format → expect 422
+PUT {{baseUrl}}/mood/entries/<entry-id>
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "26-02-2026",
+  "moodScore": 8
+}
+
+### =====================================================
+### Mood – Delete entry (DELETE)
+### =====================================================
+
+### 25. Delete a mood entry (happy path) → expect 204
+### Replace <entry-id> with a real UUID from a previous POST response
+DELETE {{baseUrl}}/mood/entries/0533fed5-e44a-4ea7-94d2-8c015ee3034f
+Authorization: Bearer {{veteranToken}}
+
+### 26. Delete – no auth token → expect 401
+DELETE {{baseUrl}}/mood/entries/<entry-id>
+
+### 27. Delete – entry does not exist → expect 404
+DELETE {{baseUrl}}/mood/entries/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{veteranToken}}
+
+### 28. Delete – entry belongs to another user → expect 403
+DELETE {{baseUrl}}/mood/entries/<entry-id>
+Authorization: Bearer {{supportToken}}
+
+### 29. Delete – invalid entry ID format → expect 400
+DELETE {{baseUrl}}/mood/entries/not-a-uuid
+Authorization: Bearer {{veteranToken}}
