@@ -14,12 +14,12 @@ type CreateInviteRequest struct {
 }
 
 type InviteUserModel struct {
-	ID        uuid.UUID         `json:"id"`
-	Username  string            `json:"username"`
-	FirstName string            `json:"firstName"`
-	LastName  string            `json:"lastName"`
-	Image     string            `json:"image"`
-	Roles     []userdomain.Role `json:"roles"`
+	ID        uuid.UUID       `json:"id"`
+	Username  string          `json:"username"`
+	FirstName string          `json:"firstName"`
+	LastName  string          `json:"lastName"`
+	Image     string          `json:"image"`
+	Role      userdomain.Role `json:"role"`
 }
 
 type InviteModel struct {
@@ -46,7 +46,7 @@ func ToInviteModel(inv domain.Invite) InviteModel {
 			FirstName: inv.Sender.FirstName,
 			LastName:  inv.Sender.LastName,
 			Image:     inv.Sender.Image,
-			Roles:     inv.Sender.Roles,
+			Role:      inv.Sender.Role,
 		},
 		Receiver: InviteUserModel{
 			ID:        inv.Receiver.ID.UUID,
@@ -54,7 +54,7 @@ func ToInviteModel(inv domain.Invite) InviteModel {
 			FirstName: inv.Receiver.FirstName,
 			LastName:  inv.Receiver.LastName,
 			Image:     inv.Receiver.Image,
-			Roles:     inv.Receiver.Roles,
+			Role:      inv.Receiver.Role,
 		},
 		Status:    string(inv.Status),
 		Note:      inv.Note,

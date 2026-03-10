@@ -6,7 +6,6 @@ import (
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
-	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
 type InviteEntity struct {
@@ -61,7 +60,7 @@ func decryptInviteUser(id uuid.UUID, encKey, encUsername, encFirst, encLast []by
 		FirstName: string(firstBytes),
 		LastName:  string(lastBytes),
 		Image:     derefString(image),
-		Roles:     make([]userdomain.Role, 0),
+		Role:      "",
 	}, nil
 }
 

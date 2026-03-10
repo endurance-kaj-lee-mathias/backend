@@ -19,7 +19,7 @@ type InviteUser struct {
 	FirstName string
 	LastName  string
 	Image     string
-	Roles     []domain.Role
+	Role      domain.Role
 }
 
 type Invite struct {

@@ -9,7 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-func (r *userRoleReader) GetRoles(ctx context.Context, userID uuid.UUID) ([]string, error) {
+func (r *userRoleReader) GetRole(ctx context.Context, userID uuid.UUID) (string, error) {
 	var encryptedRoles []byte
 	var encryptedUserKey []byte
 
@@ -17,31 +17,35 @@ func (r *userRoleReader) GetRoles(ctx context.Context, userID uuid.UUID) ([]stri
 
 	if err := r.db.QueryRowContext(ctx, query, userID).Scan(&encryptedRoles, &encryptedUserKey); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, UserNotFound
+			return "", UserNotFound
 		}
-		return nil, err
+		return "", err
 	}
 
 	userKey, err := r.enc.DecryptUserKey(encryptedUserKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	rolesBytes, err := r.enc.Decrypt(encryptedRoles, userKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var roles []string
 	if len(rolesBytes) == 0 {
-		return roles, nil
+		return "", nil
 	}
 
 	if err := json.Unmarshal(rolesBytes, &roles); err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return roles, nil
+	if len(roles) > 0 {
+		return roles[0], nil
+	}
+
+	return "", nil
 }
 
 func (r *userRoleReader) FindIDByUsername(ctx context.Context, username string) (uuid.UUID, error) {

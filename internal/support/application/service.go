@@ -8,14 +8,6 @@ import (
 	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
-func convertRoles(roleStrings []string) []userdomain.Role {
-	roles := make([]userdomain.Role, len(roleStrings))
-	for i, roleStr := range roleStrings {
-		roles[i] = userdomain.Role(roleStr)
-	}
-	return roles
-}
-
 func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error) {
 	ents, err := s.repo.ReadAll(ctx, id.UUID)
 	if err != nil {
@@ -28,12 +20,12 @@ func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Mem
 	}
 
 	for i, member := range members {
-		roleStrings, err := s.userRoleRead.GetRoles(ctx, member.ID.UUID)
+		roleStr, err := s.userRoleRead.GetRole(ctx, member.ID.UUID)
 		if err != nil {
 			return nil, err
 		}
 
-		members[i].Roles = convertRoles(roleStrings)
+		members[i].Role = userdomain.Role(roleStr)
 	}
 
 	return members, nil
@@ -51,12 +43,12 @@ func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]dom
 	}
 
 	for i, member := range members {
-		roleStrings, err := s.userRoleRead.GetRoles(ctx, member.ID.UUID)
+		roleStr, err := s.userRoleRead.GetRole(ctx, member.ID.UUID)
 		if err != nil {
 			return nil, err
 		}
 
-		members[i].Roles = convertRoles(roleStrings)
+		members[i].Role = userdomain.Role(roleStr)
 	}
 
 	return members, nil
@@ -109,12 +101,12 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		return domain.Invite{}, domain.SelfInvite
 	}
 
-	senderRoles, err := s.userRoleRead.GetRoles(ctx, senderID.UUID)
+	senderRoles, err := s.userRoleRead.GetRole(ctx, senderID.UUID)
 	if err != nil {
 		return domain.Invite{}, err
 	}
 
-	receiverRoles, err := s.userRoleRead.GetRoles(ctx, receiverID.UUID)
+	receiverRoles, err := s.userRoleRead.GetRole(ctx, receiverID.UUID)
 	if err != nil {
 		return domain.Invite{}, err
 	}
@@ -146,8 +138,8 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		return domain.Invite{}, domain.AlreadyAccepted
 	}
 
-	senderUser := domain.InviteUser{ID: senderID, Roles: convertRoles(senderRoles)}
-	receiverUser := domain.InviteUser{ID: receiverID, Roles: convertRoles(receiverRoles)}
+	senderUser := domain.InviteUser{ID: senderID, Role: userdomain.Role(senderRoles)}
+	receiverUser := domain.InviteUser{ID: receiverID, Role: userdomain.Role(receiverRoles)}
 	inv, err := domain.NewInvite(senderUser, receiverUser, note)
 	if err != nil {
 		return domain.Invite{}, err
@@ -167,17 +159,17 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		return domain.Invite{}, err
 	}
 
-	senderRolesUpdated, err := s.userRoleRead.GetRoles(ctx, senderID.UUID)
+	senderRoleUpdated, err := s.userRoleRead.GetRole(ctx, senderID.UUID)
 	if err != nil {
 		return domain.Invite{}, err
 	}
-	inv.Sender.Roles = convertRoles(senderRolesUpdated)
+	inv.Sender.Role = userdomain.Role(senderRoleUpdated)
 
-	receiverRolesUpdated, err := s.userRoleRead.GetRoles(ctx, receiverID.UUID)
+	receiverRoleUpdated, err := s.userRoleRead.GetRole(ctx, receiverID.UUID)
 	if err != nil {
 		return domain.Invite{}, err
 	}
-	inv.Receiver.Roles = convertRoles(receiverRolesUpdated)
+	inv.Receiver.Role = userdomain.Role(receiverRoleUpdated)
 
 	return inv, nil
 }
@@ -210,17 +202,17 @@ func (s *service) AcceptInvite(ctx context.Context, callerID domain.MemberId, in
 		return domain.Invite{}, err
 	}
 
-	senderRoles, err := s.userRoleRead.GetRoles(ctx, ent.SenderID)
+	senderRole, err := s.userRoleRead.GetRole(ctx, ent.SenderID)
 	if err != nil {
 		return domain.Invite{}, err
 	}
-	inv.Sender.Roles = convertRoles(senderRoles)
+	inv.Sender.Role = userdomain.Role(senderRole)
 
-	receiverRoles, err := s.userRoleRead.GetRoles(ctx, ent.ReceiverID)
+	receiverRole, err := s.userRoleRead.GetRole(ctx, ent.ReceiverID)
 	if err != nil {
 		return domain.Invite{}, err
 	}
-	inv.Receiver.Roles = convertRoles(receiverRoles)
+	inv.Receiver.Role = userdomain.Role(receiverRole)
 
 	return inv, nil
 }
@@ -252,17 +244,17 @@ func (s *service) ListInvites(ctx context.Context, callerID domain.MemberId) ([]
 			return nil, nil, err
 		}
 
-		senderRoles, err := s.userRoleRead.GetRoles(ctx, ent.SenderID)
+		senderRole, err := s.userRoleRead.GetRole(ctx, ent.SenderID)
 		if err != nil {
 			return nil, nil, err
 		}
-		inv.Sender.Roles = convertRoles(senderRoles)
+		inv.Sender.Role = userdomain.Role(senderRole)
 
-		receiverRoles, err := s.userRoleRead.GetRoles(ctx, ent.ReceiverID)
+		receiverRole, err := s.userRoleRead.GetRole(ctx, ent.ReceiverID)
 		if err != nil {
 			return nil, nil, err
 		}
-		inv.Receiver.Roles = convertRoles(receiverRoles)
+		inv.Receiver.Role = userdomain.Role(receiverRole)
 
 		if ent.ReceiverID == callerID.UUID {
 			incoming = append(incoming, inv)

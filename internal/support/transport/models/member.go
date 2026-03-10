@@ -7,14 +7,14 @@ import (
 )
 
 type MemberModel struct {
-	ID        uuid.UUID         `json:"id"`
-	Veteran   uuid.UUID         `json:"veteran"`
-	Email     string            `json:"email"`
-	FirstName string            `json:"firstName"`
-	LastName  string            `json:"lastName"`
-	Username  string            `json:"username"`
-	Image     string            `json:"image"`
-	Roles     []userdomain.Role `json:"roles"`
+	ID        uuid.UUID       `json:"id"`
+	Veteran   uuid.UUID       `json:"veteran"`
+	Email     string          `json:"email"`
+	FirstName string          `json:"firstName"`
+	LastName  string          `json:"lastName"`
+	Username  string          `json:"username"`
+	Image     string          `json:"image"`
+	Role      userdomain.Role `json:"role"`
 }
 
 func ToModel(mem domain.Member) MemberModel {
@@ -26,7 +26,7 @@ func ToModel(mem domain.Member) MemberModel {
 		FirstName: mem.FirstName,
 		LastName:  mem.LastName,
 		Image:     mem.Image,
-		Roles:     mem.Roles,
+		Role:      mem.Role,
 	}
 }
 
