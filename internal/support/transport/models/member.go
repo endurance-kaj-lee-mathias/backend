@@ -3,16 +3,18 @@ package models
 import (
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
+	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
 type MemberModel struct {
-	ID        uuid.UUID `json:"id"`
-	Veteran   uuid.UUID `json:"veteran"`
-	Email     string    `json:"email"`
-	FirstName string    `json:"firstName"`
-	LastName  string    `json:"lastName"`
-	Username  string    `json:"username"`
-	Image     string    `json:"image"`
+	ID        uuid.UUID       `json:"id"`
+	Veteran   uuid.UUID       `json:"veteran"`
+	Email     string          `json:"email"`
+	FirstName string          `json:"firstName"`
+	LastName  string          `json:"lastName"`
+	Username  string          `json:"username"`
+	Image     string          `json:"image"`
+	Role      userdomain.Role `json:"role"`
 }
 
 func ToModel(mem domain.Member) MemberModel {
@@ -24,6 +26,7 @@ func ToModel(mem domain.Member) MemberModel {
 		FirstName: mem.FirstName,
 		LastName:  mem.LastName,
 		Image:     mem.Image,
+		Role:      mem.Role,
 	}
 }
 

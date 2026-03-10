@@ -60,6 +60,7 @@ func decryptInviteUser(id uuid.UUID, encKey, encUsername, encFirst, encLast []by
 		FirstName: string(firstBytes),
 		LastName:  string(lastBytes),
 		Image:     derefString(image),
+		Role:      "",
 	}, nil
 }
 

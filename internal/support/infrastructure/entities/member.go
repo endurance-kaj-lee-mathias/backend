@@ -65,6 +65,7 @@ func FromEntity(ent MemberEntity, enc encryption.Service) (domain.Member, error)
 		string(firstNameBytes),
 		string(lastNameBytes),
 		derefString(ent.Image),
+		"",
 		ent.CreatedAt,
 		ent.UpdatedAt,
 	), nil

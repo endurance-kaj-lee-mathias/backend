@@ -11,7 +11,7 @@ import (
 )
 
 type UserRoleReader interface {
-	GetRoles(ctx context.Context, userID uuid.UUID) ([]string, error)
+	GetRole(ctx context.Context, userID uuid.UUID) (string, error)
 	FindIDByUsername(ctx context.Context, username string) (uuid.UUID, error)
 }
 

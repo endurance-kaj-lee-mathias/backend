@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
+	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
 type CreateInviteRequest struct {
@@ -13,11 +14,12 @@ type CreateInviteRequest struct {
 }
 
 type InviteUserModel struct {
-	ID        uuid.UUID `json:"id"`
-	Username  string    `json:"username"`
-	FirstName string    `json:"firstName"`
-	LastName  string    `json:"lastName"`
-	Image     string    `json:"image"`
+	ID        uuid.UUID       `json:"id"`
+	Username  string          `json:"username"`
+	FirstName string          `json:"firstName"`
+	LastName  string          `json:"lastName"`
+	Image     string          `json:"image"`
+	Role      userdomain.Role `json:"role"`
 }
 
 type InviteModel struct {
@@ -44,6 +46,7 @@ func ToInviteModel(inv domain.Invite) InviteModel {
 			FirstName: inv.Sender.FirstName,
 			LastName:  inv.Sender.LastName,
 			Image:     inv.Sender.Image,
+			Role:      inv.Sender.Role,
 		},
 		Receiver: InviteUserModel{
 			ID:        inv.Receiver.ID.UUID,
@@ -51,6 +54,7 @@ func ToInviteModel(inv domain.Invite) InviteModel {
 			FirstName: inv.Receiver.FirstName,
 			LastName:  inv.Receiver.LastName,
 			Image:     inv.Receiver.Image,
+			Role:      inv.Receiver.Role,
 		},
 		Status:    string(inv.Status),
 		Note:      inv.Note,

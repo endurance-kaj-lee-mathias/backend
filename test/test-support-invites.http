@@ -249,3 +249,98 @@ Content-Type: application/json
 ### =====================================================
 GET {{baseUrl}}/support
 Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### 15. Get VETERAN's support list to extract a supportId
+###     Expected: 200 – list of supporters/friends
+### =====================================================
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    if (response.body && response.body.length > 0) {
+        client.global.set("supporterId", response.body[0].id);
+    }
+%}
+
+### =====================================================
+### 16. VETERAN deletes a supporter
+###     Expected: 204 No Content
+### =====================================================
+DELETE {{baseUrl}}/users/support/{{supporterId}}
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 17. Verify supporter was removed
+###     Expected: 200 – supporter no longer in list
+### =====================================================
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 18. Setup for friend deletion: SUPPORT sends invite to VETERAN
+###     Expected: 201 Created
+### =====================================================
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("friendInviteId", response.body.id);
+%}
+
+### =====================================================
+### 19. VETERAN accepts to create friendship
+###     Expected: 200
+### =====================================================
+PATCH {{baseUrl}}/support/{{friendInviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 20. Get SUPPORT's friend list to extract friendId
+###     Expected: 200 – VETERAN should be in the list
+### =====================================================
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{supportToken}}
+
+> {%
+    if (response.body && response.body.length > 0) {
+        const veteran = response.body.find(u => u.username === "Mathias");
+        if (veteran) {
+            client.global.set("friendId", veteran.id);
+        }
+    }
+%}
+
+### =====================================================
+### 21. SUPPORT deletes a friend
+###     Expected: 204 No Content
+### =====================================================
+DELETE {{baseUrl}}/users/support/{{friendId}}
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### 22. Verify friend was removed from SUPPORT's list
+###     Expected: 200 – friend no longer in list
+### =====================================================
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### 23. Verify friend was removed from VETERAN's list too
+###     Expected: 200 – SUPPORT no longer in list
+### =====================================================
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 24. Error – delete non-existent supporter
+###     Expected: 404 Not Found or 204 No Content (idempotent)
+### =====================================================
+DELETE {{baseUrl}}/users/support/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{veteranToken}}
+
