@@ -146,8 +146,8 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		return domain.Invite{}, domain.AlreadyAccepted
 	}
 
-	senderUser := domain.InviteUser{ID: senderID}
-	receiverUser := domain.InviteUser{ID: receiverID}
+	senderUser := domain.InviteUser{ID: senderID, Roles: convertRoles(senderRoles)}
+	receiverUser := domain.InviteUser{ID: receiverID, Roles: convertRoles(receiverRoles)}
 	inv, err := domain.NewInvite(senderUser, receiverUser, note)
 	if err != nil {
 		return domain.Invite{}, err
@@ -162,7 +162,24 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		return domain.Invite{}, err
 	}
 
-	return entities.FromInviteEntity(ent, s.enc)
+	inv, err = entities.FromInviteEntity(ent, s.enc)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	senderRolesUpdated, err := s.userRoleRead.GetRoles(ctx, senderID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+	inv.Sender.Roles = convertRoles(senderRolesUpdated)
+
+	receiverRolesUpdated, err := s.userRoleRead.GetRoles(ctx, receiverID.UUID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+	inv.Receiver.Roles = convertRoles(receiverRolesUpdated)
+
+	return inv, nil
 }
 
 func (s *service) AcceptInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) (domain.Invite, error) {
@@ -188,7 +205,24 @@ func (s *service) AcceptInvite(ctx context.Context, callerID domain.MemberId, in
 		return domain.Invite{}, err
 	}
 
-	return entities.FromInviteEntity(updated, s.enc)
+	inv, err := entities.FromInviteEntity(updated, s.enc)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+
+	senderRoles, err := s.userRoleRead.GetRoles(ctx, ent.SenderID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+	inv.Sender.Roles = convertRoles(senderRoles)
+
+	receiverRoles, err := s.userRoleRead.GetRoles(ctx, ent.ReceiverID)
+	if err != nil {
+		return domain.Invite{}, err
+	}
+	inv.Receiver.Roles = convertRoles(receiverRoles)
+
+	return inv, nil
 }
 
 func (s *service) DeclineInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) error {
@@ -217,6 +251,19 @@ func (s *service) ListInvites(ctx context.Context, callerID domain.MemberId) ([]
 		if err != nil {
 			return nil, nil, err
 		}
+
+		senderRoles, err := s.userRoleRead.GetRoles(ctx, ent.SenderID)
+		if err != nil {
+			return nil, nil, err
+		}
+		inv.Sender.Roles = convertRoles(senderRoles)
+
+		receiverRoles, err := s.userRoleRead.GetRoles(ctx, ent.ReceiverID)
+		if err != nil {
+			return nil, nil, err
+		}
+		inv.Receiver.Roles = convertRoles(receiverRoles)
+
 		if ent.ReceiverID == callerID.UUID {
 			incoming = append(incoming, inv)
 		} else {

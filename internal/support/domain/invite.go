@@ -1,13 +1,16 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
+)
 
 type InviteStatus string
 
 const (
 	InviteStatusPending  InviteStatus = "PENDING"
 	InviteStatusAccepted InviteStatus = "ACCEPTED"
-	InviteStatusDeclined InviteStatus = "DECLINED"
 )
 
 type InviteUser struct {
@@ -16,6 +19,7 @@ type InviteUser struct {
 	FirstName string
 	LastName  string
 	Image     string
+	Roles     []domain.Role
 }
 
 type Invite struct {
