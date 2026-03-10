@@ -1,0 +1,91 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameSupport = Lee
+@password = password
+
+### =====================================================
+### Get tokens
+### =====================================================
+
+### Get VETERAN token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### Get SUPPORT token
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### Setup: Create support relationship
+### =====================================================
+
+### SUPPORT sends invite to VETERAN
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("inviteId", response.body.id);
+%}
+
+### VETERAN accepts the invite
+PATCH {{baseUrl}}/support/{{inviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### Get VETERAN's support list to extract supporterId
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    if (response.body && response.body.length > 0) {
+        client.global.set("supporterId", response.body[0].id);
+    }
+%}
+
+### =====================================================
+### Test: DELETE endpoint
+### =====================================================
+
+### VETERAN deletes a supporter
+### Expected: 204 No Content
+DELETE {{baseUrl}}/users/support/{{supporterId}}
+Authorization: Bearer {{veteranToken}}
+
+### Verify supporter was removed
+### Expected: 200 – supporter no longer in list
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
