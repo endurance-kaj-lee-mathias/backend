@@ -133,3 +133,102 @@ func (h *Handler) GetTodayEntry(w http.ResponseWriter, r *http.Request) {
 
 	response.Write(w, http.StatusOK, models.ToResponse(*entry))
 }
+
+func (h *Handler) UpdateMoodEntry(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	entryID, err := domain.MoodIdFromString(chi.URLParam(r, "entryId"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidEntryId)
+		return
+	}
+
+	existing, err := h.service.GetEntryByID(r.Context(), entryID)
+	if err != nil {
+		if errors.Is(err, infrastructure.MoodEntryNotFound) {
+			response.WriteError(w, http.StatusNotFound, MoodEntryNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if existing.UserID.String() != claims.Sub {
+		response.WriteError(w, http.StatusForbidden, Forbidden)
+		return
+	}
+
+	var body models.MoodEntryRequest
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", body.Date)
+	if err != nil {
+		response.WriteError(w, http.StatusUnprocessableEntity, InvalidDate)
+		return
+	}
+
+	updated := domain.MoodEntry{
+		ID:        existing.ID,
+		UserID:    existing.UserID,
+		Date:      date,
+		MoodScore: body.MoodScore,
+		Notes:     body.Notes,
+		CreatedAt: existing.CreatedAt,
+		UpdatedAt: existing.UpdatedAt,
+	}
+
+	if err := h.service.UpdateMoodEntry(r.Context(), updated); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) DeleteMoodEntry(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	entryID, err := domain.MoodIdFromString(chi.URLParam(r, "entryId"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidEntryId)
+		return
+	}
+
+	existing, err := h.service.GetEntryByID(r.Context(), entryID)
+	if err != nil {
+		if errors.Is(err, infrastructure.MoodEntryNotFound) {
+			response.WriteError(w, http.StatusNotFound, MoodEntryNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if existing.UserID.String() != claims.Sub {
+		response.WriteError(w, http.StatusForbidden, Forbidden)
+		return
+	}
+
+	if err := h.service.DeleteMoodEntry(r.Context(), entryID); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

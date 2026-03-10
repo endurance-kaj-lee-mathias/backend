@@ -116,6 +116,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
 			r.Get("/entries/me", moodHandler.GetMyEntries)
 			r.Get("/entries/me/today", moodHandler.GetTodayEntry)
+			r.Put("/entries/{entryId}", moodHandler.UpdateMoodEntry)
+			r.Delete("/entries/{entryId}", moodHandler.DeleteMoodEntry)
 
 			r.Group(func(r chi.Router) {
 				r.Use(auth.WithResource(string(authzdomain.ResourceMoodEntries)))
