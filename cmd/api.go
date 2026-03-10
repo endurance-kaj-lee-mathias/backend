@@ -30,6 +30,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(time.Minute))
+	r.Use(corsMiddleware(server.config.AllowedOrigins))
 
 	userHandler := users.Wire(server.db, server.enc, server.kc)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
@@ -41,12 +42,6 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	authzHandler, authzService := authorization.Wire(server.db)
 	supportHandler := support.Wire(server.db, server.enc, authzService)
 	exportHandler := export.Wire(server.db, server.enc)
-
-	r.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
-	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.TokenAuthentication(server.idp))
