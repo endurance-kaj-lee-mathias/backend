@@ -171,3 +171,31 @@ func (h *Handler) ListInvites(w http.ResponseWriter, r *http.Request) {
 		Outgoing: models.ToInviteModels(outgoing),
 	})
 }
+
+func (h *Handler) DeleteFriend(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	callerID, err := domain.ParseMemberId(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	friendIdStr := chi.URLParam(r, "friendId")
+	friendId, err := domain.ParseMemberId(friendIdStr)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteFriend(r.Context(), callerID, friendId); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
