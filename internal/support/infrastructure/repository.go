@@ -2,6 +2,8 @@ package infrastructure
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -121,4 +123,22 @@ func (r *repository) Delete(ctx context.Context, veteranID, supportID uuid.UUID)
 	}
 
 	return nil
+}
+
+func (r *repository) ExistsRelationship(ctx context.Context, a, b uuid.UUID) (bool, error) {
+	query := `
+		SELECT 1 FROM user_supports
+		WHERE (veteran_id = $1 AND support_id = $2)
+		   OR (veteran_id = $2 AND support_id = $1)
+		LIMIT 1
+	`
+	var dummy int
+	err := r.db.QueryRowContext(ctx, query, a, b).Scan(&dummy)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
@@ -67,35 +66,6 @@ func (r *inviteRepository) FindPendingBySenderReceiver(ctx context.Context, send
 		return entities.InviteEntity{}, false, err
 	}
 	return ent, true, nil
-}
-
-func (r *inviteRepository) FindAcceptedBySenderReceiver(ctx context.Context, senderID, receiverID uuid.UUID) (bool, error) {
-	query := `SELECT 1 FROM support_invites WHERE sender_id = $1 AND receiver_id = $2 AND status = 'ACCEPTED' LIMIT 1`
-	var dummy int
-	err := r.db.QueryRowContext(ctx, query, senderID, receiverID).Scan(&dummy)
-	if errors.Is(err, sql.ErrNoRows) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (r *inviteRepository) UpdateInviteStatus(ctx context.Context, id uuid.UUID, status domain.InviteStatus) error {
-	query := `UPDATE support_invites SET status = $1, updated_at = $2 WHERE id = $3`
-	result, err := r.db.ExecContext(ctx, query, string(status), time.Now().UTC(), id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return InviteNotFound
-	}
-	return nil
 }
 
 func (r *inviteRepository) DeleteInvite(ctx context.Context, id uuid.UUID) error {
