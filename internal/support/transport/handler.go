@@ -109,14 +109,13 @@ func (h *Handler) AcceptInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inv, err := h.service.AcceptInvite(r.Context(), callerID, inviteID)
-	if err != nil {
+	if err := h.service.AcceptInvite(r.Context(), callerID, inviteID); err != nil {
 		status, errMsg := mapInviteError(err)
 		response.WriteError(w, status, errMsg)
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToInviteModel(inv))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) DeclineInvite(w http.ResponseWriter, r *http.Request) {
@@ -170,32 +169,4 @@ func (h *Handler) ListInvites(w http.ResponseWriter, r *http.Request) {
 		Incoming: models.ToInviteModels(incoming),
 		Outgoing: models.ToInviteModels(outgoing),
 	})
-}
-
-func (h *Handler) DeleteFriend(w http.ResponseWriter, r *http.Request) {
-	claims, ok := auth.GetUserClaims(r.Context())
-	if !ok {
-		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
-		return
-	}
-
-	callerID, err := domain.ParseMemberId(claims.Sub)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
-		return
-	}
-
-	friendIdStr := chi.URLParam(r, "friendId")
-	friendId, err := domain.ParseMemberId(friendIdStr)
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
-		return
-	}
-
-	if err := h.service.DeleteFriend(r.Context(), callerID, friendId); err != nil {
-		response.WriteError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
 }
