@@ -6,6 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
+	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
 type MemberEntity struct {
@@ -65,6 +66,7 @@ func FromEntity(ent MemberEntity, enc encryption.Service) (domain.Member, error)
 		string(firstNameBytes),
 		string(lastNameBytes),
 		derefString(ent.Image),
+		make([]userdomain.Role, 0),
 		ent.CreatedAt,
 		ent.UpdatedAt,
 	), nil

@@ -5,14 +5,38 @@ import (
 
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/infrastructure/entities"
+	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
+
+func convertRoles(roleStrings []string) []userdomain.Role {
+	roles := make([]userdomain.Role, len(roleStrings))
+	for i, roleStr := range roleStrings {
+		roles[i] = userdomain.Role(roleStr)
+	}
+	return roles
+}
 
 func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error) {
 	ents, err := s.repo.ReadAll(ctx, id.UUID)
 	if err != nil {
 		return nil, err
 	}
-	return entities.FromEntities(ents, s.enc)
+
+	members, err := entities.FromEntities(ents, s.enc)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, member := range members {
+		roleStrings, err := s.userRoleRead.GetRoles(ctx, member.ID.UUID)
+		if err != nil {
+			return nil, err
+		}
+
+		members[i].Roles = convertRoles(roleStrings)
+	}
+
+	return members, nil
 }
 
 func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error) {
@@ -20,7 +44,22 @@ func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]dom
 	if err != nil {
 		return nil, err
 	}
-	return entities.FromEntities(ents, s.enc)
+
+	members, err := entities.FromEntities(ents, s.enc)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, member := range members {
+		roleStrings, err := s.userRoleRead.GetRoles(ctx, member.ID.UUID)
+		if err != nil {
+			return nil, err
+		}
+
+		members[i].Roles = convertRoles(roleStrings)
+	}
+
+	return members, nil
 }
 
 func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error {
