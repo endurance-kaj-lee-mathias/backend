@@ -62,6 +62,7 @@ Content-Type: application/json
 %}
 
 ### VETERAN accepts the invite
+### Expected: 204 No Content
 PATCH {{baseUrl}}/support/{{inviteId}}/accept
 Authorization: Bearer {{veteranToken}}
 
@@ -88,4 +89,18 @@ Authorization: Bearer {{veteranToken}}
 ### Expected: 200 – supporter no longer in list
 GET {{baseUrl}}/users/support
 Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Test: Re-invite after delete
+### =====================================================
+
+### SUPPORT sends invite to VETERAN again
+### Expected: 201 Created (no conflict since relationship was deleted)
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
 
