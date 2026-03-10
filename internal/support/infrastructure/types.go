@@ -20,14 +20,13 @@ type Repository interface {
 	ReadAll(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error)
 	ReadAllByMember(ctx context.Context, id uuid.UUID) ([]entities.MemberEntity, error)
 	Delete(ctx context.Context, veteranID, supportID uuid.UUID) error
+	ExistsRelationship(ctx context.Context, a, b uuid.UUID) (bool, error)
 }
 
 type InviteRepository interface {
 	CreateInvite(ctx context.Context, inv domain.Invite) error
 	FindInviteByID(ctx context.Context, id uuid.UUID) (entities.InviteEntity, error)
 	FindPendingBySenderReceiver(ctx context.Context, senderID, receiverID uuid.UUID) (entities.InviteEntity, bool, error)
-	FindAcceptedBySenderReceiver(ctx context.Context, senderID, receiverID uuid.UUID) (bool, error)
-	UpdateInviteStatus(ctx context.Context, id uuid.UUID, status domain.InviteStatus) error
 	DeleteInvite(ctx context.Context, id uuid.UUID) error
 	ListPendingForUser(ctx context.Context, userID uuid.UUID) ([]entities.InviteEntity, error)
 }

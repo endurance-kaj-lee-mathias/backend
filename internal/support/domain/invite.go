@@ -9,8 +9,7 @@ import (
 type InviteStatus string
 
 const (
-	InviteStatusPending  InviteStatus = "PENDING"
-	InviteStatusAccepted InviteStatus = "ACCEPTED"
+	InviteStatusPending InviteStatus = "PENDING"
 )
 
 type InviteUser struct {

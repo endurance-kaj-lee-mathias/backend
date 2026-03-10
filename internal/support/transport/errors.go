@@ -16,7 +16,7 @@ func mapInviteError(err error) (int, error) {
 	case errors.Is(err, domain.SelfInvite):
 		return http.StatusBadRequest, err
 	case errors.Is(err, domain.DuplicatePendingInvite),
-		errors.Is(err, domain.AlreadyAccepted):
+		errors.Is(err, domain.AlreadyConnected):
 		return http.StatusConflict, err
 	case errors.Is(err, domain.NotReceiver):
 		return http.StatusForbidden, err

@@ -65,7 +65,6 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 			r.Get("/support", supportHandler.GetAll)
 			r.Delete("/support/{supportId}", supportHandler.DeleteSupporter)
-			r.Delete("/support/{friendId}", supportHandler.DeleteFriend)
 
 			r.Group(func(r chi.Router) {
 				r.Use(auth.WithResource(string(authzdomain.ResourceUserProfile)))
