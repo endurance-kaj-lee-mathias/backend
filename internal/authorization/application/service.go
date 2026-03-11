@@ -86,6 +86,19 @@ func (s *service) ListRules(ctx context.Context, ownerID uuid.UUID) ([]domain.Ru
 	return rules, nil
 }
 
+func (s *service) ListRulesByViewer(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) ([]domain.Rule, error) {
+	rules, err := s.repo.FindByOwnerAndViewer(ctx, ownerID, viewerID)
+	if err != nil {
+		return nil, err
+	}
+
+	if rules == nil {
+		rules = []domain.Rule{}
+	}
+
+	return rules, nil
+}
+
 func (s *service) RevokeAll(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) error {
 	if err := s.repo.DeleteByOwnerAndViewer(ctx, ownerID, viewerID); err != nil {
 		return err

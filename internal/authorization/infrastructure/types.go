@@ -13,6 +13,7 @@ type Repository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	FindByID(ctx context.Context, id uuid.UUID) (domain.Rule, error)
 	FindByOwner(ctx context.Context, ownerID uuid.UUID) ([]domain.Rule, error)
+	FindByOwnerAndViewer(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) ([]domain.Rule, error)
 	FindRule(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID, resource string) (*domain.Rule, error)
 	DeleteByOwnerAndViewer(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) error
 	GetPrivacy(ctx context.Context, userID uuid.UUID) (bool, error)

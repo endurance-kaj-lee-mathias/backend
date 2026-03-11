@@ -93,6 +93,36 @@ func (r *repository) FindByOwner(ctx context.Context, ownerID uuid.UUID) ([]doma
 	return rules, rows.Err()
 }
 
+func (r *repository) FindByOwnerAndViewer(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) ([]domain.Rule, error) {
+	query := `
+		SELECT id, owner_id, viewer_id, resource, effect, created_at
+		FROM authorization_rules
+		WHERE owner_id = $1 AND viewer_id = $2
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, ownerID, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
+
+	var rules []domain.Rule
+	for rows.Next() {
+		var rule domain.Rule
+		if err := rows.Scan(&rule.ID, &rule.OwnerID, &rule.ViewerID, &rule.Resource, &rule.Effect, &rule.CreatedAt); err != nil {
+			return nil, err
+		}
+		rules = append(rules, rule)
+	}
+
+	return rules, rows.Err()
+}
+
 func (r *repository) FindRule(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID, resource string) (*domain.Rule, error) {
 	query := `
 		SELECT id, owner_id, viewer_id, resource, effect, created_at
