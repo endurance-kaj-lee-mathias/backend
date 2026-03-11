@@ -68,13 +68,19 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var roleName string
-	switch claims.ClientID {
-	case h.mobileClientID:
-		roleName = "veteran"
-	case h.webClientID:
-		roleName = "support-group"
-	default:
+	roleName := ""
+	for _, aud := range claims.Audiences {
+		if aud == h.mobileClientID {
+			roleName = "veteran"
+			break
+		}
+		if aud == h.webClientID {
+			roleName = "support-group"
+			break
+		}
+	}
+
+	if roleName == "" {
 		response.WriteError(w, http.StatusForbidden, ClientNotEligible)
 		return
 	}
