@@ -42,8 +42,6 @@ func Authenticate(config config.Idp) func(*http.Request) (jwt.MapClaims, error) 
 	}
 }
 
-// AuthenticateWSClaims validates the JWT token carried in the
-// Authorization header of the WebSocket upgrade request.
 func AuthenticateWSClaims(config config.Idp) func(*http.Request) (*Claims, error) {
 	raw := Authenticate(config)
 	return func(r *http.Request) (*Claims, error) {
