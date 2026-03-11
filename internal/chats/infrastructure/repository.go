@@ -11,58 +11,6 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats/infrastructure/entities"
 )
 
-func (r *repository) FindConversations(ctx context.Context, userID uuid.UUID) ([]entities.ConversationWithParticipantsEntity, error) {
-	query := `
-		SELECT c.id, c.created_at, cp_all.user_id
-		FROM conversations c
-		JOIN conversation_participants cp_me  ON cp_me.conversation_id  = c.id AND cp_me.user_id = $1
-		JOIN conversation_participants cp_all ON cp_all.conversation_id = c.id
-		ORDER BY c.created_at ASC
-	`
-
-	rows, err := r.db.QueryContext(ctx, query, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			slog.Error("failed to close rows", "error", err)
-		}
-	}()
-
-	convMap := make(map[uuid.UUID]*entities.ConversationWithParticipantsEntity)
-	var order []uuid.UUID
-
-	for rows.Next() {
-		var convID uuid.UUID
-		var createdAt time.Time
-		var participantID uuid.UUID
-
-		if err := rows.Scan(&convID, &createdAt, &participantID); err != nil {
-			return nil, err
-		}
-
-		if _, ok := convMap[convID]; !ok {
-			convMap[convID] = &entities.ConversationWithParticipantsEntity{
-				ID:        convID,
-				CreatedAt: createdAt,
-			}
-			order = append(order, convID)
-		}
-		convMap[convID].Participants = append(convMap[convID].Participants, participantID)
-	}
-
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-
-	result := make([]entities.ConversationWithParticipantsEntity, 0, len(order))
-	for _, id := range order {
-		result = append(result, *convMap[id])
-	}
-	return result, nil
-}
-
 func (r *repository) FindConversation(ctx context.Context, userA, userB uuid.UUID) (entities.ConversationEntity, error) {
 	query := `
 		SELECT c.id, c.created_at

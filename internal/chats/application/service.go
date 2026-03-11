@@ -11,23 +11,6 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats/infrastructure/entities"
 )
 
-func (s *service) GetConversations(ctx context.Context, userID uuid.UUID) ([]domain.Conversation, error) {
-	ents, err := s.repo.FindConversations(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]domain.Conversation, 0, len(ents))
-	for _, ent := range ents {
-		result = append(result, domain.NewConversation(
-			domain.ConversationId{UUID: ent.ID},
-			ent.Participants,
-			ent.CreatedAt,
-		))
-	}
-	return result, nil
-}
-
 func (s *service) GetOrCreateConversation(ctx context.Context, callerID, participantID uuid.UUID) (domain.Conversation, error) {
 	ok, err := s.repo.CheckSupportRelationship(ctx, callerID, participantID)
 	if err != nil {
