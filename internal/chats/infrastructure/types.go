@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	FindConversation(ctx context.Context, userA, userB uuid.UUID) (entities.ConversationEntity, error)
+	FindConversations(ctx context.Context, userID uuid.UUID) ([]entities.ConversationWithParticipantsEntity, error)
 	CreateConversation(ctx context.Context, ent entities.ConversationEntity) error
 	SaveParticipantKey(ctx context.Context, ent entities.ParticipantKeyEntity) error
 	UpdateParticipantKey(ctx context.Context, conversationID, userID uuid.UUID, encryptedKey []byte) error

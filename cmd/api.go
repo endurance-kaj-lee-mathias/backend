@@ -107,6 +107,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 		})
 
 		r.Route("/chats", func(r chi.Router) {
+			r.Get("/", chatsHandler.GetConversations)
 			r.Post("/", chatsHandler.StartConversation)
 			r.Post("/{conversationId}/messages", chatsHandler.SendMessage)
 			r.Get("/{conversationId}/messages", chatsHandler.GetMessages)

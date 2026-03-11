@@ -24,7 +24,7 @@ func LoadIdp() Idp {
 	adminUser := env.Get("KEYCLOAK_ADMIN_USER", "admin")
 	adminPassword := env.Get("KEYCLOAK_ADMIN_PASSWORD", "admin")
 
-	defaultIssuers := "http://localhost:8180,https://10.0.2.2:8443"
+	defaultIssuers := "http://localhost:8180,https://10.0.2.2:8443,https://127.0.0.1:8443,https://auth.leeco.dev"
 	issuersRaw := env.Get("IDP_ISSUERS", defaultIssuers)
 
 	estimatedIssuers := strings.Count(issuersRaw, ",") + 1

@@ -42,6 +42,31 @@ func Authenticate(config config.Idp) func(*http.Request) (jwt.MapClaims, error) 
 	}
 }
 
+// AuthenticateWSClaims is like AuthenticateClaims but also accepts the token
+// via the `token` query parameter. WebSocket clients cannot set the
+// Authorization header during the HTTP upgrade handshake, so the token
+// must travel as a query parameter instead.
+func AuthenticateWSClaims(config config.Idp) func(*http.Request) (*Claims, error) {
+	raw := Authenticate(config)
+	return func(r *http.Request) (*Claims, error) {
+		if t := r.URL.Query().Get("token"); t != "" {
+			// Inject the token as a synthetic Authorization header so the
+			// existing extractToken / validateToken logic is reused as-is.
+			r = r.Clone(r.Context())
+			r.Header.Set("Authorization", "Bearer "+t)
+		}
+		mapClaims, err := raw(r)
+		if err != nil {
+			return nil, err
+		}
+		c := claimsFromMap(mapClaims)
+		if c.Sub == "" {
+			return nil, ClaimsInvalid
+		}
+		return c, nil
+	}
+}
+
 func AuthenticateClaims(config config.Idp) func(*http.Request) (*Claims, error) {
 	raw := Authenticate(config)
 	return func(r *http.Request) (*Claims, error) {

@@ -17,6 +17,33 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+func (h *Handler) GetConversations(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	callerID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	convs, err := h.service.GetConversations(r.Context(), callerID)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	result := make([]models.ConversationModel, 0, len(convs))
+	for _, c := range convs {
+		result = append(result, models.ToConversationModel(c))
+	}
+
+	response.Write(w, http.StatusOK, result)
+}
+
 func (h *Handler) StartConversation(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
 	if !ok {

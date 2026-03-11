@@ -11,6 +11,7 @@ import (
 
 type Service interface {
 	GetOrCreateConversation(ctx context.Context, callerID, participantID uuid.UUID) (domain.Conversation, error)
+	GetConversations(ctx context.Context, userID uuid.UUID) ([]domain.Conversation, error)
 	SendMessage(ctx context.Context, conversationID uuid.UUID, senderID uuid.UUID, content string) (domain.Message, error)
 	GetMessages(ctx context.Context, conversationID uuid.UUID, callerID uuid.UUID, limit, offset int) ([]domain.Message, error)
 }

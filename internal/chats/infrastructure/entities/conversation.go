@@ -11,6 +11,12 @@ type ConversationEntity struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
+type ConversationWithParticipantsEntity struct {
+	ID           uuid.UUID `db:"id"`
+	CreatedAt    time.Time `db:"created_at"`
+	Participants []uuid.UUID
+}
+
 type ParticipantKeyEntity struct {
 	ConversationID           uuid.UUID `db:"conversation_id"`
 	UserID                   uuid.UUID `db:"user_id"`
