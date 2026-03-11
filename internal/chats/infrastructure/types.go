@@ -19,6 +19,7 @@ type Repository interface {
 	CreateMessage(ctx context.Context, ent entities.MessageEntity) error
 	GetMessages(ctx context.Context, conversationID uuid.UUID, limit, offset int) ([]entities.MessageEntity, error)
 	CheckSupportRelationship(ctx context.Context, userA, userB uuid.UUID) (bool, error)
+	GetConversationSummaries(ctx context.Context, userID uuid.UUID) ([]entities.ConversationSummaryEntity, error)
 }
 
 type repository struct {

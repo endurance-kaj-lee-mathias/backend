@@ -143,3 +143,25 @@ func (h *Handler) GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	response.Write(w, http.StatusOK, models.ToMessageModels(msgs))
 }
+
+func (h *Handler) GetAllChats(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	callerID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	summaries, err := h.service.GetAllChats(r.Context(), callerID)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToChatSummaryModels(summaries))
+}
