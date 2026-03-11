@@ -17,3 +17,17 @@ type ParticipantKeyEntity struct {
 	EncryptedConversationKey []byte    `db:"encrypted_conversation_key"`
 	EncryptedUserKey         []byte    `db:"encrypted_user_key"`
 }
+
+type ConversationSummaryEntity struct {
+	ConversationID                 uuid.UUID
+	OtherUserID                    uuid.UUID
+	OtherEncryptedFirstName        []byte
+	OtherEncryptedLastName         []byte
+	OtherEncryptedUserKey          []byte
+	OtherImage                     *string
+	CallerEncryptedConversationKey []byte
+	CallerEncryptedUserKey         []byte
+	LatestEncryptedContent         []byte
+	LatestSenderID                 *uuid.UUID
+	LatestMessageAt                *time.Time
+}

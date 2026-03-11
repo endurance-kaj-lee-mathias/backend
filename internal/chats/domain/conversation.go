@@ -19,3 +19,14 @@ func NewConversation(id ConversationId, participants []uuid.UUID, createdAt time
 		CreatedAt:    createdAt,
 	}
 }
+
+type ConversationSummary struct {
+	ConversationID        ConversationId
+	OtherUserID           uuid.UUID
+	FirstName             string
+	LastName              string
+	Image                 string
+	LatestMessage         *string
+	LatestMessageSenderID *uuid.UUID
+	LatestMessageAt       *time.Time
+}

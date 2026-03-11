@@ -33,7 +33,7 @@ func NewUser(id UserId, email string, username string, firstName string, lastNam
 		Roles:        roles,
 		About:        fmt.Sprintf("Hey, I'm %s. I'm here to find support and connect with others who understand.", firstName),
 		Introduction: fmt.Sprintf("Hi, I'm %s! I'm new to Endurance and looking forward to connecting.", firstName),
-		Image:        "https://sl1nk.com/profilepic",
+		Image:        "https://firebase.google.com/static/images/brand-guidelines/logo-vertical.png",
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
