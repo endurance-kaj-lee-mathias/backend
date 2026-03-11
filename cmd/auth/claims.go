@@ -17,4 +17,5 @@ type Claims struct {
 	PhoneNumber string        `json:"phoneNumber"`
 	Address     ClaimsAddress `json:"address"`
 	Roles       []string      `json:"roles"`
+	ClientID    string        `json:"azp"`
 }

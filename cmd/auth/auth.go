@@ -214,6 +214,9 @@ func claimsFromMap(raw jwt.MapClaims) *Claims {
 			}
 		}
 	}
+	if azp, ok := raw["azp"].(string); ok {
+		c.ClientID = azp
+	}
 	return c
 }
 

@@ -32,7 +32,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r.Use(middleware.Timeout(time.Minute))
 	r.Use(corsMiddleware(server.config.AllowedOrigins))
 
-	userHandler := users.Wire(server.db, server.enc, server.kc)
+	userHandler := users.Wire(server.db, server.enc, server.kc, "mobile", server.idp.WebClientID)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
 	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
 	chatsHandler := chats.Wire(server.db, server.enc)
@@ -48,6 +48,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/me", userHandler.GetOrCreate)
+			r.Post("/me/register", userHandler.Register)
 			r.Get("/me/export", exportHandler.ExportUserData)
 
 			r.Delete("/me", userHandler.DeleteMe)

@@ -26,6 +26,7 @@ type Service interface {
 	GetAddress(ctx context.Context, userID domain.UserId) (domain.Address, error)
 	UpsertDevice(ctx context.Context, userID domain.UserId, deviceToken string, platform string) error
 	DeleteDevice(ctx context.Context, deviceToken string) error
+	AssignRole(ctx context.Context, userID domain.UserId, roleName string) error
 }
 
 type service struct {

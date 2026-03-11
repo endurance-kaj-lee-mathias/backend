@@ -62,6 +62,31 @@ func (h *Handler) UpsertAddress(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToAddressModel(addr))
 }
 
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	id, claims, ok := h.authenticatedID(w, r)
+	if !ok {
+		return
+	}
+
+	var roleName string
+	switch claims.ClientID {
+	case h.mobileClientID:
+		roleName = "veteran"
+	case h.webClientID:
+		roleName = "support-group"
+	default:
+		response.WriteError(w, http.StatusForbidden, ClientNotEligible)
+		return
+	}
+
+	if err := h.service.AssignRole(r.Context(), id, roleName); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 	id, claims, ok := h.authenticatedID(w, r)
 	if !ok {
