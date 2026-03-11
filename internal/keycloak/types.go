@@ -8,6 +8,7 @@ import (
 
 type Client interface {
 	UpdateUser(ctx context.Context, userID string, update UserUpdate) error
+	DeleteUser(ctx context.Context, userID string) error
 }
 
 type UserUpdate struct {
