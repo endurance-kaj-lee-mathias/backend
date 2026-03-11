@@ -1,0 +1,262 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameSupport = Lee
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – SUPPORT
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Get access token – THERAPIST
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+%}
+
+### =====================================================
+### 4. Ensure users exist in DB & capture their IDs
+### =====================================================
+
+### 4a. Get or create VETERAN – stores veteranId
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    client.global.set("veteranId", response.body.id);
+%}
+
+### 4b. Get or create SUPPORT – stores supportId
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{supportToken}}
+
+> {%
+    client.global.set("supportId", response.body.id);
+%}
+
+### 4c. Get or create THERAPIST – stores therapistId
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{therapistToken}}
+
+> {%
+    client.global.set("therapistId", response.body.id);
+%}
+
+### =====================================================
+### 5. Ensure support relationships exist
+### =====================================================
+
+### 5a. SUPPORT sends invite to VETERAN
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("supportInviteId", response.body.id);
+%}
+
+### 5b. VETERAN accepts the invite
+PATCH {{baseUrl}}/support/{{supportInviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### GetAllChats – Happy paths
+### =====================================================
+
+### 6. VETERAN starts a conversation with SUPPORT
+POST {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "participantId": "{{supportId}}"
+}
+
+> {%
+    client.global.set("conversationId", response.body.id);
+%}
+
+### 7. VETERAN sends first message to the conversation
+POST {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "content": "Hello, I wanted to reach out!"
+}
+
+### 8. SUPPORT replies
+POST {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "content": "Hi! Great to hear from you."
+}
+
+### 9. VETERAN sends another message
+POST {{baseUrl}}/chats/{{conversationId}}/messages
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "content": "How are you doing today?"
+}
+
+### 10. GET ALL CHATS – VETERAN perspective
+# Should return array with one chat entry containing:
+# - conversationId, otherUserId (supportId), firstName, lastName, imageUrl
+# - latestMessage = "How are you doing today?" (VETERAN's last message)
+# - latestMessageSentBy = veteranId
+# - latestMessageAt = timestamp of last message
+GET {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+
+### 11. GET ALL CHATS – SUPPORT perspective
+# Should return array with one chat entry containing:
+# - conversationId (same as above), otherUserId (veteranId), firstName, lastName, imageUrl
+# - latestMessage = "How are you doing today?" (same message)
+# - latestMessageSentBy = veteranId
+# - latestMessageAt = timestamp of last message
+GET {{baseUrl}}/chats
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### GetAllChats – Multiple conversations
+### =====================================================
+
+### 12a. Start a second conversation (SUPPORT initiates with VETERAN)
+POST {{baseUrl}}/chats
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "participantId": "{{veteranId}}"
+}
+
+> {%
+    client.global.set("conversationId2", response.body.id);
+%}
+
+### 12b. SUPPORT sends message to second conversation
+POST {{baseUrl}}/chats/{{conversationId2}}/messages
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "content": "Just checking in!"
+}
+
+### 12c. GET ALL CHATS – VETERAN now has 2 conversations
+# Should return array with 2 chat entries
+# - Both should be listed, sorted by latestMessageAt DESC NULLS LAST
+GET {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### GetAllChats – Edge cases / constraints
+### =====================================================
+
+### 13. GET ALL CHATS – THERAPIST (no conversations)
+# Should return empty array [] (THERAPIST is not in any conversations)
+GET {{baseUrl}}/chats
+Authorization: Bearer {{therapistToken}}
+
+### 14. GET ALL CHATS – without authorization → expect 401
+GET {{baseUrl}}/chats
+
+### =====================================================
+### GetAllChats – Verify chat without messages
+### =====================================================
+
+### 15a. Create another support relationship
+POST {{baseUrl}}/support
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("therapistInviteId", response.body.id);
+%}
+
+### 15b. VETERAN accepts therapist invite
+PATCH {{baseUrl}}/support/{{therapistInviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### 15c. Start conversation (don't send any messages yet)
+POST {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "participantId": "{{therapistId}}"
+}
+
+> {%
+    client.global.set("conversationId3", response.body.id);
+%}
+
+### 15d. GET ALL CHATS – Should include conversation with null latestMessage fields
+# Should return array with 3 entries, including the new conversation with:
+# - latestMessage = null
+# - latestMessageSentBy = null
+# - latestMessageAt = null
+GET {{baseUrl}}/chats
+Authorization: Bearer {{veteranToken}}
+

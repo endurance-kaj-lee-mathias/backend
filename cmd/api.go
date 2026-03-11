@@ -107,7 +107,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 		})
 
 		r.Route("/chats", func(r chi.Router) {
-			r.Get("/", chatsHandler.GetConversations)
+			r.Get("/", chatsHandler.GetAllChats)
 			r.Post("/", chatsHandler.StartConversation)
 			r.Post("/{conversationId}/messages", chatsHandler.SendMessage)
 			r.Get("/{conversationId}/messages", chatsHandler.GetMessages)
@@ -117,6 +117,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
 			r.Get("/entries/me", moodHandler.GetMyEntries)
 			r.Get("/entries/me/today", moodHandler.GetTodayEntry)
+			r.Put("/entries/{entryId}", moodHandler.UpdateMoodEntry)
+			r.Delete("/entries/{entryId}", moodHandler.DeleteMoodEntry)
 
 			r.Group(func(r chi.Router) {
 				r.Use(auth.WithResource(string(authzdomain.ResourceMoodEntries)))

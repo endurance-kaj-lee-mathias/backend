@@ -7,6 +7,53 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/infrastructure/entities"
 )
 
+func (s *service) GetEntryByID(ctx context.Context, id domain.MoodId) (*domain.MoodEntry, error) {
+	ent, err := s.repo.FindByID(ctx, id.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	encryptedUserKey, err := s.userKeyReader.GetEncryptedUserKey(ctx, domain.UserId{UUID: ent.UserID})
+	if err != nil {
+		return nil, err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return nil, err
+	}
+
+	entry, err := entities.FromEntity(*ent, s.enc, userKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entry, nil
+}
+
+func (s *service) UpdateMoodEntry(ctx context.Context, entry domain.MoodEntry) error {
+	encryptedUserKey, err := s.userKeyReader.GetEncryptedUserKey(ctx, entry.UserID)
+	if err != nil {
+		return err
+	}
+
+	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
+	if err != nil {
+		return err
+	}
+
+	ent, err := entities.ToEntity(entry, s.enc, userKey)
+	if err != nil {
+		return err
+	}
+
+	return s.repo.Update(ctx, ent)
+}
+
+func (s *service) DeleteMoodEntry(ctx context.Context, id domain.MoodId) error {
+	return s.repo.Delete(ctx, id.UUID)
+}
+
 func (s *service) UpsertMoodEntry(ctx context.Context, entry domain.MoodEntry) error {
 	encryptedUserKey, err := s.userKeyReader.GetEncryptedUserKey(ctx, entry.UserID)
 	if err != nil {

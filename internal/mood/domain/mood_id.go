@@ -13,3 +13,11 @@ func NewMoodId() (MoodId, error) {
 	}
 	return MoodId{UUID: id}, nil
 }
+
+func MoodIdFromString(s string) (MoodId, error) {
+	id, err := uuid.FromString(s)
+	if err != nil {
+		return MoodId{}, err
+	}
+	return MoodId{UUID: id}, nil
+}

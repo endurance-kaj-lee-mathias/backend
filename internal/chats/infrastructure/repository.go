@@ -164,7 +164,7 @@ func (r *repository) GetMessages(ctx context.Context, conversationID uuid.UUID, 
 		SELECT id, conversation_id, sender_id, encrypted_content, created_at
 		FROM messages
 		WHERE conversation_id = $1
-		ORDER BY created_at ASC
+		ORDER BY created_at
 		LIMIT $2 OFFSET $3
 	`
 
@@ -211,4 +211,86 @@ func (r *repository) CheckSupportRelationship(ctx context.Context, userA, userB 
 	}
 
 	return exists, nil
+}
+
+func (r *repository) GetConversationSummaries(ctx context.Context, userID uuid.UUID) ([]entities.ConversationSummaryEntity, error) {
+	query := `
+		SELECT
+			c.id,
+			other_u.id,
+			other_u.encrypted_first_name,
+			other_u.encrypted_last_name,
+			other_u.encrypted_user_key,
+			other_u.image,
+			caller_cp.encrypted_conversation_key,
+			caller_u.encrypted_user_key,
+			lm.encrypted_content,
+			lm.sender_id,
+			lm.created_at
+		FROM conversations c
+		JOIN conversation_participants caller_cp ON caller_cp.conversation_id = c.id AND caller_cp.user_id = $1
+		JOIN users caller_u ON caller_u.id = $1
+		JOIN conversation_participants other_cp ON other_cp.conversation_id = c.id AND other_cp.user_id != $1
+		JOIN users other_u ON other_u.id = other_cp.user_id
+		LEFT JOIN LATERAL (
+			SELECT encrypted_content, sender_id, created_at
+			FROM messages
+			WHERE conversation_id = c.id
+			ORDER BY created_at DESC
+			LIMIT 1
+		) lm ON true
+		ORDER BY lm.created_at DESC NULLS LAST
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
+
+	var summaries []entities.ConversationSummaryEntity
+
+	for rows.Next() {
+		var ent entities.ConversationSummaryEntity
+
+		var latestSenderID uuid.NullUUID
+		var latestMessageAt *time.Time
+		var latestEncryptedContent []byte
+
+		if err := rows.Scan(
+			&ent.ConversationID,
+			&ent.OtherUserID,
+			&ent.OtherEncryptedFirstName,
+			&ent.OtherEncryptedLastName,
+			&ent.OtherEncryptedUserKey,
+			&ent.OtherImage,
+			&ent.CallerEncryptedConversationKey,
+			&ent.CallerEncryptedUserKey,
+			&latestEncryptedContent,
+			&latestSenderID,
+			&latestMessageAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if latestSenderID.Valid {
+			ent.LatestSenderID = &latestSenderID.UUID
+		}
+
+		ent.LatestEncryptedContent = latestEncryptedContent
+		ent.LatestMessageAt = latestMessageAt
+
+		summaries = append(summaries, ent)
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return summaries, nil
 }

@@ -146,6 +146,75 @@ func (s *service) GetMessages(ctx context.Context, conversationID uuid.UUID, cal
 	return entities.FromMessageEntities(ents, convKey, s.enc)
 }
 
+func (s *service) GetAllChats(ctx context.Context, userID uuid.UUID) ([]domain.ConversationSummary, error) {
+	summaryEnts, err := s.repo.GetConversationSummaries(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(summaryEnts) == 0 {
+		return []domain.ConversationSummary{}, nil
+	}
+
+	callerUserKey, err := s.enc.DecryptUserKey(summaryEnts[0].CallerEncryptedUserKey)
+	if err != nil {
+		return nil, err
+	}
+
+	summaries := make([]domain.ConversationSummary, 0, len(summaryEnts))
+
+	for _, ent := range summaryEnts {
+		convKey, err := s.enc.Decrypt(ent.CallerEncryptedConversationKey, callerUserKey)
+		if err != nil {
+			return nil, err
+		}
+
+		var latestMessage *string
+
+		if len(ent.LatestEncryptedContent) > 0 {
+			contentBytes, err := s.enc.Decrypt(ent.LatestEncryptedContent, convKey)
+			if err != nil {
+				return nil, err
+			}
+			content := string(contentBytes)
+			latestMessage = &content
+		}
+
+		otherUserKey, err := s.enc.DecryptUserKey(ent.OtherEncryptedUserKey)
+		if err != nil {
+			return nil, err
+		}
+
+		firstNameBytes, err := s.enc.Decrypt(ent.OtherEncryptedFirstName, otherUserKey)
+		if err != nil {
+			return nil, err
+		}
+
+		lastNameBytes, err := s.enc.Decrypt(ent.OtherEncryptedLastName, otherUserKey)
+		if err != nil {
+			return nil, err
+		}
+
+		image := ""
+		if ent.OtherImage != nil {
+			image = *ent.OtherImage
+		}
+
+		summaries = append(summaries, domain.ConversationSummary{
+			ConversationID:        domain.ConversationId{UUID: ent.ConversationID},
+			OtherUserID:           ent.OtherUserID,
+			FirstName:             string(firstNameBytes),
+			LastName:              string(lastNameBytes),
+			Image:                 image,
+			LatestMessage:         latestMessage,
+			LatestMessageSenderID: ent.LatestSenderID,
+			LatestMessageAt:       ent.LatestMessageAt,
+		})
+	}
+
+	return summaries, nil
+}
+
 func (s *service) decryptConversationKey(ctx context.Context, conversationID, userID uuid.UUID) ([]byte, error) {
 	pkEnt, err := s.repo.GetParticipantKey(ctx, conversationID, userID)
 	if err != nil {

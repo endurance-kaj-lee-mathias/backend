@@ -62,10 +62,6 @@ scope = openid
     client.global.set("therapistToken", response.body.access_token);
 %}
 
-###
-GET {{keycloakUrl}}/admin/realms/{{realm}}/users/
-
-
 ### 1. Get or create the current user (VETERAN) – stores veteranId and veteranUsername
 GET {{baseUrl}}/users/me
 Authorization: Bearer {{veteranToken}}
@@ -112,30 +108,35 @@ GET {{baseUrl}}/users/support
 Authorization: Bearer {{veteranToken}}
 
 
-### 7. Add SUPPORT as supporter for a VETERAN (happy path)
-# Run requests 1–3 first so all users exist in the DB with the correct roles.
-POST {{baseUrl}}/users/{{veteranId}}/support
+### 7. SUPPORT sends invite to VETERAN via support invite flow
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("supportInviteId", response.body.id);
+%}
+
+### 8. VETERAN accepts the support invite
+PATCH {{baseUrl}}/support/{{supportInviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### 9. List support invites for VETERAN
+GET {{baseUrl}}/support
+Authorization: Bearer {{veteranToken}}
+
+### 10. Verify SUPPORT is now listed as a supporter for VETERAN
+GET {{baseUrl}}/users/support
 Authorization: Bearer {{supportToken}}
 
-### 8. Add THERAPIST as supporter for a VETERAN (happy path)
-POST {{baseUrl}}/users/{{veteranId}}/support
-Authorization: Bearer {{therapistToken}}
 
-### 9. Add VETERAN as supporter for another VETERAN (happy path)
-POST {{baseUrl}}/users/{{veteranId}}/support
-Authorization: Bearer {{veteranToken}}
-
-
-### 10. Constraint: recipient must have VETERAN role
-# supportId points to a SUPPORT user who does NOT have the VETERAN role.
-
-POST {{baseUrl}}/users/{{supportId}}/support
-Authorization: Bearer {{veteranToken}}
-
-
-### 13. Delete a specific supporter from current VETERAN
-DELETE {{baseUrl}}/users/support/{{supportId}}
-Authorization: Bearer {{veteranToken}}
+### 11. Delete a specific supporter from current VETERAN
+DELETE {{baseUrl}}/users/support/{{veteranId}}
+Authorization: Bearer {{supportToken}}
 
 
 ### =====================================================

@@ -54,12 +54,16 @@ func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]dom
 	return members, nil
 }
 
-func (s *service) DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error {
-	if err := s.repo.Delete(ctx, veteranID.UUID, supportID.UUID); err != nil {
+func (s *service) DeleteSupporter(ctx context.Context, callerID domain.MemberId, otherID domain.MemberId) error {
+	if err := s.repo.Delete(ctx, callerID.UUID, otherID.UUID); err != nil {
 		return err
 	}
 
-	if err := s.authz.RevokeAll(ctx, veteranID.UUID, supportID.UUID); err != nil {
+	if err := s.authz.RevokeAll(ctx, callerID.UUID, otherID.UUID); err != nil {
+		return err
+	}
+
+	if err := s.authz.RevokeAll(ctx, otherID.UUID, callerID.UUID); err != nil {
 		return err
 	}
 

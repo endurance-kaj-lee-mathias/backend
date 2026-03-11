@@ -104,3 +104,36 @@ Content-Type: application/json
   "username": "{{usernameVeteran}}"
 }
 
+> {%
+    client.global.set("inviteId2", response.body.id);
+%}
+
+### VETERAN accepts the second invite
+### Expected: 204 No Content
+PATCH {{baseUrl}}/support/{{inviteId2}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### Get LEE's ID from VETERAN's support list
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    if (response.body && response.body.length > 0) {
+        client.global.set("leeId", response.body[0].id);
+    }
+%}
+
+### =====================================================
+### Test: DELETE from the other direction (SUPPORT deletes)
+### =====================================================
+
+### LEE (support) deletes the connection
+### Expected: 204 No Content
+DELETE {{baseUrl}}/users/support/{{leeId}}
+Authorization: Bearer {{supportToken}}
+
+### Verify connection was removed from LEE's perspective
+### Expected: 200 – empty list
+GET {{baseUrl}}/users/support
+Authorization: Bearer {{supportToken}}
+

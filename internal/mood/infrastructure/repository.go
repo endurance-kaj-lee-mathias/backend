@@ -139,3 +139,42 @@ func (r *repository) FindTodayByUserID(ctx context.Context, userID uuid.UUID) (*
 
 	return &ent, nil
 }
+
+func (r *repository) FindByID(ctx context.Context, id uuid.UUID) (*entities.MoodEntryEntity, error) {
+	query := `
+		SELECT id, user_id, date, mood_score, encrypted_notes, created_at, updated_at
+		FROM mood_entries
+		WHERE id = $1
+	`
+
+	var ent entities.MoodEntryEntity
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&ent.ID, &ent.UserID, &ent.Date, &ent.MoodScore, &ent.EncryptedNotes, &ent.CreatedAt, &ent.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, MoodEntryNotFound
+		}
+		return nil, err
+	}
+
+	return &ent, nil
+}
+
+func (r *repository) Update(ctx context.Context, ent entities.MoodEntryEntity) error {
+	query := `
+		UPDATE mood_entries
+		SET date = $1, mood_score = $2, encrypted_notes = $3, updated_at = NOW()
+		WHERE id = $4
+	`
+
+	_, err := r.db.ExecContext(ctx, query, ent.Date, ent.MoodScore, ent.EncryptedNotes, ent.ID)
+	return err
+}
+
+func (r *repository) Delete(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM mood_entries WHERE id = $1`
+
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
