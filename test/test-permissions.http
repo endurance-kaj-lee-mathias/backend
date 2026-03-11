@@ -131,7 +131,7 @@ GET {{baseUrl}}/support
 Authorization: Bearer {{veteranToken}}
 
 ### VETERAN accepts the support invite
-PATCH {{baseUrl}}/support/ec2e8d12-5e56-47ec-b79f-33787b8ddf7c/accept
+PATCH {{baseUrl}}/support/6ba6b38a-c605-4c36-af26-4f8819562d45/accept
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
@@ -221,6 +221,21 @@ Authorization: Bearer {{supportToken}}
 ### 10. VETERAN lists their sharing rules
 ###     Expected: 200 OK – contains the deny rule from request 7
 GET {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+
+### 10b. VETERAN gets rules for THERAPIST – should contain the deny rule from request 7
+###      Expected: 200 OK – array with one deny rule for userProfile
+GET {{baseUrl}}/sharing/rules/{{therapistId}}
+Authorization: Bearer {{veteranToken}}
+
+### 10c. VETERAN gets rules for SUPPORT – no rules set yet
+###      Expected: 200 OK – empty array []
+GET {{baseUrl}}/sharing/rules/{{supportId}}
+Authorization: Bearer {{veteranToken}}
+
+### 10d. Error – invalid UUID as viewer ID
+###      Expected: 400 Bad Request
+GET {{baseUrl}}/sharing/rules/not-a-valid-uuid
 Authorization: Bearer {{veteranToken}}
 
 ### 11. VETERAN deletes the deny rule – THERAPIST should be unblocked

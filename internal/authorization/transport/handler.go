@@ -103,6 +103,34 @@ func (h *Handler) ListRules(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToRuleResponses(rules))
 }
 
+func (h *Handler) GetRulesByViewer(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	ownerID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	viewerID, err := uuid.FromString(chi.URLParam(r, "id"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	rules, err := h.service.ListRulesByViewer(r.Context(), ownerID, viewerID)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToRuleResponses(rules))
+}
+
 func mapError(err error) int {
 	switch {
 	case errors.Is(err, domain.NotOwner):
