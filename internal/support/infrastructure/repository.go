@@ -104,7 +104,11 @@ func (r *repository) queryMembers(ctx context.Context, query string, args ...any
 }
 
 func (r *repository) Delete(ctx context.Context, veteranID, supportID uuid.UUID) error {
-	query := `DELETE FROM user_supports WHERE veteran_id = $1 AND support_id = $2`
+	query := `
+		DELETE FROM user_supports
+		WHERE (veteran_id = $1 AND support_id = $2)
+		   OR (veteran_id = $2 AND support_id = $1)
+	`
 
 	result, err := r.db.ExecContext(ctx, query, veteranID, supportID)
 

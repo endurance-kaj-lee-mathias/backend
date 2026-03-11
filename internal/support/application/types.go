@@ -16,7 +16,7 @@ type AuthzRevoker interface {
 type Service interface {
 	GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error)
 	GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error)
-	DeleteSupporter(ctx context.Context, veteranID domain.VeteranId, supportID domain.MemberId) error
+	DeleteSupporter(ctx context.Context, callerID domain.MemberId, otherID domain.MemberId) error
 
 	SendInvite(ctx context.Context, senderID domain.MemberId, username string, note *string) (domain.Invite, error)
 	AcceptInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) error

@@ -40,20 +40,19 @@ func (h *Handler) DeleteSupporter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veteranId, err := domain.ParseVeteranId(claims.Sub)
+	callerID, err := domain.ParseMemberId(claims.Sub)
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
-	supportIdStr := chi.URLParam(r, "supportId")
-	supportId, err := domain.ParseMemberId(supportIdStr)
+	otherID, err := domain.ParseMemberId(chi.URLParam(r, "supportId"))
 	if err != nil {
 		response.WriteError(w, http.StatusBadRequest, InvalidId)
 		return
 	}
 
-	if err := h.service.DeleteSupporter(r.Context(), veteranId, supportId); err != nil {
+	if err := h.service.DeleteSupporter(r.Context(), callerID, otherID); err != nil {
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
