@@ -98,6 +98,42 @@ func (c *client) getUser(ctx context.Context, token string, userID string) (keyc
 	return user, nil
 }
 
+func (c *client) DeleteUser(ctx context.Context, userID string) error {
+	token, err := c.getAdminToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf("%s/admin/realms/%s/users/%s", c.baseURL, c.realm, userID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, nil)
+	if err != nil {
+		slog.Error("keycloak: create delete user request", "userID", userID, "error", err)
+		return fmt.Errorf("keycloak: create delete request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		slog.Error("keycloak: delete user request", "userID", userID, "error", err)
+		return fmt.Errorf("keycloak: delete user request: %w", err)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		slog.Error("keycloak: delete user failed", "userID", userID, "status", resp.StatusCode, "body", string(body))
+		return fmt.Errorf("keycloak: delete user returned %d: %s", resp.StatusCode, body)
+	}
+
+	return nil
+}
+
 func (c *client) UpdateUser(ctx context.Context, userID string, update UserUpdate) error {
 	token, err := c.getAdminToken(ctx)
 	if err != nil {

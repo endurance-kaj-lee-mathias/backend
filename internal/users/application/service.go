@@ -3,6 +3,8 @@ package application
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -123,7 +125,49 @@ func (s *service) GetByUsername(ctx context.Context, username string) (domain.Us
 }
 
 func (s *service) DeleteUser(ctx context.Context, id domain.UserId) error {
-	return s.repo.Delete(ctx, id.UUID)
+	snapshot, err := s.repo.FindByID(ctx, id.UUID)
+	if err != nil {
+		return err
+	}
+
+	var dbErr, kcErr error
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		dbErr = s.repo.Delete(ctx, id.UUID)
+	}()
+
+	go func() {
+		defer wg.Done()
+		kcErr = s.kc.DeleteUser(ctx, id.UUID.String())
+	}()
+
+	wg.Wait()
+
+	if dbErr == nil && kcErr == nil {
+		return nil
+	}
+
+	if dbErr == nil && kcErr != nil {
+		if restoreErr := s.repo.Create(ctx, snapshot); restoreErr != nil {
+			slog.Error("failed to restore user after Keycloak deletion failure", "user_id", id.UUID, "restore_error", restoreErr)
+		}
+		return kcErr
+	}
+
+	if kcErr == nil && dbErr != nil {
+		slog.Error("inconsistent user deletion: user removed from Keycloak but still present in DB",
+			"user_id", id.UUID,
+			"db_error", dbErr,
+			"keycloak_deleted", true,
+		)
+		return dbErr
+	}
+
+	return errors.Join(dbErr, kcErr)
 }
 
 func (s *service) UpdatePhoneNumber(ctx context.Context, id domain.UserId, phoneNumber *string) error {
