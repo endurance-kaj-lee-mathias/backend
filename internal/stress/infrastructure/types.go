@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
@@ -14,9 +15,11 @@ import (
 type Repository interface {
 	Create(ctx context.Context, ent entities.StressSampleEntity) error
 	CountSamples(ctx context.Context, userID uuid.UUID) (int, error)
+	GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID) (time.Time, error)
 	GetSamplesLast90Days(ctx context.Context, userID uuid.UUID) ([]entities.StressSampleEntity, error)
 	CreateScore(ctx context.Context, ent entities.StressScoreEntity) error
 	GetLatestScore(ctx context.Context, userID uuid.UUID) (domain.StressScore, error)
+	DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error
 }
 
 type UserKeyReader interface {

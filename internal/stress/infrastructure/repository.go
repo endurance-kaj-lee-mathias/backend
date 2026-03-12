@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -49,6 +50,22 @@ func (r *repository) CountSamples(ctx context.Context, userID uuid.UUID) (int, e
 	var count int
 	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM stress_samples WHERE user_id = $1`, userID).Scan(&count)
 	return count, err
+}
+
+func (r *repository) GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID) (time.Time, error) {
+	var ts time.Time
+	err := r.db.QueryRowContext(
+		ctx,
+		`SELECT timestamp_utc FROM stress_samples WHERE user_id = $1 ORDER BY timestamp_utc DESC LIMIT 1`,
+		userID,
+	).Scan(&ts)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return time.Time{}, SampleNotFound
+		}
+		return time.Time{}, err
+	}
+	return ts, nil
 }
 
 func (r *repository) GetSamplesLast90Days(ctx context.Context, userID uuid.UUID) ([]entities.StressSampleEntity, error) {
@@ -134,4 +151,27 @@ func (r *repository) GetLatestScore(ctx context.Context, userID uuid.UUID) (doma
 	}
 
 	return entities.ScoreFromEntity(ent), nil
+}
+
+func (r *repository) DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			slog.Error("stress: rollback delete all by user", "error", err)
+		}
+	}()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM stress_samples WHERE user_id = $1`, userID); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM stress_scores WHERE user_id = $1`, userID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

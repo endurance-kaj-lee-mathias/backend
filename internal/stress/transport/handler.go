@@ -70,6 +70,32 @@ func (h *Handler) IngestSample(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func (h *Handler) GetLatestSampleTimestamp(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	ts, err := h.service.GetLatestSampleTimestamp(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, infrastructure.SampleNotFound) {
+			response.WriteError(w, http.StatusNotFound, SampleNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.LatestSampleResponse{Timestamp: ts})
+}
+
 func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
 	if !ok {
@@ -94,6 +120,27 @@ func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
+}
+
+func (h *Handler) DeleteMySamples(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteMySamples(r.Context(), userID); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handler) GetLatestScoreByUserID(w http.ResponseWriter, r *http.Request) {

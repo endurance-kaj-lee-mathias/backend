@@ -31,3 +31,7 @@ func (m *StressSampleRequest) Validate() error {
 	}
 	return nil
 }
+
+type LatestSampleResponse struct {
+	Timestamp time.Time `json:"timestamp"`
+}

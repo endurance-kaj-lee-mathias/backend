@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -106,6 +107,8 @@ func (s *service) SendMessage(ctx context.Context, conversationID uuid.UUID, sen
 		return domain.Message{}, err
 	}
 
+	go s.notifyMessage(conversationID, senderID)
+
 	return domain.NewMessage(
 		domain.MessageId{UUID: msgID},
 		domain.ConversationId{UUID: conversationID},
@@ -113,6 +116,34 @@ func (s *service) SendMessage(ctx context.Context, conversationID uuid.UUID, sen
 		content,
 		now,
 	), nil
+}
+
+func (s *service) notifyMessage(conversationID, senderID uuid.UUID) {
+	ctx := context.Background()
+
+	recipients, err := s.repo.FindOtherParticipants(ctx, conversationID, senderID)
+	if err != nil {
+		slog.Warn("failed to fetch other participants for message notification", "conversation_id", conversationID, "error", err)
+		return
+	}
+
+	for _, recipientID := range recipients {
+		tokens, err := s.repo.FindDeviceTokensByUserID(ctx, recipientID)
+		if err != nil {
+			slog.Warn("failed to fetch device tokens for message notification", "user_id", recipientID, "error", err)
+			continue
+		}
+
+		for _, token := range tokens {
+			if token == "" {
+				continue
+			}
+
+			if err := s.notifier.NotifyNewMessage(ctx, token); err != nil {
+				slog.Warn("failed to send message notification", "user_id", recipientID, "error", err)
+			}
+		}
+	}
 }
 
 func (s *service) GetMessages(ctx context.Context, conversationID uuid.UUID, callerID uuid.UUID, limit, offset int) ([]domain.Message, error) {

@@ -54,6 +54,10 @@ func (s *service) DeleteMoodEntry(ctx context.Context, id domain.MoodId) error {
 	return s.repo.Delete(ctx, id.UUID)
 }
 
+func (s *service) DeleteMyMoodEntries(ctx context.Context, userID domain.UserId) error {
+	return s.repo.DeleteAllByUserID(ctx, userID.UUID)
+}
+
 func (s *service) UpsertMoodEntry(ctx context.Context, entry domain.MoodEntry) error {
 	encryptedUserKey, err := s.userKeyReader.GetEncryptedUserKey(ctx, entry.UserID)
 	if err != nil {

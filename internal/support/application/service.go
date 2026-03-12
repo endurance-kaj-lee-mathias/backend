@@ -3,7 +3,9 @@ package application
 import (
 	"context"
 	"sync"
+	"log/slog"
 
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/infrastructure/entities"
 	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
@@ -209,6 +211,8 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		inv.Receiver.Role = userdomain.Role(receiverRoleUpdated)
 	}
 
+	go s.notifyInviteReceived(receiverID.UUID)
+
 	return inv, nil
 }
 
@@ -230,7 +234,54 @@ func (s *service) AcceptInvite(ctx context.Context, callerID domain.MemberId, in
 		return err
 	}
 
+	senderID, err := domain.ParseMemberId(ent.SenderID.String())
+	if err != nil {
+		return err
+	}
+
+	go s.notifyInviteAccepted(senderID.UUID)
+
 	return nil
+}
+
+func (s *service) notifyInviteReceived(receiverID uuid.UUID) {
+	ctx := context.Background()
+
+	tokens, err := s.userRoleRead.FindDeviceTokensByUserID(ctx, receiverID)
+	if err != nil {
+		slog.Warn("failed to fetch device tokens for invite notification", "user_id", receiverID, "error", err)
+		return
+	}
+
+	for _, token := range tokens {
+		if token == "" {
+			continue
+		}
+
+		if err := s.notifier.NotifyInvite(ctx, token); err != nil {
+			slog.Warn("failed to send invite notification", "user_id", receiverID, "error", err)
+		}
+	}
+}
+
+func (s *service) notifyInviteAccepted(senderID uuid.UUID) {
+	ctx := context.Background()
+
+	tokens, err := s.userRoleRead.FindDeviceTokensByUserID(ctx, senderID)
+	if err != nil {
+		slog.Warn("failed to fetch device tokens for invite accepted notification", "user_id", senderID, "error", err)
+		return
+	}
+
+	for _, token := range tokens {
+		if token == "" {
+			continue
+		}
+
+		if err := s.notifier.NotifyInviteAccepted(ctx, token); err != nil {
+			slog.Warn("failed to send invite accepted notification", "user_id", senderID, "error", err)
+		}
+	}
 }
 
 func (s *service) DeclineInvite(ctx context.Context, callerID domain.MemberId, inviteID domain.InviteId) error {

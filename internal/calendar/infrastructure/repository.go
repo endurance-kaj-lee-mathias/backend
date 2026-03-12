@@ -254,3 +254,8 @@ func (r *repository) GetUrgentSlotMinutesForDate(ctx context.Context, providerID
 
 	return int(minutes.Float64), nil
 }
+
+func (r *repository) DeleteSlotsByProviderID(ctx context.Context, providerID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM availability_slots WHERE provider_id = $1`, providerID)
+	return err
+}

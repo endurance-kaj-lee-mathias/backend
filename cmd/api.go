@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -35,12 +36,12 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	userHandler := users.Wire(server.db, server.enc, server.kc, "mobile", server.idp.WebClientID)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
 	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
-	chatsHandler := chats.Wire(server.db, server.enc)
+	chatsHandler := chats.Wire(server.db, server.enc, server.notifier)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
 	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes)
 	authzHandler, authzService := authorization.Wire(server.db)
-	supportHandler := support.Wire(server.db, server.enc, authzService)
+	supportHandler := support.Wire(server.db, server.enc, authzService, server.notifier)
 	exportHandler := export.Wire(server.db, server.enc)
 
 	r.Group(func(r chi.Router) {
@@ -98,6 +99,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/stress", func(r chi.Router) {
 			r.Post("/samples", stressHandler.IngestSample)
+			r.Get("/samples/latest", stressHandler.GetLatestSampleTimestamp)
+			r.Delete("/samples/me", stressHandler.DeleteMySamples)
 			r.Get("/scores/latest", stressHandler.GetLatestScore)
 
 			r.Group(func(r chi.Router) {
@@ -119,6 +122,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
 			r.Get("/entries/me", moodHandler.GetMyEntries)
 			r.Get("/entries/me/today", moodHandler.GetTodayEntry)
+			r.Delete("/entries/me/all", moodHandler.DeleteMyEntries)
 			r.Put("/entries/{entryId}", moodHandler.UpdateMoodEntry)
 			r.Delete("/entries/{entryId}", moodHandler.DeleteMoodEntry)
 
@@ -136,6 +140,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
+			r.Delete("/slots/me", calendarHandler.DeleteMySlots)
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
 			r.Post("/slots/{id}/book", calendarHandler.BookSlot)
 			r.Patch("/appointments/{id}/cancel", calendarHandler.CancelAppointment)
@@ -202,13 +207,13 @@ func (server *server) run(ctx context.Context, h http.Handler) error {
 		}
 
 		err := <-errCh
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return err
 		}
 
 		return nil
 	case err := <-errCh:
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return err
 		}
 

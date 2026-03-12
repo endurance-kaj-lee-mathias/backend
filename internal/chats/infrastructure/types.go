@@ -20,6 +20,8 @@ type Repository interface {
 	GetMessages(ctx context.Context, conversationID uuid.UUID, limit, offset int) ([]entities.MessageEntity, error)
 	CheckSupportRelationship(ctx context.Context, userA, userB uuid.UUID) (bool, error)
 	GetConversationSummaries(ctx context.Context, userID uuid.UUID) ([]entities.ConversationSummaryEntity, error)
+	FindOtherParticipants(ctx context.Context, conversationID, senderID uuid.UUID) ([]uuid.UUID, error)
+	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
 }
 
 type repository struct {

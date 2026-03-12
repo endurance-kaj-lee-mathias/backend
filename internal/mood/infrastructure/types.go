@@ -19,6 +19,7 @@ type Repository interface {
 	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
 	Update(ctx context.Context, ent entities.MoodEntryEntity) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error
 }
 
 type UserKeyReader interface {

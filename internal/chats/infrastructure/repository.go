@@ -242,3 +242,45 @@ func (r *repository) GetConversationSummaries(ctx context.Context, userID uuid.U
 
 	return summaries, nil
 }
+
+func (r *repository) FindOtherParticipants(ctx context.Context, conversationID, senderID uuid.UUID) ([]uuid.UUID, error) {
+	query := `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`
+
+	rows, err := r.db.QueryContext(ctx, query, conversationID, senderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	return ids, rows.Err()
+}
+
+func (r *repository) FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := `SELECT device_token FROM user_devices WHERE user_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tokens []string
+	for rows.Next() {
+		var token string
+		if err := rows.Scan(&token); err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, token)
+	}
+
+	return tokens, rows.Err()
+}
