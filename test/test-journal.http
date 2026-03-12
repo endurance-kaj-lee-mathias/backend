@@ -1,0 +1,380 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameSupport = Lee
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – SUPPORT
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Seed – ensure both users exist and capture IDs
+### =====================================================
+
+### 3a. Get or create VETERAN
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    client.global.set("veteranId", response.body.id);
+%}
+
+### 3b. Get or create SUPPORT
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{supportToken}}
+
+> {%
+    client.global.set("supportId", response.body.id);
+%}
+
+### =====================================================
+### 4. Establish support relationship
+###    SUPPORT sends invite → VETERAN accepts
+### =====================================================
+
+### 4a. SUPPORT sends invite to VETERAN
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("inviteId", response.body.id);
+%}
+
+### 4b. VETERAN accepts the invite
+PATCH {{baseUrl}}/support/{{inviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 5. Seed mood entries for VETERAN
+### =====================================================
+
+### 5a. Entry from last week
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-05",
+  "moodScore": 6,
+  "notes": "Feeling okay, a bit tired"
+}
+
+### 5b. Entry from yesterday
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-11",
+  "moodScore": 4,
+  "notes": "Rough night"
+}
+
+### 5c. Entry for today
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-12",
+  "moodScore": 7
+}
+
+### =====================================================
+### Stress score pagination – own scores
+### =====================================================
+
+### 6. Get own stress scores – default pagination (limit 20, offset 0)
+###    Expected: 200 OK – PaginatedResponse with pagination metadata
+GET {{baseUrl}}/stress/scores/latest
+Authorization: Bearer {{veteranToken}}
+
+### 7. Get own stress scores – first page of 2
+###    Expected: 200 OK – data has at most 2 items, page=1
+GET {{baseUrl}}/stress/scores/latest?limit=2&offset=0
+Authorization: Bearer {{veteranToken}}
+
+### 8. Get own stress scores – second page of 2
+###    Expected: 200 OK – page=2, offset reflected in pagination
+GET {{baseUrl}}/stress/scores/latest?limit=2&offset=2
+Authorization: Bearer {{veteranToken}}
+
+### 9. Offset beyond total – empty data array, total_pages still correct
+###    Expected: 200 OK – data: [], total_items unchanged
+GET {{baseUrl}}/stress/scores/latest?limit=10&offset=9999
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Stress score pagination – viewing a veteran's scores
+### =====================================================
+
+### 10. SUPPORT views VETERAN's paginated scores (no sharing rule yet – open account)
+###     Expected: 200 OK
+GET {{baseUrl}}/stress/scores/{{veteranId}}/latest?limit=5&offset=0
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Error paths – stress score pagination
+### =====================================================
+
+### 11. No auth on own scores → 401
+GET {{baseUrl}}/stress/scores/latest
+
+### 12. Invalid UUID on /scores/{id}/latest → 400
+GET {{baseUrl}}/stress/scores/not-a-uuid/latest
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Journal – happy paths
+### =====================================================
+
+### 13. VETERAN creates a wildcard allow rule for SUPPORT
+###     Expected: 201 Created – SUPPORT can now see all sections
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "*",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("wildcardRuleId", response.body.id);
+%}
+
+### 14. SUPPORT fetches the full journal – all sections visible
+###     Expected: 200 OK – userProfile, stressScores and moodEntries all present
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 15. Pagination – first page of 1 for each section
+###     Expected: 200 OK – each paginated section has page_size=1, page=1
+GET {{baseUrl}}/users/journal/{{veteranId}}?limit=1&offset=0
+Authorization: Bearer {{supportToken}}
+
+### 16. Pagination – second page of 1
+###     Expected: 200 OK – page=2, offset=1
+GET {{baseUrl}}/users/journal/{{veteranId}}?limit=1&offset=1
+Authorization: Bearer {{supportToken}}
+
+### 17. VETERAN deletes the wildcard rule and creates scoped allow rules instead
+###     Expected: 204 No Content
+DELETE {{baseUrl}}/sharing/rules/{{wildcardRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+### 18. VETERAN allows SUPPORT to see only the user profile
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "userProfile",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("profileRuleId", response.body.id);
+%}
+
+### 19. SUPPORT fetches journal – only userProfile section present, others omitted
+###     Expected: 200 OK – userProfile present, stressScores null, moodEntries null
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 20. VETERAN swaps to allow only stressScores
+DELETE {{baseUrl}}/sharing/rules/{{profileRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "stressScores",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("stressRuleId", response.body.id);
+%}
+
+### 21. SUPPORT fetches journal – only stressScores section present
+###     Expected: 200 OK – stressScores present, userProfile null, moodEntries null
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 22. VETERAN swaps to allow only moodEntries
+DELETE {{baseUrl}}/sharing/rules/{{stressRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "moodEntries",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("moodRuleId", response.body.id);
+%}
+
+### 23. SUPPORT fetches journal – only moodEntries section present
+###     Expected: 200 OK – moodEntries present, userProfile null, stressScores null
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 24. VETERAN adds stressScores rule too – two sections visible
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "stressScores",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("stressRuleId2", response.body.id);
+%}
+
+### 25. SUPPORT fetches journal – stressScores and moodEntries present, userProfile still null
+###     Expected: 200 OK
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### Cleanup shared rules
+DELETE {{baseUrl}}/sharing/rules/{{moodRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+DELETE {{baseUrl}}/sharing/rules/{{stressRuleId2}}
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Journal – no sharing rules set (all sections denied)
+### =====================================================
+
+### 26. SUPPORT fetches journal – no allow rules for any resource
+###     Expected: 200 OK – veteranId present, all sections null
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Journal – deny rule overrides open account
+### =====================================================
+
+### 27. VETERAN creates a deny rule for moodEntries against SUPPORT
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "moodEntries",
+  "effect": "deny"
+}
+
+> {%
+    client.global.set("denyMoodRuleId", response.body.id);
+%}
+
+### 28. VETERAN also allows stressScores and userProfile for SUPPORT
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "stressScores",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("stressRuleId3", response.body.id);
+%}
+
+
+### 29. SUPPORT fetches journal – moodEntries denied, other two sections present
+###     Expected: 200 OK – userProfile + stressScores present, moodEntries null
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### Cleanup
+DELETE {{baseUrl}}/sharing/rules/{{denyMoodRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+DELETE {{baseUrl}}/sharing/rules/{{stressRuleId3}}
+Authorization: Bearer {{veteranToken}}
+
+DELETE {{baseUrl}}/sharing/rules/{{profileRuleId2}}
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Journal – error paths
+### =====================================================
+
+### 30. No auth → 401
+GET {{baseUrl}}/users/journal/{{veteranId}}
+
+### 31. Invalid UUID → 400
+GET {{baseUrl}}/users/journal/not-a-uuid
+Authorization: Bearer {{supportToken}}
+
+### 32. Non-existent veteran ID → 404
+GET {{baseUrl}}/users/journal/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{supportToken}}
+
+### 33. VETERAN tries to view their own journal
+###     Expected: 403 Forbidden (no support relationship with yourself)
+GET {{baseUrl}}/users/journal/{{veteranId}}
+Authorization: Bearer {{veteranToken}}
+

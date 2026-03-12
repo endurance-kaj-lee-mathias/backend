@@ -137,6 +137,35 @@ func (r *repository) GetLatestScore(ctx context.Context, userID uuid.UUID) (doma
 	return entities.ScoreFromEntity(ent), nil
 }
 
+func (r *repository) GetScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.StressScore, int, error) {
+	query := `
+		SELECT id, user_id, score, category, model_version, computed_at, COUNT(*) OVER() AS total
+		FROM stress_scores
+		WHERE user_id = $1
+		ORDER BY computed_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var result []domain.StressScore
+	var total int
+
+	for rows.Next() {
+		var ent entities.StressScoreEntity
+		if err := rows.Scan(&ent.ID, &ent.UserID, &ent.Score, &ent.Category, &ent.ModelVersion, &ent.ComputedAt, &total); err != nil {
+			return nil, 0, err
+		}
+		result = append(result, entities.ScoreFromEntity(ent))
+	}
+
+	return result, total, rows.Err()
+}
+
 func (r *repository) DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
