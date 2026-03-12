@@ -24,3 +24,13 @@ func ToStressScoreResponse(score domain.StressScore) StressScoreResponse {
 		ComputedAt:   score.ComputedAt,
 	}
 }
+
+func ToStressScoreResponseList(scores []domain.StressScore) []StressScoreResponse {
+	result := make([]StressScoreResponse, 0, len(scores))
+
+	for _, score := range scores {
+		result = append(result, ToStressScoreResponse(score))
+	}
+
+	return result
+}

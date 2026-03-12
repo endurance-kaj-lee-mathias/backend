@@ -17,6 +17,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/export"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood"
 	moodapp "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
@@ -38,11 +39,12 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
 	chatsHandler := chats.Wire(server.db, server.enc, server.notifier)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
-	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
-	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes)
 	authzHandler, authzService := authorization.Wire(server.db)
+	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier, authzService)
+	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes)
 	supportHandler := support.Wire(server.db, server.enc, authzService, server.notifier)
 	exportHandler := export.Wire(server.db, server.enc)
+	journalHandler := journal.Wire(server.db, server.enc, authzService)
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.TokenAuthentication(server.idp))
@@ -80,6 +82,11 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
 				r.Use(auth.RequireAuthorization(authzService))
 				r.Get("/{id}", userHandler.GetUser)
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
+				r.Get("/journal/{id}", journalHandler.GetJournal)
 			})
 		})
 
@@ -122,6 +129,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
 			r.Get("/entries/me", moodHandler.GetMyEntries)
 			r.Get("/entries/me/today", moodHandler.GetTodayEntry)
+			r.Get("/entries/veterans", moodHandler.GetVeteransMood)
 			r.Delete("/entries/me/all", moodHandler.DeleteMyEntries)
 			r.Put("/entries/{entryId}", moodHandler.UpdateMoodEntry)
 			r.Delete("/entries/{entryId}", moodHandler.DeleteMoodEntry)

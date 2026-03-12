@@ -14,10 +14,11 @@ type Notifier interface {
 	Notify(ctx context.Context, deviceToken string) error
 }
 
-func Wire(db *sql.DB, enc encryption.Service, notifier Notifier) (*transport.Handler, *application.Scheduler) {
+func Wire(db *sql.DB, enc encryption.Service, notifier Notifier, authz application.AuthorizationChecker) (*transport.Handler, *application.Scheduler) {
 	repo := infrastructure.NewRepository(db)
 	userKeyReader := infrastructure.NewUserKeyReader(db, enc)
-	service := application.NewService(repo, userKeyReader, enc)
+	veteranReader := infrastructure.NewVeteranReader(db, enc)
+	service := application.NewService(repo, userKeyReader, enc, veteranReader, authz)
 	scheduler := application.NewScheduler(repo, notifier, enc.Hash("VETERAN"))
 	handler := transport.NewHandler(service)
 	return handler, scheduler

@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/pagination"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress/domain"
@@ -109,17 +110,15 @@ func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	score, err := h.service.GetLatestScore(r.Context(), userID)
+	limit, offset := pagination.ParsePagination(r)
+
+	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, limit, offset)
 	if err != nil {
-		if errors.Is(err, infrastructure.ScoreNotFound) {
-			response.WriteError(w, http.StatusNotFound, ScoreNotFound)
-			return
-		}
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
+	response.Write(w, http.StatusOK, response.NewPaginated(models.ToStressScoreResponseList(scores), total, limit, offset))
 }
 
 func (h *Handler) DeleteMySamples(w http.ResponseWriter, r *http.Request) {
@@ -150,15 +149,13 @@ func (h *Handler) GetLatestScoreByUserID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	score, err := h.service.GetLatestScore(r.Context(), userID)
+	limit, offset := pagination.ParsePagination(r)
+
+	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, limit, offset)
 	if err != nil {
-		if errors.Is(err, infrastructure.ScoreNotFound) {
-			response.WriteError(w, http.StatusNotFound, ScoreNotFound)
-			return
-		}
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
+	response.Write(w, http.StatusOK, response.NewPaginated(models.ToStressScoreResponseList(scores), total, limit, offset))
 }

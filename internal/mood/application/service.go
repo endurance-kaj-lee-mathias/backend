@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/infrastructure/entities"
 )
@@ -128,4 +129,45 @@ func (s *service) GetTodayEntry(ctx context.Context, userID domain.UserId) (*dom
 	}
 
 	return &entry, nil
+}
+
+func (s *service) GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]domain.VeteranMoodSummary, error) {
+	veterans, err := s.veteranLister.GetVeteransForMember(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+
+	summaries := make([]domain.VeteranMoodSummary, 0, len(veterans))
+
+	for _, veteran := range veterans {
+		allowed, err := s.authz.IsAllowed(ctx, veteran.ID, memberID, "moodEntries")
+		if err != nil {
+			return nil, err
+		}
+
+		if !allowed {
+			continue
+		}
+
+		latest, err := s.repo.FindLatestByUserID(ctx, veteran.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		summary := domain.VeteranMoodSummary{
+			VeteranID: veteran.ID,
+			FirstName: veteran.FirstName,
+			LastName:  veteran.LastName,
+			Image:     veteran.Image,
+		}
+
+		if latest != nil {
+			summary.LatestScore = &latest.MoodScore
+			summary.LastUpdatedAt = &latest.UpdatedAt
+		}
+
+		summaries = append(summaries, summary)
+	}
+
+	return summaries, nil
 }

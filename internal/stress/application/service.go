@@ -98,3 +98,7 @@ func (s *service) GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID
 func (s *service) DeleteMySamples(ctx context.Context, userID uuid.UUID) error {
 	return s.repo.DeleteAllByUserID(ctx, userID)
 }
+
+func (s *service) GetScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.StressScore, int, error) {
+	return s.repo.GetScoresPaginated(ctx, userID, limit, offset)
+}

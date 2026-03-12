@@ -1,0 +1,244 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameSupport = Lee
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – SUPPORT
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Seed – ensure both users exist, store their IDs
+### =====================================================
+
+### 3a. Get or create VETERAN – store veteranId
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+> {%
+    client.global.set("veteranId", response.body.id);
+%}
+
+### 3b. Get or create SUPPORT – store supportId
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{supportToken}}
+
+> {%
+    client.global.set("supportId", response.body.id);
+%}
+
+### =====================================================
+### 4. Setup – establish support relationship
+###    SUPPORT sends invite to VETERAN, VETERAN accepts
+### =====================================================
+
+### 4a. Support sends invite to veteran
+POST {{baseUrl}}/support
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "username": "{{usernameVeteran}}"
+}
+
+> {%
+    client.global.set("inviteId", response.body.id);
+%}
+
+### 4b. Veteran accepts the invite
+PATCH {{baseUrl}}/support/{{inviteId}}/accept
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### 5. Setup – seed mood entries for the veteran
+### =====================================================
+
+### 5a. Submit mood entry 1
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-10",
+  "moodScore": 7,
+  "notes": "Feeling pretty good today."
+}
+
+### 5b. Submit mood entry 2
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-11",
+  "moodScore": 4,
+  "notes": "A bit tired, rough night."
+}
+
+### 5c. Submit mood entry 3 (most recent – this score and timestamp should appear)
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-12",
+  "moodScore": 9
+}
+
+### =====================================================
+### GET /mood/entries/veterans – Happy path (public account, no rules)
+### Response shape per item: { id, firstName, lastName, image, latestScore, lastUpdatedAt }
+### =====================================================
+
+### 6. Support fetches veterans' mood – public account, no rules
+###    Expected: 200 – array with 1 veteran, latestScore=9
+GET {{baseUrl}}/mood/entries/veterans
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Sharing rules – explicit deny
+### =====================================================
+
+### 7. Veteran creates a deny rule for moodEntries for the support member
+###    Expected: 201 Created
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "moodEntries",
+  "effect": "deny"
+}
+
+> {%
+    client.global.set("denyRuleId", response.body.id);
+%}
+
+### 8. Support fetches veterans' mood – deny rule in place
+###    Expected: 200 – empty array (veteran silently excluded)
+GET {{baseUrl}}/mood/entries/veterans
+Authorization: Bearer {{supportToken}}
+
+### 9. Veteran removes the deny rule
+###    Expected: 204 No Content
+DELETE {{baseUrl}}/sharing/rules/{{denyRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+### 10. Support fetches veterans' mood – deny rule removed
+###     Expected: 200 – veteran visible again, latestScore=9
+GET {{baseUrl}}/mood/entries/veterans
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Sharing rules – private account
+### =====================================================
+
+### 11. Veteran sets account to private
+###     Expected: 204 No Content
+PATCH {{baseUrl}}/users/me/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": true
+}
+
+### 12. Support fetches veterans' mood – private, no allow rule
+###     Expected: 200 – empty array
+GET {{baseUrl}}/mood/entries/veterans
+Authorization: Bearer {{supportToken}}
+
+### 13. Veteran creates explicit allow rule for moodEntries for support member
+###     Expected: 201 Created
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{supportId}}",
+  "resource": "moodEntries",
+  "effect": "deny"
+}
+
+> {%
+    client.global.set("allowRuleId", response.body.id);
+%}
+
+### 14. Support fetches veterans' mood – private account WITH allow rule
+###     Expected: 200 – veteran visible, latestScore=9
+GET {{baseUrl}}/mood/entries/veterans
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Cleanup
+### =====================================================
+
+### 15. Veteran removes the allow rule
+###     Expected: 204 No Content
+DELETE {{baseUrl}}/sharing/rules/{{allowRuleId}}
+Authorization: Bearer {{veteranToken}}
+
+### 16. Veteran sets account back to public
+###     Expected: 204 No Content
+PATCH {{baseUrl}}/users/me/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": false
+}
+
+### =====================================================
+### Edge cases
+### =====================================================
+
+### 17. Veteran with no mood entries yet – latestScore and lastUpdatedAt should be absent
+###     (requires a second veteran with no entries in the support relationship)
+###     Expected: 200 – veteran entry without latestScore / lastUpdatedAt fields
+
+### 18. Veteran calls the endpoint (has no veterans of their own)
+###     Expected: 200 – empty array
+GET {{baseUrl}}/mood/entries/veterans
+Authorization: Bearer {{veteranToken}}
+
+### 19. No auth token → expect 401
+GET {{baseUrl}}/mood/entries/veterans
+

@@ -46,14 +46,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2025-12-04T08:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 62.1,
-  "rmssd_ms": 54.3,
-  "resting_hr": 58.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2025-12-04T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 62.1,
+  "rmssdMs": 54.3,
+  "restingHr": 58.0,
   "steps": 420,
-  "sleep_debt_hours": 0.5
+  "sleepDebtHours": 0.5
 }
 
 ### 4. Day -87
@@ -62,14 +62,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2025-12-07T09:15:00Z",
-  "window_minutes": 5,
-  "mean_hr": 63.8,
-  "rmssd_ms": 51.7,
-  "resting_hr": 59.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2025-12-07T09:15:00Z",
+  "windowMinutes": 5,
+  "meanHr": 63.8,
+  "rmssdMs": 51.7,
+  "restingHr": 59.0,
   "steps": 380,
-  "sleep_debt_hours": 0.0
+  "sleepDebtHours": 0.0
 }
 
 ### 5. Day -84
@@ -78,14 +78,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2025-12-10T07:45:00Z",
-  "window_minutes": 5,
-  "mean_hr": 61.5,
-  "rmssd_ms": 56.0,
-  "resting_hr": 57.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2025-12-10T07:45:00Z",
+  "windowMinutes": 5,
+  "meanHr": 61.5,
+  "rmssdMs": 56.0,
+  "restingHr": 57.5,
   "steps": 510,
-  "sleep_debt_hours": 0.3
+  "sleepDebtHours": 0.3
 }
 
 ### 6. Day -81
@@ -94,14 +94,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2025-12-13T08:30:00Z",
-  "window_minutes": 5,
-  "mean_hr": 64.2,
-  "rmssd_ms": 52.5,
-  "resting_hr": 59.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2025-12-13T08:30:00Z",
+  "windowMinutes": 5,
+  "meanHr": 64.2,
+  "rmssdMs": 52.5,
+  "restingHr": 59.5,
   "steps": 460,
-  "sleep_debt_hours": 0.8
+  "sleepDebtHours": 0.8
 }
 
 ### 7. Day -78
@@ -110,14 +110,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2025-12-16T09:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 60.9,
-  "rmssd_ms": 57.1,
-  "resting_hr": 58.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2025-12-16T09:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 60.9,
+  "rmssdMs": 57.1,
+  "restingHr": 58.0,
   "steps": 490,
-  "sleep_debt_hours": 0.2
+  "sleepDebtHours": 0.2
 }
 
 ### 8. Day -75
@@ -126,14 +126,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2025-12-19T08:10:00Z",
-  "window_minutes": 5,
-  "mean_hr": 62.7,
-  "rmssd_ms": 53.8,
-  "resting_hr": 59.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2025-12-19T08:10:00Z",
+  "windowMinutes": 5,
+  "meanHr": 62.7,
+  "rmssdMs": 53.8,
+  "restingHr": 59.0,
   "steps": 430,
-  "sleep_debt_hours": 0.6
+  "sleepDebtHours": 0.6
 }
 
 ### 9. Day -72
@@ -142,14 +142,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2025-12-22T07:55:00Z",
-  "window_minutes": 5,
-  "mean_hr": 63.0,
-  "rmssd_ms": 55.4,
-  "resting_hr": 58.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2025-12-22T07:55:00Z",
+  "windowMinutes": 5,
+  "meanHr": 63.0,
+  "rmssdMs": 55.4,
+  "restingHr": 58.5,
   "steps": 470,
-  "sleep_debt_hours": 0.4
+  "sleepDebtHours": 0.4
 }
 
 ### =====================================================
@@ -163,14 +163,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-03T08:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 67.4,
-  "rmssd_ms": 46.2,
-  "resting_hr": 61.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-03T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 67.4,
+  "rmssdMs": 46.2,
+  "restingHr": 61.0,
   "steps": 350,
-  "sleep_debt_hours": 1.2
+  "sleepDebtHours": 1.2
 }
 
 ### 11. Day -57
@@ -179,14 +179,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-06T09:20:00Z",
-  "window_minutes": 5,
-  "mean_hr": 68.1,
-  "rmssd_ms": 44.8,
-  "resting_hr": 62.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-06T09:20:00Z",
+  "windowMinutes": 5,
+  "meanHr": 68.1,
+  "rmssdMs": 44.8,
+  "restingHr": 62.0,
   "steps": 320,
-  "sleep_debt_hours": 1.5
+  "sleepDebtHours": 1.5
 }
 
 ### 12. Day -54
@@ -195,14 +195,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-09T07:40:00Z",
-  "window_minutes": 5,
-  "mean_hr": 69.3,
-  "rmssd_ms": 43.1,
-  "resting_hr": 62.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-09T07:40:00Z",
+  "windowMinutes": 5,
+  "meanHr": 69.3,
+  "rmssdMs": 43.1,
+  "restingHr": 62.5,
   "steps": 300,
-  "sleep_debt_hours": 1.8
+  "sleepDebtHours": 1.8
 }
 
 ### 13. Day -51
@@ -211,14 +211,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-12T08:50:00Z",
-  "window_minutes": 5,
-  "mean_hr": 70.0,
-  "rmssd_ms": 41.6,
-  "resting_hr": 63.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-12T08:50:00Z",
+  "windowMinutes": 5,
+  "meanHr": 70.0,
+  "rmssdMs": 41.6,
+  "restingHr": 63.0,
   "steps": 290,
-  "sleep_debt_hours": 2.0
+  "sleepDebtHours": 2.0
 }
 
 ### 14. Day -48
@@ -227,14 +227,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-15T09:05:00Z",
-  "window_minutes": 5,
-  "mean_hr": 68.7,
-  "rmssd_ms": 45.0,
-  "resting_hr": 61.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-15T09:05:00Z",
+  "windowMinutes": 5,
+  "meanHr": 68.7,
+  "rmssdMs": 45.0,
+  "restingHr": 61.5,
   "steps": 340,
-  "sleep_debt_hours": 1.3
+  "sleepDebtHours": 1.3
 }
 
 ### 15. Day -45
@@ -243,14 +243,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-18T08:20:00Z",
-  "window_minutes": 5,
-  "mean_hr": 71.2,
-  "rmssd_ms": 40.3,
-  "resting_hr": 63.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-18T08:20:00Z",
+  "windowMinutes": 5,
+  "meanHr": 71.2,
+  "rmssdMs": 40.3,
+  "restingHr": 63.5,
   "steps": 270,
-  "sleep_debt_hours": 2.2
+  "sleepDebtHours": 2.2
 }
 
 ### 16. Day -42
@@ -259,14 +259,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-21T07:35:00Z",
-  "window_minutes": 5,
-  "mean_hr": 69.5,
-  "rmssd_ms": 42.7,
-  "resting_hr": 62.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-21T07:35:00Z",
+  "windowMinutes": 5,
+  "meanHr": 69.5,
+  "rmssdMs": 42.7,
+  "restingHr": 62.0,
   "steps": 310,
-  "sleep_debt_hours": 1.6
+  "sleepDebtHours": 1.6
 }
 
 ### 17. Day -39
@@ -275,14 +275,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-01-24T08:45:00Z",
-  "window_minutes": 5,
-  "mean_hr": 70.8,
-  "rmssd_ms": 41.0,
-  "resting_hr": 63.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-01-24T08:45:00Z",
+  "windowMinutes": 5,
+  "meanHr": 70.8,
+  "rmssdMs": 41.0,
+  "restingHr": 63.0,
   "steps": 285,
-  "sleep_debt_hours": 1.9
+  "sleepDebtHours": 1.9
 }
 
 ### =====================================================
@@ -296,14 +296,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-01T08:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 78.5,
-  "rmssd_ms": 32.4,
-  "resting_hr": 67.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-01T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 78.5,
+  "rmssdMs": 32.4,
+  "restingHr": 67.0,
   "steps": 210,
-  "sleep_debt_hours": 3.5
+  "sleepDebtHours": 3.5
 }
 
 ### 19. Day -27
@@ -312,14 +312,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-04T09:10:00Z",
-  "window_minutes": 5,
-  "mean_hr": 80.1,
-  "rmssd_ms": 30.7,
-  "resting_hr": 68.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-04T09:10:00Z",
+  "windowMinutes": 5,
+  "meanHr": 80.1,
+  "rmssdMs": 30.7,
+  "restingHr": 68.0,
   "steps": 190,
-  "sleep_debt_hours": 4.0
+  "sleepDebtHours": 4.0
 }
 
 ### 20. Day -24
@@ -328,14 +328,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-07T07:50:00Z",
-  "window_minutes": 5,
-  "mean_hr": 82.3,
-  "rmssd_ms": 28.9,
-  "resting_hr": 69.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-07T07:50:00Z",
+  "windowMinutes": 5,
+  "meanHr": 82.3,
+  "rmssdMs": 28.9,
+  "restingHr": 69.5,
   "steps": 175,
-  "sleep_debt_hours": 4.5
+  "sleepDebtHours": 4.5
 }
 
 ### 21. Day -21
@@ -344,14 +344,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-10T08:30:00Z",
-  "window_minutes": 5,
-  "mean_hr": 79.6,
-  "rmssd_ms": 31.5,
-  "resting_hr": 67.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-10T08:30:00Z",
+  "windowMinutes": 5,
+  "meanHr": 79.6,
+  "rmssdMs": 31.5,
+  "restingHr": 67.5,
   "steps": 200,
-  "sleep_debt_hours": 3.8
+  "sleepDebtHours": 3.8
 }
 
 ### 22. Day -18
@@ -360,14 +360,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-13T09:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 83.7,
-  "rmssd_ms": 27.2,
-  "resting_hr": 70.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-13T09:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 83.7,
+  "rmssdMs": 27.2,
+  "restingHr": 70.0,
   "steps": 160,
-  "sleep_debt_hours": 5.0
+  "sleepDebtHours": 5.0
 }
 
 ### 23. Day -15
@@ -376,14 +376,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-16T08:15:00Z",
-  "window_minutes": 5,
-  "mean_hr": 81.4,
-  "rmssd_ms": 29.8,
-  "resting_hr": 68.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-16T08:15:00Z",
+  "windowMinutes": 5,
+  "meanHr": 81.4,
+  "rmssdMs": 29.8,
+  "restingHr": 68.5,
   "steps": 185,
-  "sleep_debt_hours": 4.2
+  "sleepDebtHours": 4.2
 }
 
 ### 24. Day -12
@@ -392,14 +392,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-19T07:45:00Z",
-  "window_minutes": 5,
-  "mean_hr": 84.9,
-  "rmssd_ms": 25.6,
-  "resting_hr": 71.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-19T07:45:00Z",
+  "windowMinutes": 5,
+  "meanHr": 84.9,
+  "rmssdMs": 25.6,
+  "restingHr": 71.0,
   "steps": 145,
-  "sleep_debt_hours": 5.5
+  "sleepDebtHours": 5.5
 }
 
 ### 25. Day -9
@@ -408,14 +408,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-22T08:50:00Z",
-  "window_minutes": 5,
-  "mean_hr": 86.2,
-  "rmssd_ms": 24.1,
-  "resting_hr": 72.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-22T08:50:00Z",
+  "windowMinutes": 5,
+  "meanHr": 86.2,
+  "rmssdMs": 24.1,
+  "restingHr": 72.0,
   "steps": 130,
-  "sleep_debt_hours": 6.0
+  "sleepDebtHours": 6.0
 }
 
 ### =====================================================
@@ -429,14 +429,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-25T08:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 89.4,
-  "rmssd_ms": 21.3,
-  "resting_hr": 74.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-25T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 89.4,
+  "rmssdMs": 21.3,
+  "restingHr": 74.0,
   "steps": 110,
-  "sleep_debt_hours": 6.5
+  "sleepDebtHours": 6.5
 }
 
 ### 27. Day -4
@@ -445,14 +445,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-02-27T09:10:00Z",
-  "window_minutes": 5,
-  "mean_hr": 91.0,
-  "rmssd_ms": 19.8,
-  "resting_hr": 75.5,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-02-27T09:10:00Z",
+  "windowMinutes": 5,
+  "meanHr": 91.0,
+  "rmssdMs": 19.8,
+  "restingHr": 75.5,
   "steps": 95,
-  "sleep_debt_hours": 7.0
+  "sleepDebtHours": 7.0
 }
 
 ### 28. Day -2
@@ -461,14 +461,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-03-01T07:55:00Z",
-  "window_minutes": 5,
-  "mean_hr": 93.7,
-  "rmssd_ms": 17.5,
-  "resting_hr": 77.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-03-01T07:55:00Z",
+  "windowMinutes": 5,
+  "meanHr": 93.7,
+  "rmssdMs": 17.5,
+  "restingHr": 77.0,
   "steps": 80,
-  "sleep_debt_hours": 7.5
+  "sleepDebtHours": 7.5
 }
 
 ### 29. Day -1
@@ -477,14 +477,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-03-02T08:30:00Z",
-  "window_minutes": 5,
-  "mean_hr": 95.1,
-  "rmssd_ms": 16.2,
-  "resting_hr": 78.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-03-02T08:30:00Z",
+  "windowMinutes": 5,
+  "meanHr": 95.1,
+  "rmssdMs": 16.2,
+  "restingHr": 78.0,
   "steps": 70,
-  "sleep_debt_hours": 8.0
+  "sleepDebtHours": 8.0
 }
 
 ### 30. Today
@@ -493,14 +493,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-03-03T08:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 96.8,
-  "rmssd_ms": 15.0,
-  "resting_hr": 79.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-03-03T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 96.8,
+  "rmssdMs": 15.0,
+  "restingHr": 79.0,
   "steps": 60,
-  "sleep_debt_hours": 8.5
+  "sleepDebtHours": 8.5
 }
 
 ### Force Low stress scenario
@@ -509,14 +509,14 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "user_id": "{{veteranId}}",
-  "timestamp_utc": "2026-03-04T08:00:00Z",
-  "window_minutes": 5,
-  "mean_hr": 56.0,
-  "rmssd_ms": 65.0,
-  "resting_hr": 55.0,
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-03-04T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 56.0,
+  "rmssdMs": 65.0,
+  "restingHr": 55.0,
   "steps": 600,
-  "sleep_debt_hours": 0.0
+  "sleepDebtHours": 0.0
 }
 
 ### =====================================================
