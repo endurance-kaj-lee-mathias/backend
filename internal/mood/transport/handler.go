@@ -232,3 +232,24 @@ func (h *Handler) DeleteMoodEntry(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) DeleteMyEntries(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := domain.NewUserId(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteMyMoodEntries(r.Context(), userID); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

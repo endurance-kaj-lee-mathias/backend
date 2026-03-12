@@ -96,6 +96,27 @@ func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
 }
 
+func (h *Handler) DeleteMySamples(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteMySamples(r.Context(), userID); err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) GetLatestScoreByUserID(w http.ResponseWriter, r *http.Request) {
 	userID, err := uuid.FromString(chi.URLParam(r, "id"))
 	if err != nil {

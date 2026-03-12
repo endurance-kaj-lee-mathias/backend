@@ -98,6 +98,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/stress", func(r chi.Router) {
 			r.Post("/samples", stressHandler.IngestSample)
+			r.Delete("/samples/me", stressHandler.DeleteMySamples)
 			r.Get("/scores/latest", stressHandler.GetLatestScore)
 
 			r.Group(func(r chi.Router) {
@@ -119,6 +120,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
 			r.Get("/entries/me", moodHandler.GetMyEntries)
 			r.Get("/entries/me/today", moodHandler.GetTodayEntry)
+			r.Delete("/entries/me/all", moodHandler.DeleteMyEntries)
 			r.Put("/entries/{entryId}", moodHandler.UpdateMoodEntry)
 			r.Delete("/entries/{entryId}", moodHandler.DeleteMoodEntry)
 
@@ -133,6 +135,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 		r.Route("/calendar", func(r chi.Router) {
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
+			r.Delete("/slots/me", calendarHandler.DeleteMySlots)
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
 			r.Post("/slots/{id}/book", calendarHandler.BookSlot)
 			r.Patch("/appointments/{id}/cancel", calendarHandler.CancelAppointment)
