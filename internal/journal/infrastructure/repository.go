@@ -9,8 +9,6 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-var UserNotFound = errors.New("user not found")
-
 func (r *repository) GetUserProfile(ctx context.Context, userID uuid.UUID) (UserProfileEntity, error) {
 	query := `
 		SELECT id, encrypted_user_key, encrypted_first_name, encrypted_last_name, encrypted_username,

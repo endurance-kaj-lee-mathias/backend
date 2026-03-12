@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
@@ -18,16 +17,7 @@ type Service interface {
 	UpdateMoodEntry(ctx context.Context, entry domain.MoodEntry) error
 	DeleteMoodEntry(ctx context.Context, id domain.MoodId) error
 	DeleteMyMoodEntries(ctx context.Context, userID domain.UserId) error
-	GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]VeteranMoodSummary, error)
-}
-
-type VeteranMoodSummary struct {
-	VeteranID     uuid.UUID
-	FirstName     string
-	LastName      string
-	Image         string
-	LatestScore   *int
-	LastUpdatedAt *time.Time
+	GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]domain.VeteranMoodSummary, error)
 }
 
 type AuthorizationChecker interface {
