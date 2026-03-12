@@ -89,3 +89,7 @@ func (s *service) computeStressScore(ctx context.Context, userID uuid.UUID) (dom
 func (s *service) GetLatestScore(ctx context.Context, userID uuid.UUID) (domain.StressScore, error) {
 	return s.repo.GetLatestScore(ctx, userID)
 }
+
+func (s *service) DeleteMySamples(ctx context.Context, userID uuid.UUID) error {
+	return s.repo.DeleteAllByUserID(ctx, userID)
+}

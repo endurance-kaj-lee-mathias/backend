@@ -84,6 +84,28 @@ func (h *Handler) GetSlots(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToSlotModels(slots))
 }
 
+func (h *Handler) DeleteMySlots(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	providerID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteMySlots(r.Context(), providerID); err != nil {
+		status, errMsg := mapError(err)
+		response.WriteError(w, status, errMsg)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) DeleteSlot(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
 	if !ok {

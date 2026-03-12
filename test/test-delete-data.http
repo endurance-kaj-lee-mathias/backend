@@ -1,0 +1,294 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+    var payload = response.body.access_token.split(".")[1];
+    var decoded = JSON.parse(atob(payload));
+    client.global.set("veteranId", decoded.sub);
+%}
+
+### =====================================================
+### 2. Get access token – THERAPIST
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+    var payload = response.body.access_token.split(".")[1];
+    var decoded = JSON.parse(atob(payload));
+    client.global.set("therapistId", decoded.sub);
+%}
+
+### =====================================================
+### 3. Ensure users exist in DB
+### =====================================================
+
+### 3a. Get or create VETERAN
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+### 3b. Get or create THERAPIST
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### Seed – Mood entries (veteran)
+### =====================================================
+
+### 4. Create mood entry 1
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-10",
+  "moodScore": 7,
+  "notes": "Good day overall."
+}
+
+### 5. Create mood entry 2
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-11",
+  "moodScore": 5,
+  "notes": "Average day."
+}
+
+### 6. Verify entries exist → expect list with 2 entries
+GET {{baseUrl}}/mood/entries/me
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Seed – Stress samples (veteran)
+### =====================================================
+
+### 7. Create stress sample 1
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-03-10T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 62.1,
+  "rmssdMs": 54.3,
+  "restingHr": 58.0,
+  "steps": 420,
+  "sleepDebtHours": 0.5
+}
+
+### 8. Create stress sample 2
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "user_id": "{{veteranId}}",
+  "timestamp_utc": "2026-03-11T08:00:00Z",
+  "window_minutes": 5,
+  "mean_hr": 70.0,
+  "rmssd_ms": 40.0,
+  "resting_hr": 65.0,
+  "steps": 300,
+  "sleep_debt_hours": 1.0
+}
+
+### =====================================================
+### Seed – Calendar slots (therapist)
+### =====================================================
+
+### 9. Create urgent slot (required first by business rule)
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-01T08:00:00Z",
+  "endTime": "2026-04-01T09:00:00Z",
+  "isUrgent": true
+}
+
+> {%
+    client.global.set("urgentSlotId", response.body.id);
+%}
+
+### 10. Create normal slot
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-01T10:00:00Z",
+  "endTime": "2026-04-01T11:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("normalSlotId", response.body.id);
+%}
+
+### 11. Verify slots exist
+GET {{baseUrl}}/calendar/slots?from=2026-04-01T00:00:00Z&to=2026-04-02T00:00:00Z
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### DELETE – Mood entries (happy path)
+### =====================================================
+
+### 12. Delete all mood entries → expect 204
+DELETE {{baseUrl}}/mood/entries/me/all
+Authorization: Bearer {{veteranToken}}
+
+### 13. Verify mood entries are gone → expect empty list
+GET {{baseUrl}}/mood/entries/me
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### DELETE – Mood entries (error paths)
+### =====================================================
+
+### 14. No auth token → expect 401
+DELETE {{baseUrl}}/mood/entries/me/all
+
+### =====================================================
+### DELETE – Stress samples (happy path)
+### =====================================================
+
+### 15. Delete all stress samples + scores → expect 204
+DELETE {{baseUrl}}/stress/samples/me
+Authorization: Bearer {{veteranToken}}
+
+### 16. Verify stress score is gone → expect 404
+GET {{baseUrl}}/stress/scores/latest
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### DELETE – Stress samples (error paths)
+### =====================================================
+
+### 17. No auth token → expect 401
+DELETE {{baseUrl}}/stress/samples/me
+
+### =====================================================
+### DELETE – Calendar slots (happy path)
+### =====================================================
+
+### 18. Delete all slots for therapist → expect 204
+DELETE {{baseUrl}}/calendar/slots/me
+Authorization: Bearer {{therapistToken}}
+
+### 19. Verify slots are gone → expect empty list
+GET {{baseUrl}}/calendar/slots?from=2026-04-01T00:00:00Z&to=2026-04-02T00:00:00Z
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### DELETE – Calendar slots (error paths)
+### =====================================================
+
+### 20. No auth token → expect 401
+DELETE {{baseUrl}}/calendar/slots/me
+
+### =====================================================
+### Seed again before cascade user delete test
+### =====================================================
+
+### 21. Re-seed mood entry
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-03-12",
+  "moodScore": 8,
+  "notes": "Seeding before account delete."
+}
+
+### 22. Re-seed stress sample
+POST {{baseUrl}}/stress/samples
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "userId": "{{veteranId}}",
+  "timestamp": "2026-03-12T08:00:00Z",
+  "windowMinutes": 5,
+  "meanHr": 65.0,
+  "rmssdMs": 50.0,
+  "restingHr": 60.0,
+  "steps": 500,
+  "sleepDebtHours": 0.8
+}
+
+### 23. Re-seed calendar slot (therapist)
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-05-01T08:00:00Z",
+  "endTime": "2026-05-01T09:00:00Z",
+  "isUrgent": true
+}
+
+### =====================================================
+### CASCADE – Delete therapist account
+### All slots + appointments owned by therapist cascade via trigger
+### =====================================================
+
+### 24. Delete therapist account → expect 204
+DELETE {{baseUrl}}/users/me
+Authorization: Bearer {{therapistToken}}
+
+### 25. Verify therapist slots are gone → expect empty list
+GET {{baseUrl}}/calendar/slots?from=2026-05-01T00:00:00Z&to=2026-05-02T00:00:00Z
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### CASCADE – Delete veteran account
+### All mood entries, stress samples/scores, support relations,
+### devices, addresses and conversation data cascade via trigger
+### =====================================================
+
+### 26. Delete veteran account → expect 204
+DELETE {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+### 27. Verify veteran is gone → expect 404
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{veteranToken}}
+
