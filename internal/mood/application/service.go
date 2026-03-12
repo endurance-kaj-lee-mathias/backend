@@ -131,13 +131,13 @@ func (s *service) GetTodayEntry(ctx context.Context, userID domain.UserId) (*dom
 	return &entry, nil
 }
 
-func (s *service) GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]VeteranMoodSummary, error) {
+func (s *service) GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]domain.VeteranMoodSummary, error) {
 	veterans, err := s.veteranLister.GetVeteransForMember(ctx, memberID)
 	if err != nil {
 		return nil, err
 	}
 
-	summaries := make([]VeteranMoodSummary, 0, len(veterans))
+	summaries := make([]domain.VeteranMoodSummary, 0, len(veterans))
 
 	for _, veteran := range veterans {
 		allowed, err := s.authz.IsAllowed(ctx, veteran.ID, memberID, "moodEntries")
@@ -154,7 +154,7 @@ func (s *service) GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]Ve
 			return nil, err
 		}
 
-		summary := VeteranMoodSummary{
+		summary := domain.VeteranMoodSummary{
 			VeteranID: veteran.ID,
 			FirstName: veteran.FirstName,
 			LastName:  veteran.LastName,

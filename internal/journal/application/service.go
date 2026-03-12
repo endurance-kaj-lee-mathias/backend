@@ -6,7 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	authzdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/domain"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure/entities"
 )
 
 func (s *service) GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID uuid.UUID, limit, offset int) (domain.JournalReport, error) {
@@ -104,7 +104,7 @@ func (s *service) GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID 
 	return report, nil
 }
 
-func (s *service) decryptProfile(ent infrastructure.UserProfileEntity, userKey []byte) (domain.UserProfileSection, error) {
+func (s *service) decryptProfile(ent entities.UserProfileEntity, userKey []byte) (domain.UserProfileSection, error) {
 	firstName, err := s.enc.Decrypt(ent.EncryptedFirstName, userKey)
 	if err != nil {
 		return domain.UserProfileSection{}, err

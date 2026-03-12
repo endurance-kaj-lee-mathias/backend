@@ -3,15 +3,15 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/gofrs/uuid"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure/entities"
 )
 
 type Repository interface {
-	GetUserProfile(ctx context.Context, userID uuid.UUID) (UserProfileEntity, error)
-	GetStressScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]StressScoreRow, int, error)
-	GetMoodEntriesPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]MoodEntryRow, int, error)
+	GetUserProfile(ctx context.Context, userID uuid.UUID) (entities.UserProfileEntity, error)
+	GetStressScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entities.StressScoreRow, int, error)
+	GetMoodEntriesPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entities.MoodEntryRow, int, error)
 }
 
 type repository struct {

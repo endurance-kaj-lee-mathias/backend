@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/domain"
 )
 
 type VeteranMoodResponse struct {
@@ -15,7 +15,7 @@ type VeteranMoodResponse struct {
 	LatestScore   *int       `json:"latestScore,omitempty"`
 }
 
-func ToVeteranMoodResponseList(summaries []application.VeteranMoodSummary) []VeteranMoodResponse {
+func ToVeteranMoodResponseList(summaries []domain.VeteranMoodSummary) []VeteranMoodResponse {
 	result := make([]VeteranMoodResponse, 0, len(summaries))
 
 	for _, s := range summaries {
