@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -150,4 +151,27 @@ func (r *repository) GetLatestScore(ctx context.Context, userID uuid.UUID) (doma
 	}
 
 	return entities.ScoreFromEntity(ent), nil
+}
+
+func (r *repository) DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			slog.Error("stress: rollback delete all by user", "error", err)
+		}
+	}()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM stress_samples WHERE user_id = $1`, userID); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM stress_scores WHERE user_id = $1`, userID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

@@ -14,6 +14,7 @@ type Service interface {
 	IngestSample(ctx context.Context, sample domain.StressSample) error
 	GetLatestScore(ctx context.Context, userID uuid.UUID) (domain.StressScore, error)
 	GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID) (time.Time, error)
+	DeleteMySamples(ctx context.Context, userID uuid.UUID) error
 }
 
 type service struct {

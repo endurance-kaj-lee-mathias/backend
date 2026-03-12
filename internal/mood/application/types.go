@@ -15,6 +15,7 @@ type Service interface {
 	GetTodayEntry(ctx context.Context, userID domain.UserId) (*domain.MoodEntry, error)
 	UpdateMoodEntry(ctx context.Context, entry domain.MoodEntry) error
 	DeleteMoodEntry(ctx context.Context, id domain.MoodId) error
+	DeleteMyMoodEntries(ctx context.Context, userID domain.UserId) error
 }
 
 type PhoneNotifier interface {

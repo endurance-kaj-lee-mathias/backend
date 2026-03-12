@@ -20,6 +20,7 @@ type Repository interface {
 	CancelAppointment(ctx context.Context, appointmentID uuid.UUID, now time.Time) error
 	CheckSlotOverlap(ctx context.Context, providerID uuid.UUID, start, end time.Time) (bool, error)
 	GetUrgentSlotMinutesForDate(ctx context.Context, providerID uuid.UUID, date time.Time) (int, error)
+	DeleteSlotsByProviderID(ctx context.Context, providerID uuid.UUID) error
 	GetEventsByUserID(ctx context.Context, userID uuid.UUID) ([]entities.CalendarEventEntity, error)
 }
 

@@ -94,3 +94,7 @@ func (s *service) GetLatestScore(ctx context.Context, userID uuid.UUID) (domain.
 func (s *service) GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID) (time.Time, error) {
 	return s.repo.GetLatestSampleTimestamp(ctx, userID)
 }
+
+func (s *service) DeleteMySamples(ctx context.Context, userID uuid.UUID) error {
+	return s.repo.DeleteAllByUserID(ctx, userID)
+}

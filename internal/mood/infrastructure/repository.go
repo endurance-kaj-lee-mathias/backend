@@ -178,3 +178,8 @@ func (r *repository) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }
+
+func (r *repository) DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM mood_entries WHERE user_id = $1`, userID)
+	return err
+}

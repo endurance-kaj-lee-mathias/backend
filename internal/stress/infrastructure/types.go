@@ -19,6 +19,7 @@ type Repository interface {
 	GetSamplesLast90Days(ctx context.Context, userID uuid.UUID) ([]entities.StressSampleEntity, error)
 	CreateScore(ctx context.Context, ent entities.StressScoreEntity) error
 	GetLatestScore(ctx context.Context, userID uuid.UUID) (domain.StressScore, error)
+	DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error
 }
 
 type UserKeyReader interface {
