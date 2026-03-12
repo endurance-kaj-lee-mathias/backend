@@ -134,6 +134,76 @@ func (c *client) DeleteUser(ctx context.Context, userID string) error {
 	return nil
 }
 
+func (c *client) getRoleByName(ctx context.Context, token string, roleName string) (roleRepresentation, error) {
+	endpoint := fmt.Sprintf("%s/admin/realms/%s/roles/%s", c.baseURL, c.realm, roleName)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return roleRepresentation{}, fmt.Errorf("keycloak: create get role request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return roleRepresentation{}, fmt.Errorf("keycloak: get role request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return roleRepresentation{}, fmt.Errorf("keycloak: get role returned %d: %s", resp.StatusCode, body)
+	}
+
+	var role roleRepresentation
+	if err := json.NewDecoder(resp.Body).Decode(&role); err != nil {
+		return roleRepresentation{}, fmt.Errorf("keycloak: decode role: %w", err)
+	}
+
+	return role, nil
+}
+
+func (c *client) AssignRealmRole(ctx context.Context, userID string, roleName string) error {
+	token, err := c.getAdminToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	role, err := c.getRoleByName(ctx, token, roleName)
+	if err != nil {
+		slog.Error("keycloak: get role by name", "role", roleName, "error", err)
+		return err
+	}
+
+	body, err := json.Marshal([]roleRepresentation{role})
+	if err != nil {
+		return fmt.Errorf("keycloak: marshal role assignment: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("%s/admin/realms/%s/users/%s/role-mappings/realm", c.baseURL, c.realm, userID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("keycloak: create role assignment request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		slog.Error("keycloak: role assignment request", "userID", userID, "role", roleName, "error", err)
+		return fmt.Errorf("keycloak: role assignment request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		respBody, _ := io.ReadAll(resp.Body)
+		slog.Error("keycloak: role assignment failed", "userID", userID, "role", roleName, "status", resp.StatusCode, "body", string(respBody))
+		return fmt.Errorf("keycloak: role assignment returned %d: %s", resp.StatusCode, respBody)
+	}
+
+	return nil
+}
+
 func (c *client) UpdateUser(ctx context.Context, userID string, update UserUpdate) error {
 	token, err := c.getAdminToken(ctx)
 	if err != nil {

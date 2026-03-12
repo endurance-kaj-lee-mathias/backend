@@ -15,11 +15,13 @@ import (
 )
 
 type Handler struct {
-	service application.Service
+	service        application.Service
+	mobileClientID string
+	webClientID    string
 }
 
-func NewHandler(s application.Service) *Handler {
-	return &Handler{service: s}
+func NewHandler(s application.Service, mobileClientID string, webClientID string) *Handler {
+	return &Handler{service: s, mobileClientID: mobileClientID, webClientID: webClientID}
 }
 
 func (h *Handler) authenticatedID(w http.ResponseWriter, r *http.Request) (domain.UserId, *auth.Claims, bool) {

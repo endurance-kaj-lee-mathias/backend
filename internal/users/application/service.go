@@ -355,6 +355,10 @@ func (s *service) UpsertDevice(ctx context.Context, userID domain.UserId, device
 	return s.repo.UpsertDevice(ctx, ent)
 }
 
+func (s *service) AssignRole(ctx context.Context, id domain.UserId, roleName string) error {
+	return s.kc.AssignRealmRole(ctx, id.UUID.String(), roleName)
+}
+
 func (s *service) DeleteDevice(ctx context.Context, deviceToken string) error {
 	return s.repo.DeleteDevice(ctx, deviceToken)
 }

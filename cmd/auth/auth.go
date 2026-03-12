@@ -214,6 +214,9 @@ func claimsFromMap(raw jwt.MapClaims) *Claims {
 			}
 		}
 	}
+	if aud, err := raw.GetAudience(); err == nil {
+		c.Audiences = []string(aud)
+	}
 	return c
 }
 

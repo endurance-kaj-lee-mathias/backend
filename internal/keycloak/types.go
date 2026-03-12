@@ -9,6 +9,7 @@ import (
 type Client interface {
 	UpdateUser(ctx context.Context, userID string, update UserUpdate) error
 	DeleteUser(ctx context.Context, userID string) error
+	AssignRealmRole(ctx context.Context, userID string, roleName string) error
 }
 
 type UserUpdate struct {
@@ -42,6 +43,11 @@ func NewClient(baseURL string, realm string, adminUser string, adminPassword str
 		adminUser:     adminUser,
 		adminPassword: adminPassword,
 	}
+}
+
+type roleRepresentation struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type tokenResponse struct {
