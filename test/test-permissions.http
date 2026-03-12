@@ -200,7 +200,7 @@ Content-Type: application/json
 
 {
   "viewerId": "{{therapistId}}",
-  "resource": "userProfile",
+  "resource": "moodEntries",
   "effect": "deny"
 }
 

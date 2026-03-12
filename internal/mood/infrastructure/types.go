@@ -26,6 +26,17 @@ type UserKeyReader interface {
 	GetEncryptedUserKey(ctx context.Context, userID domain.UserId) ([]byte, error)
 }
 
+type VeteranProfile struct {
+	ID        uuid.UUID
+	FirstName string
+	LastName  string
+	Image     string
+}
+
+type VeteranLister interface {
+	GetVeteransForMember(ctx context.Context, memberID uuid.UUID) ([]VeteranProfile, error)
+}
+
 type repository struct {
 	db *sql.DB
 }
@@ -41,4 +52,13 @@ type userKeyReader struct {
 
 func NewUserKeyReader(db *sql.DB, enc encryption.Service) UserKeyReader {
 	return &userKeyReader{db: db, enc: enc}
+}
+
+type veteranReader struct {
+	db  *sql.DB
+	enc encryption.Service
+}
+
+func NewVeteranReader(db *sql.DB, enc encryption.Service) VeteranLister {
+	return &veteranReader{db: db, enc: enc}
 }

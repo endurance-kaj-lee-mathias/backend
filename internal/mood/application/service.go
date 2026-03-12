@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/infrastructure/entities"
 )
@@ -128,4 +129,39 @@ func (s *service) GetTodayEntry(ctx context.Context, userID domain.UserId) (*dom
 	}
 
 	return &entry, nil
+}
+
+func (s *service) GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]VeteranMoodSummary, error) {
+	veterans, err := s.veteranLister.GetVeteransForMember(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+
+	summaries := make([]VeteranMoodSummary, 0, len(veterans))
+
+	for _, veteran := range veterans {
+		allowed, err := s.authz.IsAllowed(ctx, veteran.ID, memberID, "moodEntries")
+		if err != nil {
+			return nil, err
+		}
+
+		if !allowed {
+			continue
+		}
+
+		entries, err := s.GetEntriesByUserID(ctx, domain.UserId{UUID: veteran.ID})
+		if err != nil {
+			return nil, err
+		}
+
+		summaries = append(summaries, VeteranMoodSummary{
+			VeteranID: veteran.ID,
+			FirstName: veteran.FirstName,
+			LastName:  veteran.LastName,
+			Image:     veteran.Image,
+			Entries:   entries,
+		})
+	}
+
+	return summaries, nil
 }
