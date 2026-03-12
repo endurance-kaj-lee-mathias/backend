@@ -1,0 +1,154 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – THERAPIST
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Ensure users exist – store IDs
+### =====================================================
+
+### 3a. Get or create VETERAN
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+### 3b. Get or create THERAPIST
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{therapistToken}}
+
+### =====================================================
+### 4. Seed – therapist creates urgent quota slots
+### =====================================================
+
+### 4a. Create first urgent slot (fills quota)
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-01T09:00:00Z",
+  "endTime": "2026-04-01T10:00:00Z",
+  "isUrgent": true
+}
+
+### 4b. Create second urgent slot (fills quota)
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-01T10:00:00Z",
+  "endTime": "2026-04-01T11:00:00Z",
+  "isUrgent": true
+}
+
+### =====================================================
+### 5. Seed – therapist creates a bookable slot
+### =====================================================
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-01T14:00:00Z",
+  "endTime": "2026-04-01T15:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("bookableSlotId", response.body.id);
+%}
+
+### =====================================================
+### 6. Veteran books the slot
+### =====================================================
+POST {{baseUrl}}/calendar/slots/{{bookableSlotId}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+> {%
+    client.global.set("appointmentId", response.body.id);
+%}
+
+### =====================================================
+### Calendar ICS – Happy paths
+### =====================================================
+
+### 7. Export calendar as downloadable .ics file – expect 200 with attachment header
+GET {{baseUrl}}/calendar/me/export
+Authorization: Bearer {{veteranToken}}
+
+### 8. Subscribe to live calendar feed – expect 200 with inline header and no-cache
+GET {{baseUrl}}/calendar/me/feed
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Calendar ICS – After cancellation
+### =====================================================
+
+### 9. Veteran cancels the appointment
+PATCH {{baseUrl}}/calendar/appointments/{{appointmentId}}/cancel
+Authorization: Bearer {{veteranToken}}
+
+### 10. Export after cancel – cancelled appointment must NOT appear in the .ics
+GET {{baseUrl}}/calendar/me/export
+Authorization: Bearer {{veteranToken}}
+
+### 11. Feed after cancel – cancelled appointment must NOT appear in the feed
+GET {{baseUrl}}/calendar/me/feed
+Authorization: Bearer {{veteranToken}}
+
+### =====================================================
+### Calendar ICS – Error cases
+### =====================================================
+
+### 12. Request without token – expect 401
+GET {{baseUrl}}/calendar/me/export
+
+### 13. Request feed without token – expect 401
+GET {{baseUrl}}/calendar/me/feed
+

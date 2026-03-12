@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -204,4 +205,67 @@ func (h *Handler) GetSlotsByUserID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Write(w, http.StatusOK, models.ToSlotModels(slots))
+}
+
+func (h *Handler) ExportCalendar(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	events, err := h.service.GetCalendarEvents(r.Context(), userID)
+	if err != nil {
+		slog.Error("failed to get calendar events", "userId", userID.String(), "error", err)
+		response.WriteError(w, http.StatusInternalServerError, CalendarGenerationFailed)
+		return
+	}
+
+	cal := buildCalendar(events)
+
+	w.Header().Set("Content-Type", "text/calendar")
+	w.Header().Set("Content-Disposition", `attachment; filename="calendar.ics"`)
+	w.WriteHeader(http.StatusOK)
+
+	if err := cal.SerializeTo(w); err != nil {
+		slog.Error("failed to serialize calendar", "userId", userID.String(), "error", err)
+	}
+}
+
+func (h *Handler) FeedCalendar(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	events, err := h.service.GetCalendarEvents(r.Context(), userID)
+	if err != nil {
+		slog.Error("failed to get calendar feed", "userId", userID.String(), "error", err)
+		response.WriteError(w, http.StatusInternalServerError, CalendarGenerationFailed)
+		return
+	}
+
+	cal := buildCalendar(events)
+
+	w.Header().Set("Content-Type", "text/calendar")
+	w.Header().Set("Content-Disposition", `inline; filename="calendar.ics"`)
+	w.Header().Set("Cache-Control", "no-cache")
+	w.WriteHeader(http.StatusOK)
+
+	if err := cal.SerializeTo(w); err != nil {
+		slog.Error("failed to serialize calendar feed", "userId", userID.String(), "error", err)
+	}
 }

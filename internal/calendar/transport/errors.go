@@ -8,6 +8,7 @@ import (
 
 var Unauthorized = errors.New("unauthorized")
 var InvalidId = errors.New("id is invalid")
+var CalendarGenerationFailed = errors.New("failed to generate calendar")
 
 func mapError(err error) (int, error) {
 	switch {

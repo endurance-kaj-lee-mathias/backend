@@ -7,6 +7,7 @@ import (
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar/infrastructure"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 )
 
 type Service interface {
@@ -15,13 +16,15 @@ type Service interface {
 	DeleteSlot(ctx context.Context, userID uuid.UUID, roles []string, slotID domain.SlotId) error
 	BookSlot(ctx context.Context, veteranID uuid.UUID, roles []string, slotID domain.SlotId, urgent bool) (domain.Appointment, error)
 	CancelAppointment(ctx context.Context, userID uuid.UUID, appointmentID domain.AppointmentId) error
+	GetCalendarEvents(ctx context.Context, userID uuid.UUID) ([]domain.Event, error)
 }
 
 type service struct {
 	repo             infrastructure.Repository
+	enc              encryption.Service
 	minUrgentMinutes int
 }
 
-func NewService(repo infrastructure.Repository, minUrgentMinutes int) Service {
-	return &service{repo: repo, minUrgentMinutes: minUrgentMinutes}
+func NewService(repo infrastructure.Repository, enc encryption.Service, minUrgentMinutes int) Service {
+	return &service{repo: repo, enc: enc, minUrgentMinutes: minUrgentMinutes}
 }
