@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress/domain"
@@ -88,6 +89,10 @@ func (s *service) computeStressScore(ctx context.Context, userID uuid.UUID) (dom
 
 func (s *service) GetLatestScore(ctx context.Context, userID uuid.UUID) (domain.StressScore, error) {
 	return s.repo.GetLatestScore(ctx, userID)
+}
+
+func (s *service) GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID) (time.Time, error) {
+	return s.repo.GetLatestSampleTimestamp(ctx, userID)
 }
 
 func (s *service) DeleteMySamples(ctx context.Context, userID uuid.UUID) error {

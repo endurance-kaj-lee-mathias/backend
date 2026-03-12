@@ -52,6 +52,22 @@ func (r *repository) CountSamples(ctx context.Context, userID uuid.UUID) (int, e
 	return count, err
 }
 
+func (r *repository) GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID) (time.Time, error) {
+	var ts time.Time
+	err := r.db.QueryRowContext(
+		ctx,
+		`SELECT timestamp_utc FROM stress_samples WHERE user_id = $1 ORDER BY timestamp_utc DESC LIMIT 1`,
+		userID,
+	).Scan(&ts)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return time.Time{}, SampleNotFound
+		}
+		return time.Time{}, err
+	}
+	return ts, nil
+}
+
 func (r *repository) GetSamplesLast90Days(ctx context.Context, userID uuid.UUID) ([]entities.StressSampleEntity, error) {
 	query := `
 		SELECT id, user_id, timestamp_utc, window_minutes, encrypted_mean_hr, encrypted_rmssd_ms,
