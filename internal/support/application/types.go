@@ -13,6 +13,11 @@ type AuthzRevoker interface {
 	RevokeAll(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) error
 }
 
+type Notifier interface {
+	NotifyInvite(ctx context.Context, deviceToken string) error
+	NotifyInviteAccepted(ctx context.Context, deviceToken string) error
+}
+
 type Service interface {
 	GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error)
 	GetAllByMember(ctx context.Context, id domain.MemberId) ([]domain.Member, error)
@@ -30,8 +35,9 @@ type service struct {
 	userRoleRead infrastructure.UserRoleReader
 	enc          encryption.Service
 	authz        AuthzRevoker
+	notifier     Notifier
 }
 
-func NewService(repo infrastructure.Repository, inviteRepo infrastructure.InviteRepository, userRoleRead infrastructure.UserRoleReader, enc encryption.Service, authz AuthzRevoker) Service {
-	return &service{repo: repo, inviteRepo: inviteRepo, userRoleRead: userRoleRead, enc: enc, authz: authz}
+func NewService(repo infrastructure.Repository, inviteRepo infrastructure.InviteRepository, userRoleRead infrastructure.UserRoleReader, enc encryption.Service, authz AuthzRevoker, notifier Notifier) Service {
+	return &service{repo: repo, inviteRepo: inviteRepo, userRoleRead: userRoleRead, enc: enc, authz: authz, notifier: notifier}
 }
