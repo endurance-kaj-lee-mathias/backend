@@ -57,52 +57,300 @@ GET {{baseUrl}}/users/me
 Authorization: Bearer {{therapistToken}}
 
 ### =====================================================
-### 4. Seed – therapist creates urgent quota slots
+### 4. Seed – Monday April 7
 ### =====================================================
 
-### 4a. Create first urgent slot (fills quota)
+### 4a. Urgent quota slot 1
 POST {{baseUrl}}/calendar/slots
 Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-04-01T09:00:00Z",
-  "endTime": "2026-04-01T10:00:00Z",
+  "startTime": "2026-04-07T08:00:00Z",
+  "endTime": "2026-04-07T09:00:00Z",
   "isUrgent": true
 }
 
-### 4b. Create second urgent slot (fills quota)
+### 4b. Urgent quota slot 2
 POST {{baseUrl}}/calendar/slots
 Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-04-01T10:00:00Z",
-  "endTime": "2026-04-01T11:00:00Z",
+  "startTime": "2026-04-07T09:00:00Z",
+  "endTime": "2026-04-07T10:00:00Z",
   "isUrgent": true
 }
 
-### =====================================================
-### 5. Seed – therapist creates a bookable slot
-### =====================================================
+### 4c. Bookable slot Monday morning
 POST {{baseUrl}}/calendar/slots
 Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-04-01T14:00:00Z",
-  "endTime": "2026-04-01T15:00:00Z",
+  "startTime": "2026-04-07T10:00:00Z",
+  "endTime": "2026-04-07T11:00:00Z",
   "isUrgent": false
 }
 
 > {%
-    client.global.set("bookableSlotId", response.body.id);
+    client.global.set("slotMon1", response.body.id);
+%}
+
+### 4d. Bookable slot Monday afternoon
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-07T14:00:00Z",
+  "endTime": "2026-04-07T15:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("slotMon2", response.body.id);
 %}
 
 ### =====================================================
-### 6. Veteran books the slot
+### 5. Seed – Tuesday April 8
 ### =====================================================
-POST {{baseUrl}}/calendar/slots/{{bookableSlotId}}/book
+
+### 5a. Urgent quota slot 1
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-08T08:00:00Z",
+  "endTime": "2026-04-08T09:00:00Z",
+  "isUrgent": true
+}
+
+### 5b. Urgent quota slot 2
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-08T09:00:00Z",
+  "endTime": "2026-04-08T10:00:00Z",
+  "isUrgent": true
+}
+
+### 5c. Bookable slot Tuesday
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-08T11:00:00Z",
+  "endTime": "2026-04-08T12:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("slotTue", response.body.id);
+%}
+
+### =====================================================
+### 6. Seed – Wednesday April 9
+### =====================================================
+
+### 6a. Urgent quota slot 1
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-09T08:00:00Z",
+  "endTime": "2026-04-09T09:00:00Z",
+  "isUrgent": true
+}
+
+### 6b. Urgent quota slot 2
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-09T09:00:00Z",
+  "endTime": "2026-04-09T10:00:00Z",
+  "isUrgent": true
+}
+
+### 6c. Bookable slot Wednesday morning
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-09T10:00:00Z",
+  "endTime": "2026-04-09T11:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("slotWed1", response.body.id);
+%}
+
+### 6d. Bookable slot Wednesday afternoon
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-09T15:00:00Z",
+  "endTime": "2026-04-09T16:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("slotWed2", response.body.id);
+%}
+
+### =====================================================
+### 7. Seed – Thursday April 10
+### =====================================================
+
+### 7a. Urgent quota slot 1
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-10T08:00:00Z",
+  "endTime": "2026-04-10T09:00:00Z",
+  "isUrgent": true
+}
+
+### 7b. Urgent quota slot 2
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-10T09:00:00Z",
+  "endTime": "2026-04-10T10:00:00Z",
+  "isUrgent": true
+}
+
+### 7c. Bookable slot Thursday
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-10T13:00:00Z",
+  "endTime": "2026-04-10T14:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("slotThu", response.body.id);
+%}
+
+### =====================================================
+### 8. Seed – Friday April 11
+### =====================================================
+
+### 8a. Urgent quota slot 1
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-11T08:00:00Z",
+  "endTime": "2026-04-11T09:00:00Z",
+  "isUrgent": true
+}
+
+### 8b. Urgent quota slot 2
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-11T09:00:00Z",
+  "endTime": "2026-04-11T10:00:00Z",
+  "isUrgent": true
+}
+
+### 8c. Bookable slot Friday
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-11T14:00:00Z",
+  "endTime": "2026-04-11T15:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("slotFri", response.body.id);
+%}
+
+### =====================================================
+### 9. Veteran books all slots (7 appointments across the week)
+### =====================================================
+
+### 9a. Book Monday morning
+POST {{baseUrl}}/calendar/slots/{{slotMon1}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 9b. Book Monday afternoon
+POST {{baseUrl}}/calendar/slots/{{slotMon2}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 9c. Book Tuesday
+POST {{baseUrl}}/calendar/slots/{{slotTue}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 9d. Book Wednesday morning
+POST {{baseUrl}}/calendar/slots/{{slotWed1}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 9e. Book Wednesday afternoon
+POST {{baseUrl}}/calendar/slots/{{slotWed2}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 9f. Book Thursday
+POST {{baseUrl}}/calendar/slots/{{slotThu}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false
+}
+
+### 9g. Book Friday
+POST {{baseUrl}}/calendar/slots/{{slotFri}}/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
@@ -111,18 +359,20 @@ Content-Type: application/json
 }
 
 > {%
-    client.global.set("appointmentId", response.body.id);
+    client.global.set("lastAppointmentId", response.body.id);
 %}
 
 ### =====================================================
 ### Calendar ICS – Happy paths
 ### =====================================================
 
-### 7. Export calendar as downloadable .ics file – expect 200 with attachment header
+### 10. Export calendar as downloadable .ics file – expect 200 with attachment header
+### Should contain all 7 appointments across the week
 GET {{baseUrl}}/calendar/me/export
 Authorization: Bearer {{veteranToken}}
 
-### 8. Subscribe to live calendar feed – expect 200 with inline header and no-cache
+### 11. Subscribe to live calendar feed – expect 200 with inline header and no-cache
+### Should contain the same 7 appointments
 GET {{baseUrl}}/calendar/me/feed
 Authorization: Bearer {{veteranToken}}
 
@@ -130,15 +380,15 @@ Authorization: Bearer {{veteranToken}}
 ### Calendar ICS – After cancellation
 ### =====================================================
 
-### 9. Veteran cancels the appointment
-PATCH {{baseUrl}}/calendar/appointments/{{appointmentId}}/cancel
+### 12. Veteran cancels the Friday appointment
+PATCH {{baseUrl}}/calendar/appointments/{{lastAppointmentId}}/cancel
 Authorization: Bearer {{veteranToken}}
 
-### 10. Export after cancel – cancelled appointment must NOT appear in the .ics
+### 13. Export after cancel – cancelled Friday appointment must NOT appear (6 events expected)
 GET {{baseUrl}}/calendar/me/export
 Authorization: Bearer {{veteranToken}}
 
-### 11. Feed after cancel – cancelled appointment must NOT appear in the feed
+### 14. Feed after cancel – cancelled Friday appointment must NOT appear (6 events expected)
 GET {{baseUrl}}/calendar/me/feed
 Authorization: Bearer {{veteranToken}}
 
@@ -146,9 +396,9 @@ Authorization: Bearer {{veteranToken}}
 ### Calendar ICS – Error cases
 ### =====================================================
 
-### 12. Request without token – expect 401
+### 15. Request export without token – expect 401
 GET {{baseUrl}}/calendar/me/export
 
-### 13. Request feed without token – expect 401
+### 16. Request feed without token – expect 401
 GET {{baseUrl}}/calendar/me/feed
 
