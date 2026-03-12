@@ -15,6 +15,7 @@ type Service interface {
 	DeleteSlot(ctx context.Context, userID uuid.UUID, roles []string, slotID domain.SlotId) error
 	BookSlot(ctx context.Context, veteranID uuid.UUID, roles []string, slotID domain.SlotId, urgent bool) (domain.Appointment, error)
 	CancelAppointment(ctx context.Context, userID uuid.UUID, appointmentID domain.AppointmentId) error
+	DeleteMySlots(ctx context.Context, providerID uuid.UUID) error
 }
 
 type service struct {

@@ -161,3 +161,7 @@ func (s *service) CancelAppointment(ctx context.Context, userID uuid.UUID, appoi
 
 	return s.repo.CancelAppointment(ctx, appointmentID.UUID, time.Now().UTC())
 }
+
+func (s *service) DeleteMySlots(ctx context.Context, providerID uuid.UUID) error {
+	return s.repo.DeleteSlotsByProviderID(ctx, providerID)
+}
