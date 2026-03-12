@@ -12,6 +12,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure/entities"
+	"golang.org/x/sync/errgroup"
 )
 
 func (s *service) GetOrCreate(ctx context.Context, id domain.UserId, email string, username string, firstName string, lastName string, phoneNumber string, street string, locality string, region string, postalCode string, country string, roles []domain.Role) (domain.User, error) {
@@ -196,13 +197,19 @@ func (s *service) UpdateFirstName(ctx context.Context, id domain.UserId, firstNa
 		return err
 	}
 
-	if err := s.repo.UpdateFirstName(ctx, id.UUID, encrypted); err != nil {
-		return err
-	}
+	g, gCtx := errgroup.WithContext(ctx)
 
-	return s.kc.UpdateUser(ctx, id.UUID.String(), keycloak.UserUpdate{
-		FirstName: firstName,
+	g.Go(func() error {
+		return s.repo.UpdateFirstName(gCtx, id.UUID, encrypted)
 	})
+
+	g.Go(func() error {
+		return s.kc.UpdateUser(gCtx, id.UUID.String(), keycloak.UserUpdate{
+			FirstName: firstName,
+		})
+	})
+
+	return g.Wait()
 }
 
 func (s *service) UpdateLastName(ctx context.Context, id domain.UserId, lastName string) error {
@@ -221,13 +228,19 @@ func (s *service) UpdateLastName(ctx context.Context, id domain.UserId, lastName
 		return err
 	}
 
-	if err := s.repo.UpdateLastName(ctx, id.UUID, encrypted); err != nil {
-		return err
-	}
+	g, gCtx := errgroup.WithContext(ctx)
 
-	return s.kc.UpdateUser(ctx, id.UUID.String(), keycloak.UserUpdate{
-		LastName: lastName,
+	g.Go(func() error {
+		return s.repo.UpdateLastName(gCtx, id.UUID, encrypted)
 	})
+
+	g.Go(func() error {
+		return s.kc.UpdateUser(gCtx, id.UUID.String(), keycloak.UserUpdate{
+			LastName: lastName,
+		})
+	})
+
+	return g.Wait()
 }
 
 func (s *service) UpdateIntroduction(ctx context.Context, id domain.UserId, introduction string) error {
@@ -299,17 +312,23 @@ func (s *service) UpsertAddress(ctx context.Context, userID domain.UserId, stree
 		return domain.Address{}, err
 	}
 
-	if err := s.repo.InsertAddress(ctx, ent); err != nil {
-		return domain.Address{}, err
-	}
+	g, gCtx := errgroup.WithContext(ctx)
 
-	if err := s.kc.UpdateUser(ctx, userID.UUID.String(), keycloak.UserUpdate{
-		Street:     &street,
-		Locality:   &locality,
-		Region:     &region,
-		PostalCode: &postalCode,
-		Country:    &country,
-	}); err != nil {
+	g.Go(func() error {
+		return s.repo.InsertAddress(gCtx, ent)
+	})
+
+	g.Go(func() error {
+		return s.kc.UpdateUser(gCtx, userID.UUID.String(), keycloak.UserUpdate{
+			Street:     &street,
+			Locality:   &locality,
+			Region:     &region,
+			PostalCode: &postalCode,
+			Country:    &country,
+		})
+	})
+
+	if err := g.Wait(); err != nil {
 		return domain.Address{}, err
 	}
 

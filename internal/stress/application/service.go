@@ -39,9 +39,15 @@ func (s *service) IngestSample(ctx context.Context, sample domain.StressSample) 
 	}
 
 	if count > minSamplesForComputation {
-		if _, err := s.computeStressScore(ctx, sample.UserID); err != nil {
-			slog.Error("stress: auto-compute score after ingest", "userID", sample.UserID, "error", err)
-		}
+		userID := sample.UserID
+		go func() {
+			scoreCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			if _, err := s.computeStressScore(scoreCtx, userID); err != nil {
+				slog.Error("stress: auto-compute score after ingest", "userID", userID, "error", err)
+			}
+		}()
 	}
 
 	return nil

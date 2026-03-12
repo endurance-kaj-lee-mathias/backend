@@ -2,12 +2,14 @@ package application
 
 import (
 	"context"
+	"sync"
 	"log/slog"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/infrastructure/entities"
 	userdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
+	"golang.org/x/sync/errgroup"
 )
 
 func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Member, error) {
@@ -21,13 +23,27 @@ func (s *service) GetAll(ctx context.Context, id domain.VeteranId) ([]domain.Mem
 		return nil, err
 	}
 
-	for i, member := range members {
-		roleStr, err := s.userRoleRead.GetRole(ctx, member.ID.UUID)
-		if err != nil {
-			return nil, err
-		}
+	g, gCtx := errgroup.WithContext(ctx)
+	roles := make([]string, len(members))
 
-		members[i].Role = userdomain.Role(roleStr)
+	for i, member := range members {
+		i, member := i, member
+		g.Go(func() error {
+			roleStr, err := s.userRoleRead.GetRole(gCtx, member.ID.UUID)
+			if err != nil {
+				return err
+			}
+			roles[i] = roleStr
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	for i := range members {
+		members[i].Role = userdomain.Role(roles[i])
 	}
 
 	return members, nil
@@ -44,13 +60,27 @@ func (s *service) GetAllByMember(ctx context.Context, id domain.MemberId) ([]dom
 		return nil, err
 	}
 
-	for i, member := range members {
-		roleStr, err := s.userRoleRead.GetRole(ctx, member.ID.UUID)
-		if err != nil {
-			return nil, err
-		}
+	g, gCtx := errgroup.WithContext(ctx)
+	roles := make([]string, len(members))
 
-		members[i].Role = userdomain.Role(roleStr)
+	for i, member := range members {
+		i, member := i, member
+		g.Go(func() error {
+			roleStr, err := s.userRoleRead.GetRole(gCtx, member.ID.UUID)
+			if err != nil {
+				return err
+			}
+			roles[i] = roleStr
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	for i := range members {
+		members[i].Role = userdomain.Role(roles[i])
 	}
 
 	return members, nil
@@ -87,14 +117,26 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		return domain.Invite{}, domain.SelfInvite
 	}
 
-	senderRoles, err := s.userRoleRead.GetRole(ctx, senderID.UUID)
-	if err != nil {
-		return domain.Invite{}, err
-	}
+	var senderRoles, receiverRoles string
 
-	receiverRoles, err := s.userRoleRead.GetRole(ctx, receiverID.UUID)
-	if err != nil {
-		return domain.Invite{}, err
+	{
+		g, gCtx := errgroup.WithContext(ctx)
+
+		g.Go(func() error {
+			var err error
+			senderRoles, err = s.userRoleRead.GetRole(gCtx, senderID.UUID)
+			return err
+		})
+
+		g.Go(func() error {
+			var err error
+			receiverRoles, err = s.userRoleRead.GetRole(gCtx, receiverID.UUID)
+			return err
+		})
+
+		if err := g.Wait(); err != nil {
+			return domain.Invite{}, err
+		}
 	}
 
 	veteranID, err := domain.ParseVeteranId(receiverID.UUID.String())
@@ -145,17 +187,29 @@ func (s *service) SendInvite(ctx context.Context, senderID domain.MemberId, user
 		return domain.Invite{}, err
 	}
 
-	senderRoleUpdated, err := s.userRoleRead.GetRole(ctx, senderID.UUID)
-	if err != nil {
-		return domain.Invite{}, err
-	}
-	inv.Sender.Role = userdomain.Role(senderRoleUpdated)
+	{
+		g, gCtx := errgroup.WithContext(ctx)
+		var senderRoleUpdated, receiverRoleUpdated string
 
-	receiverRoleUpdated, err := s.userRoleRead.GetRole(ctx, receiverID.UUID)
-	if err != nil {
-		return domain.Invite{}, err
+		g.Go(func() error {
+			var err error
+			senderRoleUpdated, err = s.userRoleRead.GetRole(gCtx, senderID.UUID)
+			return err
+		})
+
+		g.Go(func() error {
+			var err error
+			receiverRoleUpdated, err = s.userRoleRead.GetRole(gCtx, receiverID.UUID)
+			return err
+		})
+
+		if err := g.Wait(); err != nil {
+			return domain.Invite{}, err
+		}
+
+		inv.Sender.Role = userdomain.Role(senderRoleUpdated)
+		inv.Receiver.Role = userdomain.Role(receiverRoleUpdated)
 	}
-	inv.Receiver.Role = userdomain.Role(receiverRoleUpdated)
 
 	go s.notifyInviteReceived(receiverID.UUID)
 
@@ -249,30 +303,70 @@ func (s *service) ListInvites(ctx context.Context, callerID domain.MemberId) ([]
 		return nil, nil, err
 	}
 
+	type result struct {
+		inv        domain.Invite
+		isIncoming bool
+	}
+
+	results := make([]result, len(ents))
+	g, gCtx := errgroup.WithContext(ctx)
+
+	for i, ent := range ents {
+		i, ent := i, ent
+		g.Go(func() error {
+			inv, err := entities.FromInviteEntity(ent, s.enc)
+			if err != nil {
+				return err
+			}
+
+			var mu sync.Mutex
+			rg, rgCtx := errgroup.WithContext(gCtx)
+			var senderRole, receiverRole string
+
+			rg.Go(func() error {
+				r, err := s.userRoleRead.GetRole(rgCtx, ent.SenderID)
+				if err != nil {
+					return err
+				}
+				mu.Lock()
+				senderRole = r
+				mu.Unlock()
+				return nil
+			})
+
+			rg.Go(func() error {
+				r, err := s.userRoleRead.GetRole(rgCtx, ent.ReceiverID)
+				if err != nil {
+					return err
+				}
+				mu.Lock()
+				receiverRole = r
+				mu.Unlock()
+				return nil
+			})
+
+			if err := rg.Wait(); err != nil {
+				return err
+			}
+
+			inv.Sender.Role = userdomain.Role(senderRole)
+			inv.Receiver.Role = userdomain.Role(receiverRole)
+			results[i] = result{inv: inv, isIncoming: ent.ReceiverID == callerID.UUID}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, nil, err
+	}
+
 	var incoming, outgoing []domain.Invite
 
-	for _, ent := range ents {
-		inv, err := entities.FromInviteEntity(ent, s.enc)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		senderRole, err := s.userRoleRead.GetRole(ctx, ent.SenderID)
-		if err != nil {
-			return nil, nil, err
-		}
-		inv.Sender.Role = userdomain.Role(senderRole)
-
-		receiverRole, err := s.userRoleRead.GetRole(ctx, ent.ReceiverID)
-		if err != nil {
-			return nil, nil, err
-		}
-		inv.Receiver.Role = userdomain.Role(receiverRole)
-
-		if ent.ReceiverID == callerID.UUID {
-			incoming = append(incoming, inv)
+	for _, r := range results {
+		if r.isIncoming {
+			incoming = append(incoming, r.inv)
 		} else {
-			outgoing = append(outgoing, inv)
+			outgoing = append(outgoing, r.inv)
 		}
 	}
 
