@@ -17,6 +17,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/export"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/health"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood"
 	moodapp "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
@@ -43,6 +44,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes)
 	supportHandler := support.Wire(server.db, server.enc, authzService, server.notifier)
 	exportHandler := export.Wire(server.db, server.enc)
+	journalHandler := journal.Wire(server.db, server.enc, authzService)
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.TokenAuthentication(server.idp))
@@ -80,6 +82,11 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
 				r.Use(auth.RequireAuthorization(authzService))
 				r.Get("/{id}", userHandler.GetUser)
+			})
+
+			r.Group(func(r chi.Router) {
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
+				r.Get("/journal/{id}", journalHandler.GetJournal)
 			})
 		})
 
