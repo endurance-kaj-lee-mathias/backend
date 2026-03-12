@@ -64,3 +64,24 @@ func (r *userRoleReader) FindIDByUsername(ctx context.Context, username string) 
 
 	return id, nil
 }
+
+func (r *userRoleReader) FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	query := `SELECT device_token FROM user_devices WHERE user_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tokens []string
+	for rows.Next() {
+		var token string
+		if err := rows.Scan(&token); err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, token)
+	}
+
+	return tokens, rows.Err()
+}
