@@ -3,18 +3,15 @@ package transport
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/pagination"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/transport/models"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 )
-
-const defaultLimit = 20
-const defaultOffset = 0
 
 func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
@@ -35,20 +32,7 @@ func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := defaultLimit
-	offset := defaultOffset
-
-	if v := r.URL.Query().Get("limit"); v != "" {
-		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
-
-	if v := r.URL.Query().Get("offset"); v != "" {
-		if parsed, err := strconv.Atoi(v); err == nil && parsed >= 0 {
-			offset = parsed
-		}
-	}
+	limit, offset := pagination.ParsePagination(r)
 
 	report, err := h.service.GetJournal(r.Context(), viewerID, veteranID, limit, offset)
 	if err != nil {
