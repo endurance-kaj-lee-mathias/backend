@@ -3,6 +3,7 @@ package transport
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
@@ -13,6 +14,28 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress/transport/models"
 )
+
+const defaultLimit = 20
+const defaultOffset = 0
+
+func parsePagination(r *http.Request) (limit, offset int) {
+	limit = defaultLimit
+	offset = defaultOffset
+
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+
+	if v := r.URL.Query().Get("offset"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	return limit, offset
+}
 
 func (h *Handler) IngestSample(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
@@ -83,17 +106,15 @@ func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	score, err := h.service.GetLatestScore(r.Context(), userID)
+	limit, offset := parsePagination(r)
+
+	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, limit, offset)
 	if err != nil {
-		if errors.Is(err, infrastructure.ScoreNotFound) {
-			response.WriteError(w, http.StatusNotFound, ScoreNotFound)
-			return
-		}
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
+	response.Write(w, http.StatusOK, response.NewPaginated(models.ToStressScoreResponseList(scores), total, limit, offset))
 }
 
 func (h *Handler) DeleteMySamples(w http.ResponseWriter, r *http.Request) {
@@ -124,15 +145,13 @@ func (h *Handler) GetLatestScoreByUserID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	score, err := h.service.GetLatestScore(r.Context(), userID)
+	limit, offset := parsePagination(r)
+
+	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, limit, offset)
 	if err != nil {
-		if errors.Is(err, infrastructure.ScoreNotFound) {
-			response.WriteError(w, http.StatusNotFound, ScoreNotFound)
-			return
-		}
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToStressScoreResponse(score))
+	response.Write(w, http.StatusOK, response.NewPaginated(models.ToStressScoreResponseList(scores), total, limit, offset))
 }
