@@ -90,6 +90,29 @@ func (r *repository) FindDeviceTokensByUserID(ctx context.Context, userID uuid.U
 	return tokens, rows.Err()
 }
 
+func (r *repository) FindLatestByUserID(ctx context.Context, userID uuid.UUID) (*entities.MoodEntryEntity, error) {
+	query := `
+		SELECT id, user_id, date, mood_score, encrypted_notes, created_at, updated_at
+		FROM mood_entries
+		WHERE user_id = $1
+		ORDER BY date DESC
+		LIMIT 1
+	`
+
+	var ent entities.MoodEntryEntity
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+		&ent.ID, &ent.UserID, &ent.Date, &ent.MoodScore, &ent.EncryptedNotes, &ent.CreatedAt, &ent.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &ent, nil
+}
+
 func (r *repository) FindAllByUserID(ctx context.Context, userID uuid.UUID) ([]entities.MoodEntryEntity, error) {
 	query := `
 		SELECT id, user_id, date, mood_score, encrypted_notes, created_at, updated_at

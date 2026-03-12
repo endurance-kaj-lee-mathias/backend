@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
@@ -21,11 +22,12 @@ type Service interface {
 }
 
 type VeteranMoodSummary struct {
-	VeteranID uuid.UUID
-	FirstName string
-	LastName  string
-	Image     string
-	Entries   []domain.MoodEntry
+	VeteranID     uuid.UUID
+	FirstName     string
+	LastName      string
+	Image         string
+	LatestScore   *int
+	LastUpdatedAt *time.Time
 }
 
 type AuthorizationChecker interface {

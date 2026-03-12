@@ -1,13 +1,18 @@
 package models
 
-import "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
+import (
+	"time"
+
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
+)
 
 type VeteranMoodResponse struct {
-	VeteranID string              `json:"veteranId"`
-	FirstName string              `json:"firstName"`
-	LastName  string              `json:"lastName"`
-	Image     string              `json:"image"`
-	Entries   []MoodEntryResponse `json:"entries"`
+	ID            string     `json:"id"`
+	FirstName     string     `json:"firstName"`
+	LastName      string     `json:"lastName"`
+	Image         string     `json:"image"`
+	LastUpdatedAt *time.Time `json:"lastUpdatedAt,omitempty"`
+	LatestScore   *int       `json:"latestScore,omitempty"`
 }
 
 func ToVeteranMoodResponseList(summaries []application.VeteranMoodSummary) []VeteranMoodResponse {
@@ -15,11 +20,12 @@ func ToVeteranMoodResponseList(summaries []application.VeteranMoodSummary) []Vet
 
 	for _, s := range summaries {
 		result = append(result, VeteranMoodResponse{
-			VeteranID: s.VeteranID.String(),
-			FirstName: s.FirstName,
-			LastName:  s.LastName,
-			Image:     s.Image,
-			Entries:   ToResponseList(s.Entries),
+			ID:            s.VeteranID.String(),
+			FirstName:     s.FirstName,
+			LastName:      s.LastName,
+			Image:         s.Image,
+			LastUpdatedAt: s.LastUpdatedAt,
+			LatestScore:   s.LatestScore,
 		})
 	}
 

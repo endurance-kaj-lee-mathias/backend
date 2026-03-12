@@ -149,18 +149,24 @@ func (s *service) GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]Ve
 			continue
 		}
 
-		entries, err := s.GetEntriesByUserID(ctx, domain.UserId{UUID: veteran.ID})
+		latest, err := s.repo.FindLatestByUserID(ctx, veteran.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		summaries = append(summaries, VeteranMoodSummary{
+		summary := VeteranMoodSummary{
 			VeteranID: veteran.ID,
 			FirstName: veteran.FirstName,
 			LastName:  veteran.LastName,
 			Image:     veteran.Image,
-			Entries:   entries,
-		})
+		}
+
+		if latest != nil {
+			summary.LatestScore = &latest.MoodScore
+			summary.LastUpdatedAt = &latest.UpdatedAt
+		}
+
+		summaries = append(summaries, summary)
 	}
 
 	return summaries, nil
