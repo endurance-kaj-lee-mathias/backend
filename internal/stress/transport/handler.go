@@ -70,6 +70,32 @@ func (h *Handler) IngestSample(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func (h *Handler) GetLatestSampleTimestamp(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	ts, err := h.service.GetLatestSampleTimestamp(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, infrastructure.SampleNotFound) {
+			response.WriteError(w, http.StatusNotFound, SampleNotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.LatestSampleResponse{Timestamp: ts})
+}
+
 func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
 	if !ok {

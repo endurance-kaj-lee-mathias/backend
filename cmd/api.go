@@ -98,6 +98,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 		r.Route("/stress", func(r chi.Router) {
 			r.Post("/samples", stressHandler.IngestSample)
+			r.Get("/samples/latest", stressHandler.GetLatestSampleTimestamp)
 			r.Get("/scores/latest", stressHandler.GetLatestScore)
 
 			r.Group(func(r chi.Router) {
