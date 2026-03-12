@@ -13,6 +13,7 @@ import (
 type UserRoleReader interface {
 	GetRole(ctx context.Context, userID uuid.UUID) (string, error)
 	FindIDByUsername(ctx context.Context, username string) (uuid.UUID, error)
+	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
 }
 
 type Repository interface {
