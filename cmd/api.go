@@ -38,7 +38,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	chatsHandler := chats.Wire(server.db, server.enc)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier)
-	calendarHandler := calendar.Wire(server.db, server.config.MinUrgentMinutes)
+	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes)
 	authzHandler, authzService := authorization.Wire(server.db)
 	supportHandler := support.Wire(server.db, server.enc, authzService)
 	exportHandler := export.Wire(server.db, server.enc)
@@ -131,6 +131,9 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 		})
 
 		r.Route("/calendar", func(r chi.Router) {
+			r.Get("/me/export", calendarHandler.ExportCalendar)
+			r.Get("/me/feed", calendarHandler.FeedCalendar)
+
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
