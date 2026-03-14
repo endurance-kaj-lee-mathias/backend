@@ -89,7 +89,7 @@ func (h *Handler) GetMyEntries(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToResponseList(entries))
 }
 
-func (h *Handler) GetVeteransMood(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetVeteransSupport(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
 	if !ok {
 		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
@@ -102,13 +102,13 @@ func (h *Handler) GetVeteransMood(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summaries, err := h.service.GetVeteransMood(r.Context(), memberID)
+	summaries, err := h.service.GetVeteransSupport(r.Context(), memberID)
 	if err != nil {
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToVeteranMoodResponseList(summaries))
+	response.Write(w, http.StatusOK, models.ToVeteranSupportResponseList(summaries))
 }
 
 func (h *Handler) GetEntriesByUserID(w http.ResponseWriter, r *http.Request) {

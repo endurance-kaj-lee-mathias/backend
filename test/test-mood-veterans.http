@@ -123,13 +123,13 @@ Content-Type: application/json
 }
 
 ### =====================================================
-### GET /mood/entries/veterans – Happy path (public account, no rules)
+### GET /users/me/support – Happy path (public account, no rules)
 ### Response shape per item: { id, firstName, lastName, image, latestScore, lastUpdatedAt }
 ### =====================================================
 
 ### 6. Support fetches veterans' mood – public account, no rules
 ###    Expected: 200 – array with 1 veteran, latestScore=9
-GET {{baseUrl}}/mood/entries/veterans
+GET {{baseUrl}}/users/me/support
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
@@ -154,7 +154,7 @@ Content-Type: application/json
 
 ### 8. Support fetches veterans' mood – deny rule in place
 ###    Expected: 200 – empty array (veteran silently excluded)
-GET {{baseUrl}}/mood/entries/veterans
+GET {{baseUrl}}/users/me/support
 Authorization: Bearer {{supportToken}}
 
 ### 9. Veteran removes the deny rule
@@ -164,7 +164,7 @@ Authorization: Bearer {{veteranToken}}
 
 ### 10. Support fetches veterans' mood – deny rule removed
 ###     Expected: 200 – veteran visible again, latestScore=9
-GET {{baseUrl}}/mood/entries/veterans
+GET {{baseUrl}}/users/me/support
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
@@ -183,7 +183,7 @@ Content-Type: application/json
 
 ### 12. Support fetches veterans' mood – private, no allow rule
 ###     Expected: 200 – empty array
-GET {{baseUrl}}/mood/entries/veterans
+GET {{baseUrl}}/users/me/support
 Authorization: Bearer {{supportToken}}
 
 ### 13. Veteran creates explicit allow rule for moodEntries for support member
@@ -204,7 +204,7 @@ Content-Type: application/json
 
 ### 14. Support fetches veterans' mood – private account WITH allow rule
 ###     Expected: 200 – veteran visible, latestScore=9
-GET {{baseUrl}}/mood/entries/veterans
+GET {{baseUrl}}/users/me/support
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
@@ -236,9 +236,9 @@ Content-Type: application/json
 
 ### 18. Veteran calls the endpoint (has no veterans of their own)
 ###     Expected: 200 – empty array
-GET {{baseUrl}}/mood/entries/veterans
+GET {{baseUrl}}/users/me/support
 Authorization: Bearer {{veteranToken}}
 
 ### 19. No auth token → expect 401
-GET {{baseUrl}}/mood/entries/veterans
+GET {{baseUrl}}/users/me/support
 

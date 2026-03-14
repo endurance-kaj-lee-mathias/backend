@@ -17,7 +17,7 @@ type Service interface {
 	UpdateMoodEntry(ctx context.Context, entry domain.MoodEntry) error
 	DeleteMoodEntry(ctx context.Context, id domain.MoodId) error
 	DeleteMyMoodEntries(ctx context.Context, userID domain.UserId) error
-	GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]domain.VeteranMoodSummary, error)
+	GetVeteransSupport(ctx context.Context, memberID uuid.UUID) ([]domain.VeteranMoodSummary, error)
 }
 
 type AuthorizationChecker interface {
