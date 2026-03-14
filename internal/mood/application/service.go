@@ -131,7 +131,7 @@ func (s *service) GetTodayEntry(ctx context.Context, userID domain.UserId) (*dom
 	return &entry, nil
 }
 
-func (s *service) GetVeteransMood(ctx context.Context, memberID uuid.UUID) ([]domain.VeteranMoodSummary, error) {
+func (s *service) GetVeteransSupport(ctx context.Context, memberID uuid.UUID) ([]domain.VeteranMoodSummary, error) {
 	veterans, err := s.veteranLister.GetVeteransForMember(ctx, memberID)
 	if err != nil {
 		return nil, err

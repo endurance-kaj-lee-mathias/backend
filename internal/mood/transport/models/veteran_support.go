@@ -6,7 +6,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/domain"
 )
 
-type VeteranMoodResponse struct {
+type VeteranSupportResponse struct {
 	ID            string     `json:"id"`
 	FirstName     string     `json:"firstName"`
 	LastName      string     `json:"lastName"`
@@ -15,11 +15,11 @@ type VeteranMoodResponse struct {
 	LatestScore   *int       `json:"latestScore,omitempty"`
 }
 
-func ToVeteranMoodResponseList(summaries []domain.VeteranMoodSummary) []VeteranMoodResponse {
-	result := make([]VeteranMoodResponse, 0, len(summaries))
+func ToVeteranSupportResponseList(summaries []domain.VeteranMoodSummary) []VeteranSupportResponse {
+	result := make([]VeteranSupportResponse, 0, len(summaries))
 
 	for _, s := range summaries {
-		result = append(result, VeteranMoodResponse{
+		result = append(result, VeteranSupportResponse{
 			ID:            s.VeteranID.String(),
 			FirstName:     s.FirstName,
 			LastName:      s.LastName,

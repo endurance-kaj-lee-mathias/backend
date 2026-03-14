@@ -53,6 +53,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Get("/me", userHandler.GetOrCreate)
 			r.Post("/me/register", userHandler.Register)
 			r.Get("/me/export", exportHandler.ExportUserData)
+			r.Get("/me/support", moodHandler.GetVeteransSupport)
 
 			r.Delete("/me", userHandler.DeleteMe)
 			r.Patch("/me/phone-number", userHandler.PatchPhoneNumber)
@@ -129,7 +130,6 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/entries", moodHandler.UpsertMoodEntry)
 			r.Get("/entries/me", moodHandler.GetMyEntries)
 			r.Get("/entries/me/today", moodHandler.GetTodayEntry)
-			r.Get("/entries/veterans", moodHandler.GetVeteransMood)
 			r.Delete("/entries/me/all", moodHandler.DeleteMyEntries)
 			r.Put("/entries/{entryId}", moodHandler.UpdateMoodEntry)
 			r.Delete("/entries/{entryId}", moodHandler.DeleteMoodEntry)
