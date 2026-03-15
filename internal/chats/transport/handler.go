@@ -94,7 +94,7 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusCreated, models.ToMessageModel(msg))
+	response.Write(w, http.StatusCreated, models.ToCreatedMessageModel(msg))
 }
 
 func (h *Handler) GetMessages(w http.ResponseWriter, r *http.Request) {

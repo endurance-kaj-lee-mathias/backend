@@ -113,6 +113,7 @@ func (s *service) SendMessage(ctx context.Context, conversationID uuid.UUID, sen
 		domain.MessageId{UUID: msgID},
 		domain.ConversationId{UUID: conversationID},
 		senderID,
+		"",
 		content,
 		now,
 	), nil
@@ -199,6 +200,11 @@ func (s *service) GetAllChats(ctx context.Context, userID uuid.UUID) ([]domain.C
 			return nil, err
 		}
 
+		usernameBytes, err := s.enc.Decrypt(ent.OtherEncryptedUsername, otherUserKey)
+		if err != nil {
+			return nil, err
+		}
+
 		firstNameBytes, err := s.enc.Decrypt(ent.OtherEncryptedFirstName, otherUserKey)
 		if err != nil {
 			return nil, err
@@ -217,6 +223,7 @@ func (s *service) GetAllChats(ctx context.Context, userID uuid.UUID) ([]domain.C
 		summaries = append(summaries, domain.ConversationSummary{
 			ConversationID:        domain.ConversationId{UUID: ent.ConversationID},
 			OtherUserID:           ent.OtherUserID,
+			Username:              string(usernameBytes),
 			FirstName:             string(firstNameBytes),
 			LastName:              string(lastNameBytes),
 			Image:                 image,
