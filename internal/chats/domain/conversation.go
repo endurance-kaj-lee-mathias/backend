@@ -23,6 +23,7 @@ func NewConversation(id ConversationId, participants []uuid.UUID, createdAt time
 type ConversationSummary struct {
 	ConversationID        ConversationId
 	OtherUserID           uuid.UUID
+	Username              string
 	FirstName             string
 	LastName              string
 	Image                 string

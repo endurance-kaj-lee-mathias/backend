@@ -21,6 +21,7 @@ type ParticipantKeyEntity struct {
 type ConversationSummaryEntity struct {
 	ConversationID                 uuid.UUID
 	OtherUserID                    uuid.UUID
+	OtherEncryptedUsername         []byte
 	OtherEncryptedFirstName        []byte
 	OtherEncryptedLastName         []byte
 	OtherEncryptedUserKey          []byte

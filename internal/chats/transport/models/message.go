@@ -7,7 +7,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats/domain"
 )
 
-type MessageModel struct {
+type CreatedMessageModel struct {
 	ID             uuid.UUID `json:"id"`
 	ConversationID uuid.UUID `json:"conversationId"`
 	SenderID       uuid.UUID `json:"senderId"`
@@ -15,11 +15,31 @@ type MessageModel struct {
 	CreatedAt      time.Time `json:"createdAt"`
 }
 
+type MessageModel struct {
+	ID             uuid.UUID `json:"id"`
+	ConversationID uuid.UUID `json:"conversationId"`
+	SenderID       uuid.UUID `json:"senderId"`
+	Username       string    `json:"username"`
+	Content        string    `json:"content"`
+	CreatedAt      time.Time `json:"createdAt"`
+}
+
+func ToCreatedMessageModel(m domain.Message) CreatedMessageModel {
+	return CreatedMessageModel{
+		ID:             m.ID.UUID,
+		ConversationID: m.ConversationID.UUID,
+		SenderID:       m.SenderID,
+		Content:        m.Content,
+		CreatedAt:      m.CreatedAt,
+	}
+}
+
 func ToMessageModel(m domain.Message) MessageModel {
 	return MessageModel{
 		ID:             m.ID.UUID,
 		ConversationID: m.ConversationID.UUID,
 		SenderID:       m.SenderID,
+		Username:       m.Username,
 		Content:        m.Content,
 		CreatedAt:      m.CreatedAt,
 	}

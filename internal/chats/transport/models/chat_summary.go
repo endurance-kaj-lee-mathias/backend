@@ -8,11 +8,12 @@ import (
 )
 
 type ChatSummaryModel struct {
-	ConversationID      uuid.UUID  `json:"conversationId"`
+	ID                  uuid.UUID  `json:"id"`
 	OtherUserID         uuid.UUID  `json:"otherUserId"`
+	Username            string     `json:"username"`
 	FirstName           string     `json:"firstName"`
 	LastName            string     `json:"lastName"`
-	ImageUrl            string     `json:"imageUrl"`
+	Image               string     `json:"image"`
 	LatestMessage       *string    `json:"latestMessage"`
 	LatestMessageSentBy *uuid.UUID `json:"latestMessageSentBy"`
 	LatestMessageAt     *time.Time `json:"latestMessageAt"`
@@ -20,11 +21,12 @@ type ChatSummaryModel struct {
 
 func ToChatSummaryModel(s domain.ConversationSummary) ChatSummaryModel {
 	return ChatSummaryModel{
-		ConversationID:      s.ConversationID.UUID,
+		ID:                  s.ConversationID.UUID,
 		OtherUserID:         s.OtherUserID,
+		Username:            s.Username,
 		FirstName:           s.FirstName,
 		LastName:            s.LastName,
-		ImageUrl:            s.Image,
+		Image:               s.Image,
 		LatestMessage:       s.LatestMessage,
 		LatestMessageSentBy: s.LatestMessageSenderID,
 		LatestMessageAt:     s.LatestMessageAt,

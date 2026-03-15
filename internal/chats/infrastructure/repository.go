@@ -109,10 +109,11 @@ func (r *repository) CreateMessage(ctx context.Context, ent entities.MessageEnti
 
 func (r *repository) GetMessages(ctx context.Context, conversationID uuid.UUID, limit, offset int) ([]entities.MessageEntity, error) {
 	query := `
-		SELECT id, conversation_id, sender_id, encrypted_content, created_at
-		FROM messages
-		WHERE conversation_id = $1
-		ORDER BY created_at
+		SELECT m.id, m.conversation_id, m.sender_id, u.encrypted_username, u.encrypted_user_key, m.encrypted_content, m.created_at
+		FROM messages m
+		JOIN users u ON u.id = m.sender_id
+		WHERE m.conversation_id = $1
+		ORDER BY m.created_at
 		LIMIT $2 OFFSET $3
 	`
 
@@ -131,7 +132,7 @@ func (r *repository) GetMessages(ctx context.Context, conversationID uuid.UUID, 
 
 	for rows.Next() {
 		var ent entities.MessageEntity
-		if err := rows.Scan(&ent.ID, &ent.ConversationID, &ent.SenderID, &ent.EncryptedContent, &ent.CreatedAt); err != nil {
+		if err := rows.Scan(&ent.ID, &ent.ConversationID, &ent.SenderID, &ent.SenderUsername, &ent.SenderUserKey, &ent.EncryptedContent, &ent.CreatedAt); err != nil {
 			return nil, err
 		}
 		ents = append(ents, ent)
@@ -166,6 +167,7 @@ func (r *repository) GetConversationSummaries(ctx context.Context, userID uuid.U
 		SELECT
 			c.id,
 			other_u.id,
+			other_u.encrypted_username,
 			other_u.encrypted_first_name,
 			other_u.encrypted_last_name,
 			other_u.encrypted_user_key,
@@ -213,6 +215,7 @@ func (r *repository) GetConversationSummaries(ctx context.Context, userID uuid.U
 		if err := rows.Scan(
 			&ent.ConversationID,
 			&ent.OtherUserID,
+			&ent.OtherEncryptedUsername,
 			&ent.OtherEncryptedFirstName,
 			&ent.OtherEncryptedLastName,
 			&ent.OtherEncryptedUserKey,
