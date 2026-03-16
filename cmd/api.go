@@ -23,6 +23,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
+	usersinfrastructure "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws"
 )
 
@@ -173,20 +174,18 @@ func extractTargetFromPathID(r *http.Request) (uuid.UUID, error) {
 }
 
 func extractTargetFromUsername(userHandler *users.Handler) auth.TargetExtractor {
-	return func(r *http.Request) (uuid.UUID, error) {
-		targetID, ok := auth.GetTargetID(r.Context())
-		if ok {
-			return targetID, nil
-		}
-
-		username := chi.URLParam(r, "username")
-		usr, err := userHandler.ResolveUsername(r.Context(), username)
+	return auth.ExtractTargetFromUsername(func(ctx context.Context, username string) (uuid.UUID, error) {
+		targetID, err := userHandler.ResolveUsername(ctx, username)
 		if err != nil {
+			if errors.Is(err, usersinfrastructure.NotFound) {
+				return uuid.UUID{}, auth.TargetNotFound
+			}
+
 			return uuid.UUID{}, err
 		}
 
-		return usr, nil
-	}
+		return targetID, nil
+	})
 }
 
 func (server *server) run(ctx context.Context, h http.Handler) error {
