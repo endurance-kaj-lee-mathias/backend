@@ -291,3 +291,26 @@ func (h *Handler) FeedCalendar(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to serialize calendar feed", "userId", userID.String(), "error", err)
 	}
 }
+
+func (h *Handler) GetAppointments(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	events, err := h.service.GetCalendarEvents(r.Context(), userID)
+	if err != nil {
+		slog.Error("failed to get calendar appointments", "userId", userID.String(), "error", err)
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToEventModels(events))
+}

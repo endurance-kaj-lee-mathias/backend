@@ -145,6 +145,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 		r.Route("/calendar", func(r chi.Router) {
 			r.Get("/me/export", calendarHandler.ExportCalendar)
 			r.Get("/me/feed", calendarHandler.FeedCalendar)
+			r.Get("/appointments", calendarHandler.GetAppointments)
 
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
