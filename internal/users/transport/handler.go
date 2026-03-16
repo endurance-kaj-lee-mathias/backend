@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/request"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
@@ -144,14 +145,24 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
-	username := chi.URLParam(r, "username")
+	targetID, ok := auth.GetTargetID(r.Context())
 
-	usr, err := h.service.GetByUsername(r.Context(), username)
+	var usr domain.User
+	var err error
+
+	if ok {
+		usr, err = h.service.GetByID(r.Context(), domain.UserId{UUID: targetID})
+	} else {
+		username := chi.URLParam(r, "username")
+		usr, err = h.service.GetByUsername(r.Context(), username)
+	}
+
 	if err != nil {
 		if errors.Is(err, infrastructure.NotFound) {
 			response.WriteError(w, http.StatusNotFound, NotFound)
 			return
 		}
+
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
