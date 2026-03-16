@@ -43,5 +43,11 @@ func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToJournalResponse(report, limit, offset))
+	journalResponse, err := models.ToJournalResponse(report, limit, offset)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, journalResponse)
 }
