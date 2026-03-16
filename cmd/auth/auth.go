@@ -233,3 +233,32 @@ func GetUserClaims(ctx context.Context) (*Claims, bool) {
 
 	return c, true
 }
+
+func ValidateToken(config config.Idp) func(string) (*Claims, error) {
+	url := fmt.Sprintf(
+		"%s/realms/%s/protocol/openid-connect/certs",
+		config.Url,
+		config.Realm,
+	)
+
+	jwks := initialize(url, config.Refresh)
+
+	issuers := make([]string, len(config.Issuers))
+	for i, iss := range config.Issuers {
+		issuers[i] = fmt.Sprintf("%s/realms/%s", iss, config.Realm)
+	}
+
+	return func(token string) (*Claims, error) {
+		claims, err := validateToken(token, jwks, issuers, config.Client)
+		if err != nil {
+			return nil, err
+		}
+
+		c := claimsFromMap(claims)
+		if c.Sub == "" {
+			return nil, ClaimsInvalid
+		}
+
+		return c, nil
+	}
+}
