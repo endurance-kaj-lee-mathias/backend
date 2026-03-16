@@ -9,7 +9,7 @@ import (
 
 func (r *veteranReader) GetVeteransForMember(ctx context.Context, memberID uuid.UUID) ([]VeteranProfile, error) {
 	query := `
-		SELECT u.id, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
+		SELECT u.id, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
 		FROM users u
 		JOIN user_supports s ON u.id = s.veteran_id
 		WHERE s.support_id = $1
@@ -30,14 +30,19 @@ func (r *veteranReader) GetVeteransForMember(ctx context.Context, memberID uuid.
 
 	for rows.Next() {
 		var id uuid.UUID
-		var encryptedFirst, encryptedLast, encryptedUserKey []byte
+		var encryptedUsername, encryptedFirst, encryptedLast, encryptedUserKey []byte
 		var image *string
 
-		if err := rows.Scan(&id, &encryptedFirst, &encryptedLast, &encryptedUserKey, &image); err != nil {
+		if err := rows.Scan(&id, &encryptedUsername, &encryptedFirst, &encryptedLast, &encryptedUserKey, &image); err != nil {
 			return nil, err
 		}
 
 		userKey, err := r.enc.DecryptUserKey(encryptedUserKey)
+		if err != nil {
+			return nil, err
+		}
+
+		usernameBytes, err := r.enc.Decrypt(encryptedUsername, userKey)
 		if err != nil {
 			return nil, err
 		}
@@ -60,6 +65,7 @@ func (r *veteranReader) GetVeteransForMember(ctx context.Context, memberID uuid.
 
 		profiles = append(profiles, VeteranProfile{
 			ID:        id,
+			Username:  string(usernameBytes),
 			FirstName: string(firstNameBytes),
 			LastName:  string(lastNameBytes),
 			Image:     imageStr,

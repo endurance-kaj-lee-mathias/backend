@@ -8,6 +8,7 @@ import (
 
 type VeteranSupportResponse struct {
 	ID            string     `json:"id"`
+	Username      string     `json:"username,omitempty"`
 	FirstName     string     `json:"firstName"`
 	LastName      string     `json:"lastName"`
 	Image         string     `json:"image"`
@@ -21,6 +22,7 @@ func ToVeteranSupportResponseList(summaries []domain.VeteranMoodSummary) []Veter
 	for _, s := range summaries {
 		result = append(result, VeteranSupportResponse{
 			ID:            s.VeteranID.String(),
+			Username:      s.Username,
 			FirstName:     s.FirstName,
 			LastName:      s.LastName,
 			Image:         s.Image,

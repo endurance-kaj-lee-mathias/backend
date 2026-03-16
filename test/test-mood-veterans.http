@@ -124,7 +124,7 @@ Content-Type: application/json
 
 ### =====================================================
 ### GET /users/me/support – Happy path (public account, no rules)
-### Response shape per item: { id, firstName, lastName, image, latestScore, lastUpdatedAt }
+### Response shape per item: { id, username, firstName, lastName, image, latestScore, lastUpdatedAt }
 ### =====================================================
 
 ### 6. Support fetches veterans' mood – public account, no rules
