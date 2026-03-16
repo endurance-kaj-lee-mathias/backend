@@ -10,7 +10,7 @@ import (
 
 type JournalResponse struct {
 	VeteranID    string                                           `json:"veteranId"`
-	UserProfile  *UserProfileResponse                             `json:"userProfile,omitempty"`
+	UserProfile  UserProfileResponse                              `json:"userProfile"`
 	StressScores *response.PaginatedResponse[StressScoreResponse] `json:"stressScores,omitempty"`
 	MoodEntries  *response.PaginatedResponse[MoodEntryResponse]   `json:"moodEntries,omitempty"`
 }
@@ -43,14 +43,15 @@ type MoodEntryResponse struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func ToJournalResponse(report domain.JournalReport, limit, offset int) JournalResponse {
-	jr := JournalResponse{
-		VeteranID: report.VeteranID.String(),
+func ToJournalResponse(report domain.JournalReport, limit, offset int) (JournalResponse, error) {
+	if report.UserProfile == nil {
+		return JournalResponse{}, domain.MissingUserProfile
 	}
 
-	if report.UserProfile != nil {
-		p := report.UserProfile
-		jr.UserProfile = &UserProfileResponse{
+	p := report.UserProfile
+	jr := JournalResponse{
+		VeteranID: report.VeteranID.String(),
+		UserProfile: UserProfileResponse{
 			FirstName:    p.FirstName,
 			LastName:     p.LastName,
 			Username:     p.Username,
@@ -59,7 +60,7 @@ func ToJournalResponse(report domain.JournalReport, limit, offset int) JournalRe
 			Image:        p.Image,
 			PhoneNumber:  p.PhoneNumber,
 			IsPrivate:    p.IsPrivate,
-		}
+		},
 	}
 
 	if report.StressScores != nil {
@@ -97,5 +98,5 @@ func ToJournalResponse(report domain.JournalReport, limit, offset int) JournalRe
 		jr.MoodEntries = &p
 	}
 
-	return jr
+	return jr, nil
 }
