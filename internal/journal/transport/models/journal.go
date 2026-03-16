@@ -10,7 +10,7 @@ import (
 
 type JournalResponse struct {
 	VeteranID    string                                           `json:"veteranId"`
-	UserProfile  UserProfileResponse                              `json:"userProfile"`
+	UserProfile  UserProfileResponse                              `json:"profile"`
 	StressScores *response.PaginatedResponse[StressScoreResponse] `json:"stressScores,omitempty"`
 	MoodEntries  *response.PaginatedResponse[MoodEntryResponse]   `json:"moodEntries,omitempty"`
 }
