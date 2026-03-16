@@ -29,6 +29,7 @@ type UserKeyReader interface {
 
 type VeteranProfile struct {
 	ID        uuid.UUID
+	Username  string
 	FirstName string
 	LastName  string
 	Image     string
