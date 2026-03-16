@@ -188,17 +188,17 @@ Content-Type: application/json
 
 ### 14. SUPPORT fetches the full journal – all sections visible
 ###     Expected: 200 OK – userProfile, stressScores and moodEntries all present
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{supportToken}}
 
 ### 15. Pagination – first page of 1 for each section
 ###     Expected: 200 OK – each paginated section has page_size=1, page=1
-GET {{baseUrl}}/users/journal/{{veteranId}}?limit=1&offset=0
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}?limit=1&offset=0
 Authorization: Bearer {{supportToken}}
 
 ### 16. Pagination – second page of 1
 ###     Expected: 200 OK – page=2, offset=1
-GET {{baseUrl}}/users/journal/{{veteranId}}?limit=1&offset=1
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}?limit=1&offset=1
 Authorization: Bearer {{supportToken}}
 
 ### 17. VETERAN deletes the wildcard rule and creates scoped allow rules instead
@@ -223,7 +223,7 @@ Content-Type: application/json
 
 ### 19. SUPPORT fetches journal – only userProfile section present, others omitted
 ###     Expected: 200 OK – userProfile present, stressScores null, moodEntries null
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{supportToken}}
 
 ### 20. VETERAN swaps to allow only stressScores
@@ -246,7 +246,7 @@ Content-Type: application/json
 
 ### 21. SUPPORT fetches journal – only stressScores section present
 ###     Expected: 200 OK – stressScores present, userProfile null, moodEntries null
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{supportToken}}
 
 ### 22. VETERAN swaps to allow only moodEntries
@@ -269,7 +269,7 @@ Content-Type: application/json
 
 ### 23. SUPPORT fetches journal – only moodEntries section present
 ###     Expected: 200 OK – moodEntries present, userProfile null, stressScores null
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{supportToken}}
 
 ### 24. VETERAN adds stressScores rule too – two sections visible
@@ -289,7 +289,7 @@ Content-Type: application/json
 
 ### 25. SUPPORT fetches journal – stressScores and moodEntries present, userProfile still null
 ###     Expected: 200 OK
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{supportToken}}
 
 ### Cleanup shared rules
@@ -305,7 +305,7 @@ Authorization: Bearer {{veteranToken}}
 
 ### 26. SUPPORT fetches journal – no allow rules for any resource
 ###     Expected: 200 OK – veteranId present, all sections null
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
@@ -345,7 +345,7 @@ Content-Type: application/json
 
 ### 29. SUPPORT fetches journal – moodEntries denied, other two sections present
 ###     Expected: 200 OK – userProfile + stressScores present, moodEntries null
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{supportToken}}
 
 ### Cleanup
@@ -363,18 +363,18 @@ Authorization: Bearer {{veteranToken}}
 ### =====================================================
 
 ### 30. No auth → 401
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 
-### 31. Invalid UUID → 400
-GET {{baseUrl}}/users/journal/not-a-uuid
+### 31. Invalid username → 400
+GET {{baseUrl}}/users/journal/not-a-username
 Authorization: Bearer {{supportToken}}
 
-### 32. Non-existent veteran ID → 404
-GET {{baseUrl}}/users/journal/00000000-0000-0000-0000-000000000000
+### 32. Non-existent username → 400
+GET {{baseUrl}}/users/journal/non-existent-user
 Authorization: Bearer {{supportToken}}
 
 ### 33. VETERAN tries to view their own journal
 ###     Expected: 403 Forbidden (no support relationship with yourself)
-GET {{baseUrl}}/users/journal/{{veteranId}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}
 Authorization: Bearer {{veteranToken}}
 
