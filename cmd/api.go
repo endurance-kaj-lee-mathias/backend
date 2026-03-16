@@ -86,8 +86,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
-				r.Get("/journal/{id}", journalHandler.GetJournal)
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromUsername(userHandler)))
+				r.Get("/journal/{username}", journalHandler.GetJournal)
 			})
 		})
 
