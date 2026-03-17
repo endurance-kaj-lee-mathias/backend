@@ -6,6 +6,10 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/domain"
 )
 
+type Broadcaster interface {
+	Broadcast(channelID string, msg domain.OutboundMessage)
+}
+
 type Manager struct {
 	mu       sync.RWMutex
 	channels map[string]map[*Client]struct{}

@@ -17,6 +17,7 @@ import (
 type contextKey string
 
 const claimsKey contextKey = "claims"
+const websocketProtocolHeader = "Sec-Websocket-Protocol"
 
 func Authenticate(config config.Idp) func(*http.Request) (jwt.MapClaims, error) {
 	url := fmt.Sprintf(
@@ -106,23 +107,31 @@ func initialize(url string, refresh time.Duration) *keyfunc.JWKS {
 
 func extractToken(request *http.Request) (string, error) {
 	const prefix = "Bearer "
-	header := request.Header.Get("Authorization")
+	authorizationHeader := request.Header.Get("Authorization")
+	if authorizationHeader != "" {
+		if !strings.HasPrefix(authorizationHeader, prefix) {
+			return "", HeaderInvalid
+		}
 
-	if header == "" {
-		return "", MissingHeader
+		token := strings.TrimSpace(strings.TrimPrefix(authorizationHeader, prefix))
+		if token == "" {
+			return "", HeaderInvalid
+		}
+
+		return token, nil
 	}
 
-	if !strings.HasPrefix(header, prefix) {
-		return "", HeaderInvalid
+	websocketProtocolToken := strings.TrimSpace(request.Header.Get(websocketProtocolHeader))
+	if websocketProtocolToken != "" {
+		token := strings.TrimSpace(strings.TrimPrefix(websocketProtocolToken, prefix))
+		if token == "" {
+			return "", HeaderInvalid
+		}
+
+		return token, nil
 	}
 
-	token := strings.TrimPrefix(header, prefix)
-
-	if token == "" {
-		return "", HeaderInvalid
-	}
-
-	return token, nil
+	return "", MissingHeader
 }
 
 func validateToken(tokenString string, jwks *keyfunc.JWKS, issuers []string, audience string) (jwt.MapClaims, error) {

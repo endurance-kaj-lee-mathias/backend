@@ -7,7 +7,6 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/transport"
 )
 
-func Wire(idp config.Idp, allowedOrigins []string) *transport.Handler {
-	manager := application.NewManager()
-	return transport.NewHandler(manager, auth.ValidateToken(idp), allowedOrigins)
+func Wire(idp config.Idp, allowedOrigins []string, manager *application.Manager, conversations transport.ConversationLister) *transport.Handler {
+	return transport.NewHandler(manager, conversations, auth.AuthenticateWSClaims(idp), allowedOrigins)
 }

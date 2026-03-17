@@ -2,39 +2,45 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"github.com/go-chi/chi/v5"
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/application"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/domain"
 )
-
-func (h *Handler) authenticate(r *http.Request) (*auth.Claims, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader != "" {
-		token := strings.TrimPrefix(authHeader, "Bearer ")
-		return h.validateToken(token)
-	}
-
-	token := r.Header.Get("Sec-Websocket-Protocol")
-	if token != "" {
-		return h.validateToken(token)
-	}
-
-	return nil, errors.New("missing token")
-}
 
 func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	claims, err := h.authenticate(r)
 	if err != nil {
 		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	conversationID, err := uuid.FromString(chi.URLParam(r, "conversationId"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidConversationID)
+		return
+	}
+
+	conversationIDs, err := h.conversations.ListConversationIDs(r.Context(), userID)
+	if err != nil {
+		slog.Error("ws: failed to list conversation subscriptions", "userID", claims.Sub, "error", err)
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if !containsConversation(conversationIDs, conversationID) {
+		response.WriteError(w, http.StatusForbidden, Forbidden)
 		return
 	}
 
@@ -47,6 +53,7 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := application.NewClient(claims.Sub)
+	h.manager.Subscribe(conversationChannel(conversationID), client)
 
 	defer func() {
 		h.manager.UnsubscribeAll(client)
@@ -54,63 +61,10 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		_ = conn.CloseNow()
 	}()
 
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
+	ctx := conn.CloseRead(r.Context())
 
-	writeErr := make(chan error, 1)
-
-	go func() {
-		writeErr <- h.writeLoop(ctx, conn, client)
-	}()
-
-	if err := h.readLoop(ctx, conn, client); err != nil {
-		slog.Debug("ws: read loop ended", "userID", client.UserID, "error", err)
-	}
-
-	cancel()
-	<-writeErr
-}
-
-func (h *Handler) readLoop(ctx context.Context, conn *websocket.Conn, client *application.Client) error {
-	for {
-		var msg domain.InboundMessage
-		if err := wsjson.Read(ctx, conn, &msg); err != nil {
-			return err
-		}
-
-		if msg.Channel == "" {
-			continue
-		}
-
-		switch msg.Type {
-		case domain.MessageTypeSubscribe:
-			h.manager.Subscribe(msg.Channel, client)
-
-		case domain.MessageTypeUnsubscribe:
-			h.manager.Unsubscribe(msg.Channel, client)
-
-		case domain.MessageTypeMessage:
-			raw, err := json.Marshal(msg.Payload)
-			if err != nil {
-				slog.Debug("ws: failed to marshal payload", "error", err)
-				continue
-			}
-
-			var payload any
-			if err := json.Unmarshal(raw, &payload); err != nil {
-				slog.Debug("ws: failed to unmarshal payload", "error", err)
-				continue
-			}
-
-			h.manager.Broadcast(msg.Channel, domain.OutboundMessage{
-				Channel: msg.Channel,
-				From:    client.UserID,
-				Payload: payload,
-			})
-
-		default:
-			slog.Debug("ws: unknown message type", "type", msg.Type)
-		}
+	if err := h.writeLoop(ctx, conn, client); err != nil && err != context.Canceled {
+		slog.Debug("ws: write loop ended", "userID", client.UserID, "error", err)
 	}
 }
 
@@ -138,4 +92,18 @@ func (h *Handler) acceptOptions() *websocket.AcceptOptions {
 	}
 
 	return &websocket.AcceptOptions{OriginPatterns: h.allowedOrigins}
+}
+
+func conversationChannel(conversationID uuid.UUID) string {
+	return "conversation:" + conversationID.String()
+}
+
+func containsConversation(conversationIDs []uuid.UUID, conversationID uuid.UUID) bool {
+	for _, id := range conversationIDs {
+		if id == conversationID {
+			return true
+		}
+	}
+
+	return false
 }

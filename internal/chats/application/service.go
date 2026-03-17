@@ -10,6 +10,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/chats/infrastructure/entities"
+	wsdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/domain"
 )
 
 func (s *service) GetOrCreateConversation(ctx context.Context, callerID, participantID uuid.UUID) (domain.Conversation, error) {
@@ -107,6 +108,14 @@ func (s *service) SendMessage(ctx context.Context, conversationID uuid.UUID, sen
 		return domain.Message{}, err
 	}
 
+	channel := conversationChannel(conversationID)
+	s.broadcaster.Broadcast(channel, wsdomain.OutboundMessage{
+		Channel:   channel,
+		SenderID:  senderID.String(),
+		Content:   content,
+		CreatedAt: now,
+	})
+
 	go s.notifyMessage(conversationID, senderID)
 
 	return domain.NewMessage(
@@ -117,6 +126,10 @@ func (s *service) SendMessage(ctx context.Context, conversationID uuid.UUID, sen
 		content,
 		now,
 	), nil
+}
+
+func (s *service) ListConversationIDs(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+	return s.repo.ListConversationIDsByUserID(ctx, userID)
 }
 
 func (s *service) notifyMessage(conversationID, senderID uuid.UUID) {
@@ -253,4 +266,8 @@ func (s *service) decryptConversationKey(ctx context.Context, conversationID, us
 	}
 
 	return convKey, nil
+}
+
+func conversationChannel(conversationID uuid.UUID) string {
+	return "conversation:" + conversationID.String()
 }
