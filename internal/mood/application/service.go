@@ -156,6 +156,7 @@ func (s *service) GetVeteransSupport(ctx context.Context, memberID uuid.UUID) ([
 
 		summary := domain.VeteranMoodSummary{
 			VeteranID: veteran.ID,
+			Username:  veteran.Username,
 			FirstName: veteran.FirstName,
 			LastName:  veteran.LastName,
 			Image:     veteran.Image,

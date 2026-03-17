@@ -17,17 +17,17 @@ import (
 
 func TestServeWS_UnauthorizedRequest(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return nil, errors.New("unauthorized")
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
 	wsURL := "ws" + server.URL[4:]
 
-	_, _, err := websocket.Dial(context.Background(), wsURL, nil)
+	_, _, err := websocket.Dial(context.Background(), wsURL, dialOptionsAuth("Bearer token"))
 	if err == nil {
 		t.Fatal("expected unauthorized error, got nil")
 	}
@@ -35,11 +35,15 @@ func TestServeWS_UnauthorizedRequest(t *testing.T) {
 
 func TestServeWS_AuthorizedConnection(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
-		return &auth.Claims{Sub: "user123"}, nil
+	validate := func(token string) (*auth.Claims, error) {
+		if token == "token123" {
+			return &auth.Claims{Sub: "user123"}, nil
+		}
+
+		return nil, errors.New("unauthorized")
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
@@ -48,7 +52,43 @@ func TestServeWS_AuthorizedConnection(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token123"))
+	if err != nil {
+		t.Fatalf("failed to connect: %v", err)
+	}
+	defer func(conn *websocket.Conn) {
+		err := conn.CloseNow()
+		if err != nil {
+			derr := "failed to close connection: %v"
+			t.Logf(derr, err)
+		}
+	}(conn)
+
+	if conn == nil {
+		t.Fatal("expected connection, got nil")
+	}
+}
+
+func TestServeWS_AuthorizedWithSecWebsocketProtocol(t *testing.T) {
+	manager := application.NewManager()
+	validate := func(token string) (*auth.Claims, error) {
+		if token == "token456" {
+			return &auth.Claims{Sub: "user456"}, nil
+		}
+
+		return nil, errors.New("unauthorized")
+	}
+
+	handler := NewHandler(manager, validate, []string{"*"})
+	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
+	defer server.Close()
+
+	wsURL := "ws" + server.URL[4:]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	conn, _, err := websocket.Dial(ctx, wsURL, dialOptionsProtocol("token456"))
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}
@@ -67,11 +107,11 @@ func TestServeWS_AuthorizedConnection(t *testing.T) {
 
 func TestServeWS_Subscribe(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
@@ -80,7 +120,7 @@ func TestServeWS_Subscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token"))
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}
@@ -110,11 +150,11 @@ func TestServeWS_Subscribe(t *testing.T) {
 
 func TestServeWS_Unsubscribe(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
@@ -123,7 +163,7 @@ func TestServeWS_Unsubscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token"))
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}
@@ -166,11 +206,11 @@ func TestServeWS_Unsubscribe(t *testing.T) {
 
 func TestServeWS_Broadcast(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
@@ -179,7 +219,7 @@ func TestServeWS_Broadcast(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token"))
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}
@@ -225,11 +265,11 @@ func TestServeWS_Broadcast(t *testing.T) {
 
 func TestServeWS_MultipleClients(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
@@ -238,7 +278,7 @@ func TestServeWS_MultipleClients(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn1, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn1, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token"))
 	if err != nil {
 		t.Fatalf("failed to connect client 1: %v", err)
 	}
@@ -250,7 +290,7 @@ func TestServeWS_MultipleClients(t *testing.T) {
 		}
 	}(conn1)
 
-	conn2, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn2, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token"))
 	if err != nil {
 		t.Fatalf("failed to connect client 2: %v", err)
 	}
@@ -284,11 +324,11 @@ func TestServeWS_MultipleClients(t *testing.T) {
 
 func TestServeWS_EmptyChannelIgnored(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
@@ -297,7 +337,7 @@ func TestServeWS_EmptyChannelIgnored(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token"))
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}
@@ -327,11 +367,11 @@ func TestServeWS_EmptyChannelIgnored(t *testing.T) {
 
 func TestAcceptOptions_WildcardOrigin(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	opts := handler.acceptOptions()
 
 	if opts == nil {
@@ -344,12 +384,12 @@ func TestAcceptOptions_WildcardOrigin(t *testing.T) {
 
 func TestAcceptOptions_SpecificOrigins(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
 	origins := []string{"https://example.com", "https://app.example.com"}
-	handler := NewHandler(manager, authenticate, origins)
+	handler := NewHandler(manager, validate, origins)
 	opts := handler.acceptOptions()
 
 	if opts == nil {
@@ -365,11 +405,11 @@ func TestAcceptOptions_SpecificOrigins(t *testing.T) {
 
 func TestServeWS_ConnectionClosedGracefully(t *testing.T) {
 	manager := application.NewManager()
-	authenticate := func(*http.Request) (*auth.Claims, error) {
+	validate := func(string) (*auth.Claims, error) {
 		return &auth.Claims{Sub: "user123"}, nil
 	}
 
-	handler := NewHandler(manager, authenticate, []string{"*"})
+	handler := NewHandler(manager, validate, []string{"*"})
 	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
 	defer server.Close()
 
@@ -378,7 +418,7 @@ func TestServeWS_ConnectionClosedGracefully(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn, _, err := websocket.Dial(ctx, wsURL, nil)
+	conn, _, err := websocket.Dial(ctx, wsURL, dialOptionsAuth("Bearer token"))
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}
@@ -393,4 +433,18 @@ func TestServeWS_ConnectionClosedGracefully(t *testing.T) {
 	if manager.GetChannels() != 0 {
 		t.Fatal("expected all channels to be cleaned up after disconnect")
 	}
+}
+
+func dialOptionsAuth(value string) *websocket.DialOptions {
+	header := http.Header{}
+	header.Set("Authorization", value)
+
+	return &websocket.DialOptions{HTTPHeader: header}
+}
+
+func dialOptionsProtocol(value string) *websocket.DialOptions {
+	header := http.Header{}
+	header.Set("Sec-Websocket-Protocol", value)
+
+	return &websocket.DialOptions{HTTPHeader: header}
 }

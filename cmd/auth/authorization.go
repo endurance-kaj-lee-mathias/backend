@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization/application"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
@@ -16,6 +18,19 @@ const resourceKey contextKeyResource = "authResource"
 const targetIDKey contextKeyTargetID = "authTargetID"
 
 type TargetExtractor func(*http.Request) (uuid.UUID, error)
+type UsernameResolver func(context.Context, string) (uuid.UUID, error)
+
+func ExtractTargetFromUsername(resolve UsernameResolver) TargetExtractor {
+	return func(r *http.Request) (uuid.UUID, error) {
+		targetID, ok := GetTargetID(r.Context())
+		if ok {
+			return targetID, nil
+		}
+
+		username := chi.URLParam(r, "username")
+		return resolve(r.Context(), username)
+	}
+}
 
 func WithResource(resource string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -57,6 +72,11 @@ func RequireSupportRelationship(authService application.Service, extract TargetE
 
 			targetID, err := extract(r)
 			if err != nil {
+				if errors.Is(err, TargetNotFound) {
+					response.WriteError(w, http.StatusNotFound, err)
+					return
+				}
+
 				response.WriteError(w, http.StatusBadRequest, err)
 				return
 			}
