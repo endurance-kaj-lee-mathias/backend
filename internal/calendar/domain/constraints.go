@@ -33,7 +33,7 @@ func ValidateBooking(slot Slot, urgent bool) error {
 func HasProviderRole(roles []string) bool {
 	for _, r := range roles {
 		upper := strings.ToUpper(r)
-		if upper == string(userdomain.RoleTherapist) || upper == string(userdomain.RoleSupport) {
+		if upper == string(userdomain.RoleTherapist) || upper == string(userdomain.RoleSupport) || upper == string(userdomain.RoleVeteran) {
 			return true
 		}
 	}
@@ -43,6 +43,15 @@ func HasProviderRole(roles []string) bool {
 func HasVeteranRole(roles []string) bool {
 	for _, r := range roles {
 		if strings.ToUpper(r) == string(userdomain.RoleVeteran) {
+			return true
+		}
+	}
+	return false
+}
+
+func HasTherapistRole(roles []string) bool {
+	for _, r := range roles {
+		if strings.ToUpper(r) == string(userdomain.RoleTherapist) {
 			return true
 		}
 	}

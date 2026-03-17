@@ -3,9 +3,10 @@ package models
 import "time"
 
 type CreateSlotRequest struct {
-	StartTime time.Time `json:"startTime"`
-	EndTime   time.Time `json:"endTime"`
-	IsUrgent  bool      `json:"isUrgent"`
+	StartTime   time.Time `json:"startTime"`
+	EndTime     time.Time `json:"endTime"`
+	IsUrgent    bool      `json:"isUrgent"`
+	IsRecurring bool      `json:"isRecurring"`
 }
 
 func (m *CreateSlotRequest) Validate() error {

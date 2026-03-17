@@ -8,14 +8,15 @@ import (
 )
 
 type SlotEntity struct {
-	ID         uuid.UUID `db:"id"`
-	ProviderID uuid.UUID `db:"provider_id"`
-	StartTime  time.Time `db:"start_time"`
-	EndTime    time.Time `db:"end_time"`
-	IsUrgent   bool      `db:"is_urgent"`
-	IsBooked   bool      `db:"is_booked"`
-	CreatedAt  time.Time `db:"created_at"`
-	UpdatedAt  time.Time `db:"updated_at"`
+	ID         uuid.UUID  `db:"id"`
+	ProviderID uuid.UUID  `db:"provider_id"`
+	StartTime  time.Time  `db:"start_time"`
+	EndTime    time.Time  `db:"end_time"`
+	IsUrgent   bool       `db:"is_urgent"`
+	IsBooked   bool       `db:"is_booked"`
+	SeriesID   *uuid.UUID `db:"series_id"`
+	CreatedAt  time.Time  `db:"created_at"`
+	UpdatedAt  time.Time  `db:"updated_at"`
 }
 
 func SlotToEntity(slot domain.Slot) SlotEntity {
@@ -26,6 +27,7 @@ func SlotToEntity(slot domain.Slot) SlotEntity {
 		EndTime:    slot.EndTime,
 		IsUrgent:   slot.IsUrgent,
 		IsBooked:   slot.IsBooked,
+		SeriesID:   slot.SeriesID,
 		CreatedAt:  slot.CreatedAt,
 		UpdatedAt:  slot.UpdatedAt,
 	}
@@ -39,6 +41,7 @@ func SlotFromEntity(ent SlotEntity) domain.Slot {
 		EndTime:    ent.EndTime,
 		IsUrgent:   ent.IsUrgent,
 		IsBooked:   ent.IsBooked,
+		SeriesID:   ent.SeriesID,
 		CreatedAt:  ent.CreatedAt,
 		UpdatedAt:  ent.UpdatedAt,
 	}

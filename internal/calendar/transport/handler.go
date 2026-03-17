@@ -38,7 +38,7 @@ func (h *Handler) CreateSlot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slot, err := h.service.CreateSlot(r.Context(), providerID, claims.Roles, body.StartTime, body.EndTime, body.IsUrgent)
+	slot, err := h.service.CreateSlot(r.Context(), providerID, claims.Roles, body.StartTime, body.EndTime, body.IsUrgent, body.IsRecurring)
 	if err != nil {
 		status, errMsg := mapError(err)
 		response.WriteError(w, status, errMsg)
@@ -197,6 +197,34 @@ func (h *Handler) CancelAppointment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) DeleteSlotsBySeries(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	providerID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	seriesID, err := uuid.FromString(chi.URLParam(r, "seriesId"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteSlotsBySeries(r.Context(), providerID, seriesID); err != nil {
+		status, errMsg := mapError(err)
+		response.WriteError(w, status, errMsg)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) GetSlotsByUserID(w http.ResponseWriter, r *http.Request) {
 	fromStr := r.URL.Query().Get("from")
 	toStr := r.URL.Query().Get("to")
@@ -290,4 +318,27 @@ func (h *Handler) FeedCalendar(w http.ResponseWriter, r *http.Request) {
 	if err := cal.SerializeTo(w); err != nil {
 		slog.Error("failed to serialize calendar feed", "userId", userID.String(), "error", err)
 	}
+}
+
+func (h *Handler) GetAppointments(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	events, err := h.service.GetCalendarEvents(r.Context(), userID)
+	if err != nil {
+		slog.Error("failed to get calendar appointments", "userId", userID.String(), "error", err)
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToEventModels(events))
 }

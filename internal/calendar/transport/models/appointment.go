@@ -26,3 +26,25 @@ func ToAppointmentModel(a domain.Appointment) AppointmentResponse {
 		UpdatedAt: a.UpdatedAt,
 	}
 }
+
+type EventResponse struct {
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	StartTime time.Time `json:"startTime"`
+	EndTime   time.Time `json:"endTime"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func ToEventModels(events []domain.Event) []EventResponse {
+	out := make([]EventResponse, 0, len(events))
+	for _, e := range events {
+		out = append(out, EventResponse{
+			ID:        e.ID,
+			Title:     e.Title,
+			StartTime: e.StartTime,
+			EndTime:   e.EndTime,
+			UpdatedAt: e.UpdatedAt,
+		})
+	}
+	return out
+}

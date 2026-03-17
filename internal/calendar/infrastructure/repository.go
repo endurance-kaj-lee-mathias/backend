@@ -45,9 +45,9 @@ func (r *repository) CreateSlot(ctx context.Context, ent entities.SlotEntity) er
 	}
 
 	_, err = tx.ExecContext(ctx,
-		`INSERT INTO availability_slots (id, provider_id, start_time, end_time, is_urgent, is_booked, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		ent.ID, ent.ProviderID, ent.StartTime, ent.EndTime, ent.IsUrgent, ent.IsBooked, ent.CreatedAt, ent.UpdatedAt,
+		`INSERT INTO availability_slots (id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		ent.ID, ent.ProviderID, ent.StartTime, ent.EndTime, ent.IsUrgent, ent.IsBooked, ent.SeriesID, ent.CreatedAt, ent.UpdatedAt,
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -66,7 +66,7 @@ func (r *repository) GetSlotsByRange(ctx context.Context, from, to time.Time, pr
 
 	if providerID != nil {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, created_at, updated_at
+			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
 			 FROM availability_slots
 			 WHERE start_time >= $1 AND end_time <= $2 AND provider_id = $3
 			 ORDER BY start_time`,
@@ -74,7 +74,7 @@ func (r *repository) GetSlotsByRange(ctx context.Context, from, to time.Time, pr
 		)
 	} else {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, created_at, updated_at
+			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
 			 FROM availability_slots
 			 WHERE start_time >= $1 AND end_time <= $2
 			 ORDER BY start_time`,
@@ -96,7 +96,7 @@ func (r *repository) GetSlotsByRange(ctx context.Context, from, to time.Time, pr
 		var ent entities.SlotEntity
 		if err := rows.Scan(
 			&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime,
-			&ent.IsUrgent, &ent.IsBooked, &ent.CreatedAt, &ent.UpdatedAt,
+			&ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -113,10 +113,10 @@ func (r *repository) GetSlotByID(ctx context.Context, id uuid.UUID) (entities.Sl
 	var ent entities.SlotEntity
 
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, created_at, updated_at
+		`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
 		 FROM availability_slots WHERE id = $1`,
 		id,
-	).Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.CreatedAt, &ent.UpdatedAt)
+	).Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -257,5 +257,14 @@ func (r *repository) GetUrgentSlotMinutesForDate(ctx context.Context, providerID
 
 func (r *repository) DeleteSlotsByProviderID(ctx context.Context, providerID uuid.UUID) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM availability_slots WHERE provider_id = $1`, providerID)
+	return err
+}
+
+func (r *repository) DeleteFutureSlotsBySeries(ctx context.Context, seriesID uuid.UUID, providerID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM availability_slots
+		 WHERE series_id = $1 AND provider_id = $2 AND is_booked = false AND start_time > NOW()`,
+		seriesID, providerID,
+	)
 	return err
 }
