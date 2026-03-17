@@ -48,3 +48,12 @@ func HasVeteranRole(roles []string) bool {
 	}
 	return false
 }
+
+func HasTherapistRole(roles []string) bool {
+	for _, r := range roles {
+		if strings.ToUpper(r) == string(userdomain.RoleTherapist) {
+			return true
+		}
+	}
+	return false
+}

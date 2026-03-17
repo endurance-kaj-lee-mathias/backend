@@ -15,34 +15,37 @@ func (s *service) GetCalendarEvents(ctx context.Context, userID uuid.UUID) ([]do
 	}
 
 	events := make([]domain.Event, 0, len(ents))
-	providerCache := make(map[uuid.UUID]string)
 
 	for _, ent := range ents {
-		title, ok := providerCache[ent.ID]
+		var encFirstName, encLastName, encUserKey []byte
+		if userID == ent.VeteranID {
+			encFirstName = ent.ProviderEncryptedFirstName
+			encLastName = ent.ProviderEncryptedLastName
+			encUserKey = ent.ProviderEncryptedUserKey
+		} else {
+			encFirstName = ent.VeteranEncryptedFirstName
+			encLastName = ent.VeteranEncryptedLastName
+			encUserKey = ent.VeteranEncryptedUserKey
+		}
 
-		if !ok {
-			providerKey, err := s.enc.DecryptUserKey(ent.ProviderEncryptedUserKey)
-			if err != nil {
-				return nil, err
-			}
+		userKey, err := s.enc.DecryptUserKey(encUserKey)
+		if err != nil {
+			return nil, err
+		}
 
-			firstNameBytes, err := s.enc.Decrypt(ent.ProviderEncryptedFirstName, providerKey)
-			if err != nil {
-				return nil, err
-			}
+		firstNameBytes, err := s.enc.Decrypt(encFirstName, userKey)
+		if err != nil {
+			return nil, err
+		}
 
-			lastNameBytes, err := s.enc.Decrypt(ent.ProviderEncryptedLastName, providerKey)
-			if err != nil {
-				return nil, err
-			}
-
-			title = fmt.Sprintf("Appointment with %s %s", string(firstNameBytes), string(lastNameBytes))
-			providerCache[ent.ID] = title
+		lastNameBytes, err := s.enc.Decrypt(encLastName, userKey)
+		if err != nil {
+			return nil, err
 		}
 
 		events = append(events, domain.Event{
 			ID:        ent.ID.String(),
-			Title:     title,
+			Title:     fmt.Sprintf("Appointment with %s %s", string(firstNameBytes), string(lastNameBytes)),
 			StartTime: ent.StartTime.UTC(),
 			EndTime:   ent.EndTime.UTC(),
 			UpdatedAt: ent.UpdatedAt.UTC(),

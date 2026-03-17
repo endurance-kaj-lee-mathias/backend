@@ -11,7 +11,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar/infrastructure/entities"
 )
 
-func (s *service) CreateSlot(ctx context.Context, providerID uuid.UUID, roles []string, startTime, endTime time.Time, isUrgent bool) (domain.Slot, error) {
+func (s *service) CreateSlot(ctx context.Context, providerID uuid.UUID, roles []string, startTime, endTime time.Time, isUrgent bool, isRecurring bool) (domain.Slot, error) {
 	if !domain.HasProviderRole(roles) {
 		return domain.Slot{}, domain.OnlyProviderCanManageSlots
 	}
@@ -20,7 +20,7 @@ func (s *service) CreateSlot(ctx context.Context, providerID uuid.UUID, roles []
 		return domain.Slot{}, err
 	}
 
-	if !isUrgent {
+	if !isUrgent && domain.HasTherapistRole(roles) {
 		urgentMinutes, err := s.repo.GetUrgentSlotMinutesForDate(ctx, providerID, startTime)
 		if err != nil {
 			return domain.Slot{}, err
@@ -30,32 +30,53 @@ func (s *service) CreateSlot(ctx context.Context, providerID uuid.UUID, roles []
 		}
 	}
 
-	slotID, err := domain.NewSlotId()
-	if err != nil {
-		return domain.Slot{}, err
-	}
-
-	now := time.Now().UTC()
-	slot := domain.Slot{
-		ID:         slotID,
-		ProviderID: providerID,
-		StartTime:  startTime,
-		EndTime:    endTime,
-		IsUrgent:   isUrgent,
-		IsBooked:   false,
-		CreatedAt:  now,
-		UpdatedAt:  now,
-	}
-
-	ent := entities.SlotToEntity(slot)
-	if err := s.repo.CreateSlot(ctx, ent); err != nil {
-		if errors.Is(err, infrastructure.SlotOverlapDB) {
-			return domain.Slot{}, domain.SlotOverlap
+	var seriesID *uuid.UUID
+	if isRecurring {
+		id, err := uuid.NewV4()
+		if err != nil {
+			return domain.Slot{}, err
 		}
-		return domain.Slot{}, err
+		seriesID = &id
 	}
 
-	return slot, nil
+	duration := endTime.Sub(startTime)
+	weeks := 1
+	if isRecurring {
+		weeks = 8
+	}
+
+	var firstSlot domain.Slot
+	now := time.Now().UTC()
+	for i := 0; i < weeks; i++ {
+		slotID, err := domain.NewSlotId()
+		if err != nil {
+			return domain.Slot{}, err
+		}
+		offset := time.Duration(i) * 7 * 24 * time.Hour
+		slot := domain.Slot{
+			ID:         slotID,
+			ProviderID: providerID,
+			StartTime:  startTime.Add(offset),
+			EndTime:    startTime.Add(offset).Add(duration),
+			IsUrgent:   isUrgent,
+			IsBooked:   false,
+			SeriesID:   seriesID,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		}
+		ent := entities.SlotToEntity(slot)
+		if err := s.repo.CreateSlot(ctx, ent); err != nil {
+			if errors.Is(err, infrastructure.SlotOverlapDB) {
+				return domain.Slot{}, domain.SlotOverlap
+			}
+			return domain.Slot{}, err
+		}
+		if i == 0 {
+			firstSlot = slot
+		}
+	}
+
+	return firstSlot, nil
 }
 
 func (s *service) GetSlots(ctx context.Context, from, to time.Time, providerID *uuid.UUID) ([]domain.Slot, error) {
@@ -164,4 +185,8 @@ func (s *service) CancelAppointment(ctx context.Context, userID uuid.UUID, appoi
 
 func (s *service) DeleteMySlots(ctx context.Context, providerID uuid.UUID) error {
 	return s.repo.DeleteSlotsByProviderID(ctx, providerID)
+}
+
+func (s *service) DeleteSlotsBySeries(ctx context.Context, providerID uuid.UUID, seriesID uuid.UUID) error {
+	return s.repo.DeleteFutureSlotsBySeries(ctx, seriesID, providerID)
 }

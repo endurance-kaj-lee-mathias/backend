@@ -8,14 +8,15 @@ import (
 )
 
 type SlotResponse struct {
-	ID         uuid.UUID `json:"id"`
-	ProviderID uuid.UUID `json:"providerId"`
-	StartTime  time.Time `json:"startTime"`
-	EndTime    time.Time `json:"endTime"`
-	IsUrgent   bool      `json:"isUrgent"`
-	IsBooked   bool      `json:"isBooked"`
-	CreatedAt  time.Time `json:"createdAt"`
-	UpdatedAt  time.Time `json:"updatedAt"`
+	ID         uuid.UUID  `json:"id"`
+	ProviderID uuid.UUID  `json:"providerId"`
+	StartTime  time.Time  `json:"startTime"`
+	EndTime    time.Time  `json:"endTime"`
+	IsUrgent   bool       `json:"isUrgent"`
+	IsBooked   bool       `json:"isBooked"`
+	SeriesID   *uuid.UUID `json:"seriesId,omitempty"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
 }
 
 func ToSlotModel(s domain.Slot) SlotResponse {
@@ -26,6 +27,7 @@ func ToSlotModel(s domain.Slot) SlotResponse {
 		EndTime:    s.EndTime,
 		IsUrgent:   s.IsUrgent,
 		IsBooked:   s.IsBooked,
+		SeriesID:   s.SeriesID,
 		CreatedAt:  s.CreatedAt,
 		UpdatedAt:  s.UpdatedAt,
 	}
