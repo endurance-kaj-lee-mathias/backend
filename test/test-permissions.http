@@ -180,13 +180,13 @@ Authorization: Bearer {{therapistToken}}
 ### 5. SUPPORT views VETERAN profile by username – open mode
 ###    Expected: 200 OK
 GET {{baseUrl}}/users/search/{{veteranUsername}}
-Authorization: Bearer {{supportToken}}
+Authorization: Bearer {{therapistToken}}
 
 ### 6. No relationship – VETERAN views THERAPIST profile – open mode
 ###    Expected: 403 Forbidden (no support relationship between them in reverse)
 ###    (Only applies if THERAPIST has no accepted relationship where VETERAN is the support side)
-GET {{baseUrl}}/users/{{therapistId}}
-Authorization: Bearer {{veteranToken}}
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
 
 ### =====================================================
 ### Sharing rules – CRUD
@@ -200,8 +200,8 @@ Content-Type: application/json
 
 {
   "viewerId": "{{therapistId}}",
-  "resource": "moodEntries",
-  "effect": "deny"
+  "resource": "userProfile",
+  "effect": "allow"
 }
 
 > {%

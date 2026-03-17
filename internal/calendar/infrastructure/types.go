@@ -21,6 +21,7 @@ type Repository interface {
 	CheckSlotOverlap(ctx context.Context, providerID uuid.UUID, start, end time.Time) (bool, error)
 	GetUrgentSlotMinutesForDate(ctx context.Context, providerID uuid.UUID, date time.Time) (int, error)
 	DeleteSlotsByProviderID(ctx context.Context, providerID uuid.UUID) error
+	DeleteFutureSlotsBySeries(ctx context.Context, seriesID uuid.UUID, providerID uuid.UUID) error
 	GetEventsByUserID(ctx context.Context, userID uuid.UUID) ([]entities.CalendarEventEntity, error)
 }
 

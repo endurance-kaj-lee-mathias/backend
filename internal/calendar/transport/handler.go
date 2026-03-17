@@ -38,7 +38,7 @@ func (h *Handler) CreateSlot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slot, err := h.service.CreateSlot(r.Context(), providerID, claims.Roles, body.StartTime, body.EndTime, body.IsUrgent)
+	slot, err := h.service.CreateSlot(r.Context(), providerID, claims.Roles, body.StartTime, body.EndTime, body.IsUrgent, body.IsRecurring)
 	if err != nil {
 		status, errMsg := mapError(err)
 		response.WriteError(w, status, errMsg)
@@ -189,6 +189,34 @@ func (h *Handler) CancelAppointment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.CancelAppointment(r.Context(), userID, appointmentID); err != nil {
+		status, errMsg := mapError(err)
+		response.WriteError(w, status, errMsg)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) DeleteSlotsBySeries(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	providerID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	seriesID, err := uuid.FromString(chi.URLParam(r, "seriesId"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	if err := h.service.DeleteSlotsBySeries(r.Context(), providerID, seriesID); err != nil {
 		status, errMsg := mapError(err)
 		response.WriteError(w, status, errMsg)
 		return

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/pagination"
@@ -26,9 +25,9 @@ func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	veteranID, err := uuid.FromString(chi.URLParam(r, "id"))
-	if err != nil {
-		response.WriteError(w, http.StatusBadRequest, InvalidId)
+	veteranID, ok := auth.GetTargetID(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusBadRequest, InvalidUsername)
 		return
 	}
 
@@ -44,5 +43,11 @@ func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToJournalResponse(report, limit, offset))
+	journalResponse, err := models.ToJournalResponse(report, limit, offset)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.Write(w, http.StatusOK, journalResponse)
 }

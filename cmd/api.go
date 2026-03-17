@@ -23,6 +23,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
+	usersinfrastructure "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws"
 	wsapp "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/application"
 )
@@ -88,8 +89,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			})
 
 			r.Group(func(r chi.Router) {
-				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromPathID))
-				r.Get("/journal/{id}", journalHandler.GetJournal)
+				r.Use(auth.RequireSupportRelationship(authzService, extractTargetFromUsername(userHandler)))
+				r.Get("/journal/{username}", journalHandler.GetJournal)
 			})
 		})
 
@@ -152,6 +153,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
 			r.Delete("/slots/me", calendarHandler.DeleteMySlots)
+			r.Delete("/slots/series/{seriesId}", calendarHandler.DeleteSlotsBySeries)
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
 			r.Post("/slots/{id}/book", calendarHandler.BookSlot)
 			r.Patch("/appointments/{id}/cancel", calendarHandler.CancelAppointment)
@@ -176,20 +178,18 @@ func extractTargetFromPathID(r *http.Request) (uuid.UUID, error) {
 }
 
 func extractTargetFromUsername(userHandler *users.Handler) auth.TargetExtractor {
-	return func(r *http.Request) (uuid.UUID, error) {
-		targetID, ok := auth.GetTargetID(r.Context())
-		if ok {
-			return targetID, nil
-		}
-
-		username := chi.URLParam(r, "username")
-		usr, err := userHandler.ResolveUsername(r.Context(), username)
+	return auth.ExtractTargetFromUsername(func(ctx context.Context, username string) (uuid.UUID, error) {
+		targetID, err := userHandler.ResolveUsername(ctx, username)
 		if err != nil {
+			if errors.Is(err, usersinfrastructure.NotFound) {
+				return uuid.UUID{}, auth.TargetNotFound
+			}
+
 			return uuid.UUID{}, err
 		}
 
-		return usr, nil
-	}
+		return targetID, nil
+	})
 }
 
 func (server *server) run(ctx context.Context, h http.Handler) error {

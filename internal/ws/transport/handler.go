@@ -2,16 +2,34 @@ package transport
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
 	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/application"
 )
+
+func (h *Handler) authenticate(r *http.Request) (*auth.Claims, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader != "" {
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		return h.validateToken(token)
+	}
+
+	token := r.Header.Get("Sec-Websocket-Protocol")
+	if token != "" {
+		return h.validateToken(token)
+	}
+
+	return nil, errors.New("missing token")
+}
 
 func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	claims, err := h.authenticate(r)
