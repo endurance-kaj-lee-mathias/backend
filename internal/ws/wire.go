@@ -8,5 +8,5 @@ import (
 )
 
 func Wire(idp config.Idp, allowedOrigins []string, manager *application.Manager, conversations transport.ConversationLister) *transport.Handler {
-	return transport.NewHandler(manager, conversations, auth.ValidateToken(idp), allowedOrigins)
+	return transport.NewHandler(manager, conversations, auth.AuthenticateWSClaims(idp), allowedOrigins)
 }

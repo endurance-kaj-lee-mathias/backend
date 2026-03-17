@@ -16,15 +16,15 @@ type ConversationLister interface {
 type Handler struct {
 	manager        *application.Manager
 	conversations  ConversationLister
-	validateToken  func(string) (*auth.Claims, error)
+	authenticate   func(*http.Request) (*auth.Claims, error)
 	allowedOrigins []string
 }
 
-func NewHandler(manager *application.Manager, conversations ConversationLister, validateToken func(string) (*auth.Claims, error), allowedOrigins []string) *Handler {
+func NewHandler(manager *application.Manager, conversations ConversationLister, authenticate func(*http.Request) (*auth.Claims, error), allowedOrigins []string) *Handler {
 	return &Handler{
 		manager:        manager,
 		conversations:  conversations,
-		validateToken:  validateToken,
+		authenticate:   authenticate,
 		allowedOrigins: allowedOrigins,
 	}
 }
