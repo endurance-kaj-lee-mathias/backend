@@ -287,3 +287,35 @@ func (r *repository) FindDeviceTokensByUserID(ctx context.Context, userID uuid.U
 
 	return tokens, rows.Err()
 }
+
+func (r *repository) ListConversationIDsByUserID(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+	query := `SELECT conversation_id FROM conversation_participants WHERE user_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
+
+	conversationIDs := make([]uuid.UUID, 0)
+
+	for rows.Next() {
+		var conversationID uuid.UUID
+		if err := rows.Scan(&conversationID); err != nil {
+			return nil, err
+		}
+
+		conversationIDs = append(conversationIDs, conversationID)
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return conversationIDs, nil
+}

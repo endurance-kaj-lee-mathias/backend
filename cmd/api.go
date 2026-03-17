@@ -24,6 +24,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws"
+	wsapp "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/application"
 )
 
 func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
@@ -37,8 +38,9 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	userHandler := users.Wire(server.db, server.enc, server.kc, "mobile", server.idp.WebClientID)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
 	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
-	chatsHandler := chats.Wire(server.db, server.enc, server.notifier)
-	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins)
+	wsManager := wsapp.NewManager()
+	chatsHandler, chatsSvc := chats.Wire(server.db, server.enc, server.notifier, wsManager)
+	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins, wsManager, chatsSvc)
 	authzHandler, authzService := authorization.Wire(server.db)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier, authzService)
 	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes)

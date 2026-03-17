@@ -2,19 +2,24 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/application"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/domain"
 )
 
 func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	claims, err := h.authenticate(r)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
 	if err != nil {
 		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
 		return
@@ -30,69 +35,27 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 
 	client := application.NewClient(claims.Sub)
 
+	conversationIDs, err := h.conversations.ListConversationIDs(r.Context(), userID)
+	if err != nil {
+		slog.Error("ws: failed to list conversation subscriptions", "userID", claims.Sub, "error", err)
+		_ = conn.Close(websocket.StatusInternalError, "failed to load conversations")
+		return
+	}
+
+	for _, conversationID := range conversationIDs {
+		h.manager.Subscribe(conversationChannel(conversationID), client)
+	}
+
 	defer func() {
 		h.manager.UnsubscribeAll(client)
 		client.Close()
 		_ = conn.CloseNow()
 	}()
 
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
+	ctx := conn.CloseRead(r.Context())
 
-	writeErr := make(chan error, 1)
-
-	go func() {
-		writeErr <- h.writeLoop(ctx, conn, client)
-	}()
-
-	if err := h.readLoop(ctx, conn, client); err != nil {
-		slog.Debug("ws: read loop ended", "userID", client.UserID, "error", err)
-	}
-
-	cancel()
-	<-writeErr
-}
-
-func (h *Handler) readLoop(ctx context.Context, conn *websocket.Conn, client *application.Client) error {
-	for {
-		var msg domain.InboundMessage
-		if err := wsjson.Read(ctx, conn, &msg); err != nil {
-			return err
-		}
-
-		if msg.Channel == "" {
-			continue
-		}
-
-		switch msg.Type {
-		case domain.MessageTypeSubscribe:
-			h.manager.Subscribe(msg.Channel, client)
-
-		case domain.MessageTypeUnsubscribe:
-			h.manager.Unsubscribe(msg.Channel, client)
-
-		case domain.MessageTypeMessage:
-			raw, err := json.Marshal(msg.Payload)
-			if err != nil {
-				slog.Debug("ws: failed to marshal payload", "error", err)
-				continue
-			}
-
-			var payload any
-			if err := json.Unmarshal(raw, &payload); err != nil {
-				slog.Debug("ws: failed to unmarshal payload", "error", err)
-				continue
-			}
-
-			h.manager.Broadcast(msg.Channel, domain.OutboundMessage{
-				Channel: msg.Channel,
-				From:    client.UserID,
-				Payload: payload,
-			})
-
-		default:
-			slog.Debug("ws: unknown message type", "type", msg.Type)
-		}
+	if err := h.writeLoop(ctx, conn, client); err != nil && err != context.Canceled {
+		slog.Debug("ws: write loop ended", "userID", client.UserID, "error", err)
 	}
 }
 
@@ -120,4 +83,8 @@ func (h *Handler) acceptOptions() *websocket.AcceptOptions {
 	}
 
 	return &websocket.AcceptOptions{OriginPatterns: h.allowedOrigins}
+}
+
+func conversationChannel(conversationID uuid.UUID) string {
+	return "conversation:" + conversationID.String()
 }

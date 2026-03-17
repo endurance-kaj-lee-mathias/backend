@@ -22,6 +22,7 @@ type Repository interface {
 	GetConversationSummaries(ctx context.Context, userID uuid.UUID) ([]entities.ConversationSummaryEntity, error)
 	FindOtherParticipants(ctx context.Context, conversationID, senderID uuid.UUID) ([]uuid.UUID, error)
 	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
+	ListConversationIDsByUserID(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error)
 }
 
 type repository struct {
