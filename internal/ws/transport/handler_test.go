@@ -10,6 +10,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
+	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/application"
@@ -29,17 +30,28 @@ func (s conversationListerStub) ListConversationIDs(_ context.Context, _ uuid.UU
 	return s.conversationIDs, nil
 }
 
+func wsConversationURL(serverURL string, conversationID uuid.UUID) string {
+	return "ws" + serverURL[4:] + "/" + conversationID.String()
+}
+
+func newWSTestServer(handler *Handler) *httptest.Server {
+	r := chi.NewRouter()
+	r.Get("/{conversationId}", handler.ServeWS)
+	return httptest.NewServer(r)
+}
+
 func TestServeWS_UnauthorizedRequest(t *testing.T) {
 	manager := application.NewManager()
+	conversationID := uuid.Must(uuid.NewV4())
 	authenticate := func(*http.Request) (*auth.Claims, error) {
 		return nil, errors.New("unauthorized")
 	}
 
 	handler := NewHandler(manager, conversationListerStub{}, authenticate, []string{"*"})
-	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
+	server := newWSTestServer(handler)
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[4:]
+	wsURL := wsConversationURL(server.URL, conversationID)
 
 	_, _, err := websocket.Dial(context.Background(), wsURL, nil)
 	if err == nil {
@@ -50,15 +62,16 @@ func TestServeWS_UnauthorizedRequest(t *testing.T) {
 func TestServeWS_AuthorizedConnection(t *testing.T) {
 	manager := application.NewManager()
 	userID := uuid.Must(uuid.NewV4())
+	conversationID := uuid.Must(uuid.NewV4())
 	authenticate := func(*http.Request) (*auth.Claims, error) {
 		return &auth.Claims{Sub: userID.String()}, nil
 	}
 
-	handler := NewHandler(manager, conversationListerStub{}, authenticate, []string{"*"})
-	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
+	handler := NewHandler(manager, conversationListerStub{conversationIDs: []uuid.UUID{conversationID}}, authenticate, []string{"*"})
+	server := newWSTestServer(handler)
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[4:]
+	wsURL := wsConversationURL(server.URL, conversationID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -88,10 +101,10 @@ func TestServeWS_AutoSubscribeConversations(t *testing.T) {
 
 	lister := conversationListerStub{conversationIDs: []uuid.UUID{conversationID}}
 	handler := NewHandler(manager, lister, authenticate, []string{"*"})
-	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
+	server := newWSTestServer(handler)
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[4:]
+	wsURL := wsConversationURL(server.URL, conversationID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -125,10 +138,10 @@ func TestServeWS_BroadcastToConversationQueue(t *testing.T) {
 
 	lister := conversationListerStub{conversationIDs: []uuid.UUID{conversationID}}
 	handler := NewHandler(manager, lister, authenticate, []string{"*"})
-	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
+	server := newWSTestServer(handler)
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[4:]
+	wsURL := wsConversationURL(server.URL, conversationID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -182,10 +195,10 @@ func TestServeWS_MultipleClientsSubscribed(t *testing.T) {
 
 	lister := conversationListerStub{conversationIDs: []uuid.UUID{conversationID}}
 	handler := NewHandler(manager, lister, authenticate, []string{"*"})
-	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
+	server := newWSTestServer(handler)
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[4:]
+	wsURL := wsConversationURL(server.URL, conversationID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -255,6 +268,27 @@ func TestAcceptOptions_SpecificOrigins(t *testing.T) {
 	}
 }
 
+func TestServeWS_ForbiddenForNonParticipant(t *testing.T) {
+	manager := application.NewManager()
+	userID := uuid.Must(uuid.NewV4())
+	requestedConversationID := uuid.Must(uuid.NewV4())
+	otherConversationID := uuid.Must(uuid.NewV4())
+	authenticate := func(*http.Request) (*auth.Claims, error) {
+		return &auth.Claims{Sub: userID.String()}, nil
+	}
+
+	handler := NewHandler(manager, conversationListerStub{conversationIDs: []uuid.UUID{otherConversationID}}, authenticate, []string{"*"})
+	server := newWSTestServer(handler)
+	defer server.Close()
+
+	wsURL := wsConversationURL(server.URL, requestedConversationID)
+
+	_, _, err := websocket.Dial(context.Background(), wsURL, nil)
+	if err == nil {
+		t.Fatal("expected forbidden error, got nil")
+	}
+}
+
 func TestServeWS_ConnectionClosedGracefully(t *testing.T) {
 	manager := application.NewManager()
 	userID := uuid.Must(uuid.NewV4())
@@ -265,10 +299,10 @@ func TestServeWS_ConnectionClosedGracefully(t *testing.T) {
 
 	lister := conversationListerStub{conversationIDs: []uuid.UUID{conversationID}}
 	handler := NewHandler(manager, lister, authenticate, []string{"*"})
-	server := httptest.NewServer(http.HandlerFunc(handler.ServeWS))
+	server := newWSTestServer(handler)
 	defer server.Close()
 
-	wsURL := "ws" + server.URL[4:]
+	wsURL := wsConversationURL(server.URL, conversationID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

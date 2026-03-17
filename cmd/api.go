@@ -166,7 +166,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	})
 
 	r.Get("/health", healthHandler.Health)
-	r.Get("/ws", wsHandler.ServeWS)
+	r.Get("/ws/{conversationId}", wsHandler.ServeWS)
 
 	return r, moodScheduler
 }

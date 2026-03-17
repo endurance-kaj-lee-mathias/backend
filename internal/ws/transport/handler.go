@@ -7,6 +7,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
+	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/ws/application"
@@ -25,6 +26,24 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	conversationID, err := uuid.FromString(chi.URLParam(r, "conversationId"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidConversationID)
+		return
+	}
+
+	conversationIDs, err := h.conversations.ListConversationIDs(r.Context(), userID)
+	if err != nil {
+		slog.Error("ws: failed to list conversation subscriptions", "userID", claims.Sub, "error", err)
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if !containsConversation(conversationIDs, conversationID) {
+		response.WriteError(w, http.StatusForbidden, Forbidden)
+		return
+	}
+
 	opts := h.acceptOptions()
 
 	conn, err := websocket.Accept(w, r, opts)
@@ -34,17 +53,7 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := application.NewClient(claims.Sub)
-
-	conversationIDs, err := h.conversations.ListConversationIDs(r.Context(), userID)
-	if err != nil {
-		slog.Error("ws: failed to list conversation subscriptions", "userID", claims.Sub, "error", err)
-		_ = conn.Close(websocket.StatusInternalError, "failed to load conversations")
-		return
-	}
-
-	for _, conversationID := range conversationIDs {
-		h.manager.Subscribe(conversationChannel(conversationID), client)
-	}
+	h.manager.Subscribe(conversationChannel(conversationID), client)
 
 	defer func() {
 		h.manager.UnsubscribeAll(client)
@@ -87,4 +96,14 @@ func (h *Handler) acceptOptions() *websocket.AcceptOptions {
 
 func conversationChannel(conversationID uuid.UUID) string {
 	return "conversation:" + conversationID.String()
+}
+
+func containsConversation(conversationIDs []uuid.UUID, conversationID uuid.UUID) bool {
+	for _, id := range conversationIDs {
+		if id == conversationID {
+			return true
+		}
+	}
+
+	return false
 }
