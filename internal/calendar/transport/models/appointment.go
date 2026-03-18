@@ -11,6 +11,7 @@ type AppointmentResponse struct {
 	ID        uuid.UUID `json:"id"`
 	SlotID    uuid.UUID `json:"slotId"`
 	VeteranID uuid.UUID `json:"veteranId"`
+	Title     *string   `json:"title,omitempty"`
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -21,6 +22,7 @@ func ToAppointmentModel(a domain.Appointment) AppointmentResponse {
 		ID:        a.ID.UUID,
 		SlotID:    a.SlotID,
 		VeteranID: a.VeteranID,
+		Title:     a.Title,
 		Status:    string(a.Status),
 		CreatedAt: a.CreatedAt,
 		UpdatedAt: a.UpdatedAt,

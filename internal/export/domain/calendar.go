@@ -15,6 +15,7 @@ type AppointmentData struct {
 	VeteranID        string    `json:"veteranId"`
 	ProviderID       string    `json:"providerId"`
 	ProviderUsername string    `json:"providerUsername"`
+	Title            *string   `json:"title,omitempty"`
 	Status           string    `json:"status"`
 	StartTime        time.Time `json:"startTime"`
 	EndTime          time.Time `json:"endTime"`

@@ -159,7 +159,7 @@ func (h *Handler) BookSlot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appointment, err := h.service.BookSlot(r.Context(), veteranID, claims.Roles, slotID, body.Urgent)
+	appointment, err := h.service.BookSlot(r.Context(), veteranID, claims.Roles, slotID, body.Title, body.Urgent)
 	if err != nil {
 		status, errMsg := mapError(err)
 		response.WriteError(w, status, errMsg)

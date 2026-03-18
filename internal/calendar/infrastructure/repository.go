@@ -159,9 +159,9 @@ func (r *repository) AtomicBookSlot(ctx context.Context, id uuid.UUID, now time.
 
 func (r *repository) CreateAppointment(ctx context.Context, ent entities.AppointmentEntity) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO appointments (id, slot_id, veteran_id, status, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6)`,
-		ent.ID, ent.SlotID, ent.VeteranID, ent.Status, ent.CreatedAt, ent.UpdatedAt,
+		`INSERT INTO appointments (id, slot_id, veteran_id, title, status, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		ent.ID, ent.SlotID, ent.VeteranID, ent.Title, ent.Status, ent.CreatedAt, ent.UpdatedAt,
 	)
 	return err
 }
@@ -170,12 +170,12 @@ func (r *repository) GetAppointmentWithSlot(ctx context.Context, id uuid.UUID) (
 	var ent entities.AppointmentWithSlotEntity
 
 	err := r.db.QueryRowContext(ctx,
-		`SELECT a.id, a.slot_id, a.veteran_id, a.status, a.created_at, a.updated_at, s.provider_id
+		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id
 		 FROM appointments a
 		 JOIN availability_slots s ON a.slot_id = s.id
 		 WHERE a.id = $1`,
 		id,
-	).Scan(&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID)
+	).Scan(&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

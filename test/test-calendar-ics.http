@@ -310,7 +310,8 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "urgent": false
+  "urgent": false,
+  "title": "Therapeut meeting bij Mathias"
 }
 
 ### 9c. Book Tuesday
