@@ -66,18 +66,20 @@ func (r *repository) GetSlotsByRange(ctx context.Context, from, to time.Time, pr
 
 	if providerID != nil {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
-			 FROM availability_slots
-			 WHERE start_time >= $1 AND end_time <= $2 AND provider_id = $3
-			 ORDER BY start_time`,
+			`SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id, s.created_at, s.updated_at, a.title
+			 FROM availability_slots s
+			 LEFT JOIN appointments a ON a.slot_id = s.id AND a.status != 'CANCELLED'
+			 WHERE s.start_time >= $1 AND s.end_time <= $2 AND s.provider_id = $3
+			 ORDER BY s.start_time`,
 			from, to, *providerID,
 		)
 	} else {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
-			 FROM availability_slots
-			 WHERE start_time >= $1 AND end_time <= $2
-			 ORDER BY start_time`,
+			`SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id, s.created_at, s.updated_at, a.title
+			 FROM availability_slots s
+			 LEFT JOIN appointments a ON a.slot_id = s.id AND a.status != 'CANCELLED'
+			 WHERE s.start_time >= $1 AND s.end_time <= $2
+			 ORDER BY s.start_time`,
 			from, to,
 		)
 	}
@@ -96,7 +98,7 @@ func (r *repository) GetSlotsByRange(ctx context.Context, from, to time.Time, pr
 		var ent entities.SlotEntity
 		if err := rows.Scan(
 			&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime,
-			&ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt,
+			&ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt, &ent.AppointmentTitle,
 		); err != nil {
 			return nil, err
 		}
@@ -113,10 +115,12 @@ func (r *repository) GetSlotByID(ctx context.Context, id uuid.UUID) (entities.Sl
 	var ent entities.SlotEntity
 
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
-		 FROM availability_slots WHERE id = $1`,
+		`SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id, s.created_at, s.updated_at, a.title
+		 FROM availability_slots s
+		 LEFT JOIN appointments a ON a.slot_id = s.id AND a.status != 'CANCELLED'
+		 WHERE s.id = $1`,
 		id,
-	).Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt)
+	).Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt, &ent.AppointmentTitle)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
