@@ -73,6 +73,21 @@ func (r *repository) GetUserEncryptedKey(ctx context.Context, userID uuid.UUID) 
 	return encryptedUserKey, nil
 }
 
+func (r *repository) GetEncryptedUsername(ctx context.Context, userID uuid.UUID) ([]byte, error) {
+	query := `SELECT encrypted_username FROM users WHERE id = $1`
+
+	var encryptedUsername []byte
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&encryptedUsername)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, UserNotFound
+		}
+		return nil, err
+	}
+
+	return encryptedUsername, nil
+}
+
 func (r *repository) GetParticipantKey(ctx context.Context, conversationID, userID uuid.UUID) (entities.ParticipantKeyEntity, error) {
 	query := `
 		SELECT cp.conversation_id, cp.user_id, cp.encrypted_conversation_key, u.encrypted_user_key

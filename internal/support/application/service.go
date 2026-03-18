@@ -2,8 +2,8 @@ package application
 
 import (
 	"context"
-	"sync"
 	"log/slog"
+	"sync"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"

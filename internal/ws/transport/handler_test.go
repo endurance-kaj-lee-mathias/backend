@@ -161,6 +161,7 @@ func TestServeWS_BroadcastToConversationQueue(t *testing.T) {
 	sent := domain.OutboundMessage{
 		Channel:   channel,
 		SenderID:  userID.String(),
+		Username:  "",
 		Content:   "hello",
 		CreatedAt: time.Now().UTC(),
 	}

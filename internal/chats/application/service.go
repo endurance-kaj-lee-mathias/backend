@@ -109,9 +109,33 @@ func (s *service) SendMessage(ctx context.Context, conversationID uuid.UUID, sen
 	}
 
 	channel := conversationChannel(conversationID)
+
+	username := ""
+	if encUsername, err := s.repo.GetEncryptedUsername(context.Background(), senderID); err != nil {
+		slog.Warn("failed to fetch encrypted username for websocket broadcast", "user_id", senderID, "error", err)
+	} else {
+		encUserKey, err := s.repo.GetUserEncryptedKey(context.Background(), senderID)
+		if err != nil {
+			slog.Warn("failed to fetch encrypted user key for websocket broadcast", "user_id", senderID, "error", err)
+		} else {
+			userKey, err := s.enc.DecryptUserKey(encUserKey)
+			if err != nil {
+				slog.Warn("failed to decrypt user key for websocket broadcast", "user_id", senderID, "error", err)
+			} else {
+				unameBytes, err := s.enc.Decrypt(encUsername, userKey)
+				if err != nil {
+					slog.Warn("failed to decrypt username for websocket broadcast", "user_id", senderID, "error", err)
+				} else {
+					username = string(unameBytes)
+				}
+			}
+		}
+	}
+
 	s.broadcaster.Broadcast(channel, wsdomain.OutboundMessage{
 		Channel:   channel,
 		SenderID:  senderID.String(),
+		Username:  username,
 		Content:   content,
 		CreatedAt: now,
 	})
@@ -122,7 +146,7 @@ func (s *service) SendMessage(ctx context.Context, conversationID uuid.UUID, sen
 		domain.MessageId{UUID: msgID},
 		domain.ConversationId{UUID: conversationID},
 		senderID,
-		"",
+		username,
 		content,
 		now,
 	), nil
