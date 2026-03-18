@@ -78,20 +78,20 @@ func (s *service) UpsertMoodEntry(ctx context.Context, entry domain.MoodEntry) e
 	return s.repo.Upsert(ctx, ent)
 }
 
-func (s *service) GetEntriesByUserID(ctx context.Context, userID domain.UserId) ([]domain.MoodEntry, error) {
+func (s *service) GetEntriesByUserID(ctx context.Context, userID domain.UserId, weekOffset int) ([]domain.MoodEntry, int, error) {
 	encryptedUserKey, err := s.userKeyReader.GetEncryptedUserKey(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	userKey, err := s.enc.DecryptUserKey(encryptedUserKey)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	rawEntries, err := s.repo.FindAllByUserID(ctx, userID.UUID)
+	rawEntries, total, err := s.repo.FindPaginatedByUserID(ctx, userID.UUID, weekOffset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	entries := make([]domain.MoodEntry, 0, len(rawEntries))
@@ -99,12 +99,12 @@ func (s *service) GetEntriesByUserID(ctx context.Context, userID domain.UserId) 
 	for _, ent := range rawEntries {
 		entry, err := entities.FromEntity(ent, s.enc, userKey)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		entries = append(entries, entry)
 	}
 
-	return entries, nil
+	return entries, total, nil
 }
 
 func (s *service) GetTodayEntry(ctx context.Context, userID domain.UserId) (*domain.MoodEntry, error) {

@@ -12,7 +12,7 @@ import (
 type Service interface {
 	UpsertMoodEntry(ctx context.Context, entry domain.MoodEntry) error
 	GetEntryByID(ctx context.Context, id domain.MoodId) (*domain.MoodEntry, error)
-	GetEntriesByUserID(ctx context.Context, userID domain.UserId) ([]domain.MoodEntry, error)
+	GetEntriesByUserID(ctx context.Context, userID domain.UserId, weekOffset int) ([]domain.MoodEntry, int, error)
 	GetTodayEntry(ctx context.Context, userID domain.UserId) (*domain.MoodEntry, error)
 	UpdateMoodEntry(ctx context.Context, entry domain.MoodEntry) error
 	DeleteMoodEntry(ctx context.Context, id domain.MoodId) error

@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/pagination"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/transport/models"
@@ -76,7 +77,9 @@ func (h *Handler) GetMyEntries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := h.service.GetEntriesByUserID(r.Context(), userID)
+	limit, offset := pagination.ParsePagination(r)
+
+	entries, total, err := h.service.GetEntriesByUserID(r.Context(), userID, offset)
 	if err != nil {
 		if errors.Is(err, infrastructure.UserNotFound) {
 			response.WriteError(w, http.StatusNotFound, UserNotFound)
@@ -86,7 +89,7 @@ func (h *Handler) GetMyEntries(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToResponseList(entries))
+	response.Write(w, http.StatusOK, response.NewPaginated(models.ToResponseList(entries), total, limit, offset))
 }
 
 func (h *Handler) GetVeteransSupport(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +121,9 @@ func (h *Handler) GetEntriesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entries, err := h.service.GetEntriesByUserID(r.Context(), userID)
+	limit, offset := pagination.ParsePagination(r)
+
+	entries, total, err := h.service.GetEntriesByUserID(r.Context(), userID, offset)
 	if err != nil {
 		if errors.Is(err, infrastructure.UserNotFound) {
 			response.WriteError(w, http.StatusNotFound, UserNotFound)
@@ -128,7 +133,7 @@ func (h *Handler) GetEntriesByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToResponseList(entries))
+	response.Write(w, http.StatusOK, response.NewPaginated(models.ToResponseList(entries), total, limit, offset))
 }
 
 func (h *Handler) GetTodayEntry(w http.ResponseWriter, r *http.Request) {

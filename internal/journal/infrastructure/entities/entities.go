@@ -20,19 +20,9 @@ type UserProfileEntity struct {
 	IsPrivate             bool
 }
 
-type StressScoreRow struct {
-	ID           uuid.UUID
-	Score        float64
-	Category     string
-	ModelVersion string
-	ComputedAt   time.Time
-}
-
-type MoodEntryRow struct {
-	ID             uuid.UUID
-	Date           time.Time
-	MoodScore      int
-	EncryptedNotes []byte
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+type DailyAverageRow struct {
+	Date      time.Time
+	AvgMood   float64
+	AvgStress *float64
+	Total     int
 }

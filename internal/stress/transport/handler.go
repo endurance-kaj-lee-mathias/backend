@@ -112,7 +112,7 @@ func (h *Handler) GetLatestScore(w http.ResponseWriter, r *http.Request) {
 
 	limit, offset := pagination.ParsePagination(r)
 
-	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, limit, offset)
+	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, offset)
 	if err != nil {
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
@@ -151,7 +151,7 @@ func (h *Handler) GetLatestScoreByUserID(w http.ResponseWriter, r *http.Request)
 
 	limit, offset := pagination.ParsePagination(r)
 
-	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, limit, offset)
+	scores, total, err := h.service.GetScoresPaginated(r.Context(), userID, offset)
 	if err != nil {
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return

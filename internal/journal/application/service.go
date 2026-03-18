@@ -10,7 +10,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure/entities"
 )
 
-func (s *service) GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID uuid.UUID, limit, offset int) (domain.JournalReport, error) {
+func (s *service) GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID uuid.UUID, weekOffset int) (domain.JournalReport, error) {
 	report := domain.JournalReport{VeteranID: veteranID}
 
 	profileAllowed, err := s.authz.IsAllowed(ctx, veteranID, viewerID, string(authzdomain.ResourceUserProfile))
@@ -68,59 +68,44 @@ func (s *service) GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID 
 		report.UserProfile = &profile
 	}
 
-	if stressAllowed {
-		rows, total, err := s.repo.GetStressScoresPaginated(ctx, veteranID, limit, offset)
-		if err != nil {
-			return domain.JournalReport{}, err
-		}
-
-		items := make([]domain.StressScoreItem, 0, len(rows))
-		for _, row := range rows {
-			items = append(items, domain.StressScoreItem{
-				ID:           row.ID,
-				Score:        row.Score,
-				Category:     row.Category,
-				ModelVersion: row.ModelVersion,
-				ComputedAt:   row.ComputedAt,
-			})
-		}
-
-		report.StressScores = &domain.ScoresPage{Items: items, Total: total}
-	}
-
 	if moodAllowed {
-		rows, total, err := s.repo.GetMoodEntriesPaginated(ctx, veteranID, limit, offset)
+		rows, err := s.repo.GetWeeklyAverages(ctx, veteranID, weekOffset)
 		if err != nil {
 			return domain.JournalReport{}, err
 		}
 
-		items := make([]domain.MoodEntryItem, 0, len(rows))
-		for _, row := range rows {
-			var notes *string
-
-			if len(row.EncryptedNotes) > 0 {
-				decrypted, err := s.enc.Decrypt(row.EncryptedNotes, userKey)
-				if err != nil {
-					return domain.JournalReport{}, err
-				}
-				n := string(decrypted)
-				notes = &n
-			}
-
-			items = append(items, domain.MoodEntryItem{
-				ID:        row.ID,
-				Date:      row.Date,
-				MoodScore: row.MoodScore,
-				Notes:     notes,
-				CreatedAt: row.CreatedAt,
-				UpdatedAt: row.UpdatedAt,
-			})
-		}
-
-		report.MoodEntries = &domain.MoodPage{Items: items, Total: total}
+		total := totalFromRows(rows)
+		days := toDailyAverages(rows, stressAllowed)
+		report.Weekly = &domain.WeeklyPage{Days: days, Total: total}
 	}
 
 	return report, nil
+}
+
+func totalFromRows(rows []entities.DailyAverageRow) int {
+	if len(rows) == 0 {
+		return 0
+	}
+	return rows[0].Total
+}
+
+func toDailyAverages(rows []entities.DailyAverageRow, stressAllowed bool) []domain.DailyAverage {
+	days := make([]domain.DailyAverage, 0, len(rows))
+
+	for _, row := range rows {
+		avgStress := row.AvgStress
+		if !stressAllowed {
+			avgStress = nil
+		}
+
+		days = append(days, domain.DailyAverage{
+			Date:      row.Date.Format("2006-01-02"),
+			AvgMood:   row.AvgMood,
+			AvgStress: avgStress,
+		})
+	}
+
+	return days
 }
 
 func (s *service) decryptProfile(ent entities.UserProfileEntity, userKey []byte) (domain.UserProfileSection, error) {

@@ -114,7 +114,7 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "date": "2026-03-10",
+  "date": "2026-03-18",
   "moodScore": 7,
   "notes": "Feeling pretty good today."
 }
@@ -125,7 +125,7 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "date": "2026-03-11",
+  "date": "2026-03-18",
   "moodScore": 4,
   "notes": "A bit tired, rough night."
 }
@@ -136,7 +136,7 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "date": "2026-03-12",
+  "date": "2026-03-18",
   "moodScore": 9
 }
 

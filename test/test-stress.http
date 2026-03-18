@@ -535,3 +535,19 @@ Authorization: Bearer {{veteranToken}}
 ### 32. No auth on latest score → 401
 GET {{baseUrl}}/stress/scores/latest
 
+### =====================================================
+### Pagination tests
+### =====================================================
+
+### 33. Get current week scores (offset=0)
+GET {{baseUrl}}/stress/scores/latest?offset=0
+Authorization: Bearer {{veteranToken}}
+
+### 34. Get last week scores (offset=1)
+GET {{baseUrl}}/stress/scores/latest?offset=1
+Authorization: Bearer {{veteranToken}}
+
+### 35. Get 2 weeks ago scores (offset=2)
+GET {{baseUrl}}/stress/scores/latest?offset=2
+Authorization: Bearer {{veteranToken}}
+

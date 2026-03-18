@@ -153,16 +153,17 @@ func (r *repository) GetLatestScore(ctx context.Context, userID uuid.UUID) (doma
 	return entities.ScoreFromEntity(ent), nil
 }
 
-func (r *repository) GetScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.StressScore, int, error) {
+func (r *repository) GetScoresPaginated(ctx context.Context, userID uuid.UUID, weekOffset int) ([]domain.StressScore, int, error) {
 	query := `
-		SELECT id, user_id, score, category, model_version, computed_at, COUNT(*) OVER() AS total
+		SELECT id, user_id, score, category, model_version, computed_at, 
+		       (SELECT COUNT(DISTINCT date_trunc('week', computed_at)) FROM stress_scores WHERE user_id = $1) AS total
 		FROM stress_scores
 		WHERE user_id = $1
+		  AND date_trunc('week', computed_at) = date_trunc('week', NOW() - ($2 * INTERVAL '1 week'))
 		ORDER BY computed_at DESC
-		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, userID, weekOffset)
 	if err != nil {
 		return nil, 0, err
 	}
