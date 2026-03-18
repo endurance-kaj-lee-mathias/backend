@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/gofrs/uuid"
 	authzdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization/domain"
@@ -27,26 +28,44 @@ func (s *service) GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID 
 		return domain.JournalReport{}, err
 	}
 
-	var userKey []byte
+	profileEnt, err := s.repo.GetUserProfile(ctx, veteranID)
+	if err != nil {
+		return domain.JournalReport{}, err
+	}
 
-	if profileAllowed || moodAllowed {
-		profileEnt, err := s.repo.GetUserProfile(ctx, veteranID)
+	userKey, err := s.enc.DecryptUserKey(profileEnt.EncryptedUserKey)
+	if err != nil {
+		return domain.JournalReport{}, err
+	}
+
+	rolesBytes, err := s.enc.Decrypt(profileEnt.EncryptedRoles, userKey)
+	if err != nil {
+		return domain.JournalReport{}, err
+	}
+
+	var roles []string
+	if err := json.Unmarshal(rolesBytes, &roles); err != nil {
+		return domain.JournalReport{}, err
+	}
+
+	isVeteran := false
+	for _, r := range roles {
+		if r == "veteran" {
+			isVeteran = true
+			break
+		}
+	}
+
+	if !isVeteran {
+		return domain.JournalReport{}, domain.NotVeteran
+	}
+
+	if profileAllowed {
+		profile, err := s.decryptProfile(profileEnt, userKey)
 		if err != nil {
 			return domain.JournalReport{}, err
 		}
-
-		userKey, err = s.enc.DecryptUserKey(profileEnt.EncryptedUserKey)
-		if err != nil {
-			return domain.JournalReport{}, err
-		}
-
-		if profileAllowed {
-			profile, err := s.decryptProfile(profileEnt, userKey)
-			if err != nil {
-				return domain.JournalReport{}, err
-			}
-			report.UserProfile = &profile
-		}
+		report.UserProfile = &profile
 	}
 
 	if stressAllowed {

@@ -7,6 +7,7 @@ import (
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/pagination"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/transport/models"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
@@ -39,6 +40,12 @@ func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 			response.WriteError(w, http.StatusNotFound, VeteranNotFound)
 			return
 		}
+
+		if errors.Is(err, domain.NotVeteran) {
+			response.WriteError(w, http.StatusForbidden, Forbidden)
+			return
+		}
+
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return
 	}
