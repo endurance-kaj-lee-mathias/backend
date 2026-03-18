@@ -15,6 +15,7 @@ type UserProfileEntity struct {
 	EncryptedAbout        []byte
 	EncryptedIntroduction []byte
 	EncryptedPhoneNumber  []byte
+	EncryptedRoles        []byte
 	Image                 string
 	IsPrivate             bool
 }

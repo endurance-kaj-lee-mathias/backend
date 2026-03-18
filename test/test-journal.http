@@ -7,6 +7,7 @@
 @clientId = backend
 @clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
 @usernameVeteran = Mathias
+@usernameVeteran2 = Noah
 @usernameSupport = Lee
 @password = password
 
@@ -24,7 +25,25 @@ password = {{password}} &
 scope = openid
 
 > {%
-    client.global.set("veteranToken", response.body.access_token);
+    client.global.set("veterantoken", response.body.access_token);
+%}
+
+
+### =====================================================
+### 1. Get access token – VETERAN2
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran2}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken2", response.body.access_token);
 %}
 
 ### =====================================================
@@ -50,7 +69,7 @@ scope = openid
 
 ### 3a. Get or create VETERAN
 GET {{baseUrl}}/users/me
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 > {%
     client.global.set("veteranId", response.body.id);
@@ -84,7 +103,7 @@ Content-Type: application/json
 
 ### 4b. VETERAN accepts the invite
 PATCH {{baseUrl}}/support/{{inviteId}}/accept
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### =====================================================
 ### 5. Seed mood entries for VETERAN
@@ -92,7 +111,7 @@ Authorization: Bearer {{veteranToken}}
 
 ### 5a. Entry from last week
 POST {{baseUrl}}/mood/entries
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -103,7 +122,7 @@ Content-Type: application/json
 
 ### 5b. Entry from yesterday
 POST {{baseUrl}}/mood/entries
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -114,7 +133,7 @@ Content-Type: application/json
 
 ### 5c. Entry for today
 POST {{baseUrl}}/mood/entries
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -129,22 +148,22 @@ Content-Type: application/json
 ### 6. Get own stress scores – default pagination (limit 20, offset 0)
 ###    Expected: 200 OK – PaginatedResponse with pagination metadata
 GET {{baseUrl}}/stress/scores/latest
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### 7. Get own stress scores – first page of 2
 ###    Expected: 200 OK – data has at most 2 items, page=1
 GET {{baseUrl}}/stress/scores/latest?limit=2&offset=0
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### 8. Get own stress scores – second page of 2
 ###    Expected: 200 OK – page=2, offset reflected in pagination
 GET {{baseUrl}}/stress/scores/latest?limit=2&offset=2
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### 9. Offset beyond total – empty data array, total_pages still correct
 ###    Expected: 200 OK – data: [], total_items unchanged
 GET {{baseUrl}}/stress/scores/latest?limit=10&offset=9999
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### =====================================================
 ### Stress score pagination – viewing a veteran's scores
@@ -173,7 +192,7 @@ Authorization: Bearer {{supportToken}}
 ### 13. VETERAN creates a wildcard allow rule for SUPPORT
 ###     Expected: 201 Created – SUPPORT can now see all sections
 POST {{baseUrl}}/sharing/rules
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -188,8 +207,8 @@ Content-Type: application/json
 
 ### 14. SUPPORT fetches the full journal – all sections visible
 ###     Expected: 200 OK – userProfile, stressScores and moodEntries all present
-GET {{baseUrl}}/users/journal/{{usernameVeteran}}
-Authorization: Bearer {{supportToken}}
+GET {{baseUrl}}/users/journal/{{usernameSupport}}
+Authorization: Bearer {{veterantoken}}
 
 ### 15. Pagination – first page of 1 for each section
 ###     Expected: 200 OK – each paginated section has page_size=1, page=1
@@ -204,11 +223,11 @@ Authorization: Bearer {{supportToken}}
 ### 17. VETERAN deletes the wildcard rule and creates scoped allow rules instead
 ###     Expected: 204 No Content
 DELETE {{baseUrl}}/sharing/rules/{{wildcardRuleId}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### 18. VETERAN allows SUPPORT to see only the user profile
 POST {{baseUrl}}/sharing/rules
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -228,10 +247,10 @@ Authorization: Bearer {{supportToken}}
 
 ### 20. VETERAN swaps to allow only stressScores
 DELETE {{baseUrl}}/sharing/rules/{{profileRuleId}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 POST {{baseUrl}}/sharing/rules
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -251,10 +270,10 @@ Authorization: Bearer {{supportToken}}
 
 ### 22. VETERAN swaps to allow only moodEntries
 DELETE {{baseUrl}}/sharing/rules/{{stressRuleId}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 POST {{baseUrl}}/sharing/rules
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -274,7 +293,7 @@ Authorization: Bearer {{supportToken}}
 
 ### 24. VETERAN adds stressScores rule too – two sections visible
 POST {{baseUrl}}/sharing/rules
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -289,15 +308,15 @@ Content-Type: application/json
 
 ### 25. SUPPORT fetches journal – stressScores and moodEntries present, userProfile still null
 ###     Expected: 200 OK
-GET {{baseUrl}}/users/journal/{{usernameVeteran}}
-Authorization: Bearer {{supportToken}}
+GET {{baseUrl}}/users/journal/{{usernameSupport}}
+Authorization: Bearer {{veterantoken}}
 
 ### Cleanup shared rules
 DELETE {{baseUrl}}/sharing/rules/{{moodRuleId}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 DELETE {{baseUrl}}/sharing/rules/{{stressRuleId2}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### =====================================================
 ### Journal – no sharing rules set (all sections denied)
@@ -314,7 +333,7 @@ Authorization: Bearer {{supportToken}}
 
 ### 27. VETERAN creates a deny rule for moodEntries against SUPPORT
 POST {{baseUrl}}/sharing/rules
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -329,7 +348,7 @@ Content-Type: application/json
 
 ### 28. VETERAN also allows stressScores and userProfile for SUPPORT
 POST {{baseUrl}}/sharing/rules
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
@@ -350,13 +369,13 @@ Authorization: Bearer {{supportToken}}
 
 ### Cleanup
 DELETE {{baseUrl}}/sharing/rules/{{denyMoodRuleId}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 DELETE {{baseUrl}}/sharing/rules/{{stressRuleId3}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 DELETE {{baseUrl}}/sharing/rules/{{profileRuleId2}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 ### =====================================================
 ### Journal – error paths
@@ -376,5 +395,5 @@ Authorization: Bearer {{supportToken}}
 ### 33. VETERAN tries to view their own journal
 ###     Expected: 403 Forbidden (no support relationship with yourself)
 GET {{baseUrl}}/users/journal/{{usernameVeteran}}
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 

@@ -8,6 +8,7 @@
 @clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
 @usernameSupport = Lee
 @usernameVeteran = Mathias
+@usernameVeteran2 = Noah
 @usernameTherapist = Kaj
 @password = password
 
@@ -28,6 +29,23 @@ scope = openid
 
 > {%
     client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 1. Get access token – VETERAN2
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran2}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken2", response.body.access_token);
 %}
 
 ### Get SUPPORT token
@@ -94,11 +112,11 @@ Authorization: Bearer {{therapistToken}}
 ###    Expected: 201 Created, status = PENDING
 ### =====================================================
 POST {{baseUrl}}/support
-Authorization: Bearer {{supportToken}}
+Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
-  "username": "{{usernameVeteran}}"
+  "username": "{{usernameSupport}}"
 }
 
 > {%
@@ -110,21 +128,21 @@ Content-Type: application/json
 ###    Expected: 200 – invite appears in incoming[]
 ### =====================================================
 GET {{baseUrl}}/support
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{supportToken}}
 
 ### =====================================================
 ### 3. SUPPORT lists pending invites
 ###    Expected: 200 – invite appears in outgoing[]
 ### =====================================================
 GET {{baseUrl}}/support
-Authorization: Bearer {{supportToken}}
+Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
 ### 4. VETERAN accepts the invite
 ###    Expected: 200, status = ACCEPTED
 ### =====================================================
-PATCH {{baseUrl}}/support/{{inviteId}}/accept
-Authorization: Bearer {{veteranToken}}
+PATCH {{baseUrl}}/support/eb70674f-41fd-4942-b3c9-7d104256db6e/accept
+Authorization: Bearer {{supportToken}}
 
 ### =====================================================
 ### 5. VETERAN's support list now contains SUPPORT

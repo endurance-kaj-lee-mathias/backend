@@ -8,6 +8,7 @@
 @clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
 @usernameVeteran = Mathias
 @usernameSupport = Lee
+@usernameveteran2 = Noah
 @password = password
 
 ### =====================================================
@@ -25,6 +26,23 @@ scope = openid
 
 > {%
     client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 1. Get access token – VETERAN2
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameveteran2}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken2", response.body.access_token);
 %}
 
 ### =====================================================
@@ -50,7 +68,7 @@ scope = openid
 
 ### 3a. Get or create VETERAN – store veteranId
 GET {{baseUrl}}/users/me
-Authorization: Bearer {{veteranToken}}
+Authorization: Bearer {{veteranToken2}}
 
 > {%
     client.global.set("veteranId", response.body.id);

@@ -15,6 +15,12 @@ func (r *repository) GetSupporters(ctx context.Context, veteranID uuid.UUID) ([]
 		FROM users u
 		JOIN user_supports s ON u.id = s.support_id
 		WHERE s.veteran_id = $1
+		UNION
+		SELECT u.id, u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
+			u.image, u.encrypted_user_key, s.created_at
+		FROM users u
+		JOIN user_supports s ON u.id = s.veteran_id
+		WHERE s.support_id = $1
 	`
 
 	return r.querySupportMembers(ctx, query, veteranID)
@@ -27,6 +33,12 @@ func (r *repository) GetSupportedVeterans(ctx context.Context, supportID uuid.UU
 		FROM users u
 		JOIN user_supports s ON u.id = s.veteran_id
 		WHERE s.support_id = $1
+		UNION
+		SELECT u.id, u.encrypted_email, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name,
+			u.image, u.encrypted_user_key, s.created_at
+		FROM users u
+		JOIN user_supports s ON u.id = s.support_id
+		WHERE s.veteran_id = $1
 	`
 
 	return r.querySupportMembers(ctx, query, supportID)
