@@ -13,7 +13,7 @@ import (
 type Repository interface {
 	Upsert(ctx context.Context, ent entities.MoodEntryEntity) error
 	FindByID(ctx context.Context, id uuid.UUID) (*entities.MoodEntryEntity, error)
-	FindAllByUserID(ctx context.Context, userID uuid.UUID) ([]entities.MoodEntryEntity, error)
+	FindPaginatedByUserID(ctx context.Context, userID uuid.UUID, weekOffset int) ([]entities.MoodEntryEntity, int, error)
 	FindLatestByUserID(ctx context.Context, userID uuid.UUID) (*entities.MoodEntryEntity, error)
 	FindTodayByUserID(ctx context.Context, userID uuid.UUID) (*entities.MoodEntryEntity, error)
 	FindVeteransWithoutEntryInLast24Hours(ctx context.Context, veteranRoleHash string) ([]uuid.UUID, error)

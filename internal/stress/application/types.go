@@ -14,7 +14,7 @@ type Service interface {
 	IngestSample(ctx context.Context, sample domain.StressSample) error
 	GetLatestScore(ctx context.Context, userID uuid.UUID) (domain.StressScore, error)
 	GetLatestSampleTimestamp(ctx context.Context, userID uuid.UUID) (time.Time, error)
-	GetScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.StressScore, int, error)
+	GetScoresPaginated(ctx context.Context, userID uuid.UUID, weekOffset int) ([]domain.StressScore, int, error)
 	DeleteMySamples(ctx context.Context, userID uuid.UUID) error
 }
 

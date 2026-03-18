@@ -113,31 +113,34 @@ func (r *repository) FindLatestByUserID(ctx context.Context, userID uuid.UUID) (
 	return &ent, nil
 }
 
-func (r *repository) FindAllByUserID(ctx context.Context, userID uuid.UUID) ([]entities.MoodEntryEntity, error) {
+func (r *repository) FindPaginatedByUserID(ctx context.Context, userID uuid.UUID, weekOffset int) ([]entities.MoodEntryEntity, int, error) {
 	query := `
-		SELECT id, user_id, date, mood_score, encrypted_notes, created_at, updated_at
+		SELECT id, user_id, date, mood_score, encrypted_notes, created_at, updated_at,
+		       (SELECT COUNT(DISTINCT date_trunc('week', date)) FROM mood_entries WHERE user_id = $1) AS total
 		FROM mood_entries
 		WHERE user_id = $1
+		  AND date_trunc('week', date) = date_trunc('week', NOW() - ($2 || ' week')::INTERVAL)
 		ORDER BY date DESC
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, userID)
+	rows, err := r.db.QueryContext(ctx, query, userID, weekOffset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var result []entities.MoodEntryEntity
+	var total int
 
 	for rows.Next() {
 		var ent entities.MoodEntryEntity
-		if err := rows.Scan(&ent.ID, &ent.UserID, &ent.Date, &ent.MoodScore, &ent.EncryptedNotes, &ent.CreatedAt, &ent.UpdatedAt); err != nil {
-			return nil, err
+		if err := rows.Scan(&ent.ID, &ent.UserID, &ent.Date, &ent.MoodScore, &ent.EncryptedNotes, &ent.CreatedAt, &ent.UpdatedAt, &total); err != nil {
+			return nil, 0, err
 		}
 		result = append(result, ent)
 	}
 
-	return result, rows.Err()
+	return result, total, rows.Err()
 }
 
 func (r *repository) FindTodayByUserID(ctx context.Context, userID uuid.UUID) (*entities.MoodEntryEntity, error) {

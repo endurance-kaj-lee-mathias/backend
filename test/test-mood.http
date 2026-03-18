@@ -124,6 +124,44 @@ Content-Type: application/json
   "notes": "Best day ever."
 }
 
+### 9b. Submit mood entry for last week (to test pagination)
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-15",
+  "moodScore": 8,
+  "notes": "Last week was peaceful."
+}
+
+### 9c. Submit mood entry for two weeks ago (to test pagination)
+POST {{baseUrl}}/mood/entries
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "date": "2026-02-08",
+  "moodScore": 4,
+  "notes": "Two weeks ago was stressful."
+}
+
+### =====================================================
+### Mood – Pagination tests
+### =====================================================
+
+### Get current week mood entries (offset=0)
+GET {{baseUrl}}/mood/entries?offset=0
+Authorization: Bearer {{veteranToken}}
+
+### Get last week mood entries (offset=1)
+GET {{baseUrl}}/mood/entries?offset=1
+Authorization: Bearer {{veteranToken}}
+
+### Get mood entries from two weeks ago (offset=2)
+GET {{baseUrl}}/mood/entries?offset=2
+Authorization: Bearer {{veteranToken}}
+
 ### =====================================================
 ### Mood – Error / constraint paths
 ### =====================================================
