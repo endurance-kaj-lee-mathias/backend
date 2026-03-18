@@ -42,68 +42,43 @@ func (r *repository) GetUserProfile(ctx context.Context, userID uuid.UUID) (enti
 	return ent, nil
 }
 
-func (r *repository) GetStressScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entities.StressScoreRow, int, error) {
+func (r *repository) GetWeeklyAverages(ctx context.Context, userID uuid.UUID, weekOffset int) ([]entities.DailyAverageRow, error) {
 	query := `
-		SELECT id, score, category, model_version, computed_at, COUNT(*) OVER() AS total
-		FROM stress_scores
-		WHERE user_id = $1
-		ORDER BY computed_at DESC
-		LIMIT $2 OFFSET $3
+		SELECT
+		    me.date,
+		    AVG(me.mood_score)::float8                                          AS avg_mood,
+		    AVG(ss.score)::float8                                               AS avg_stress,
+		    (SELECT COUNT(DISTINCT date_trunc('week', date))
+		     FROM mood_entries WHERE user_id = $1)                              AS total
+		FROM mood_entries me
+		LEFT JOIN stress_scores ss
+		    ON ss.user_id = me.user_id
+		    AND date_trunc('day', ss.computed_at AT TIME ZONE 'UTC') = me.date
+		WHERE me.user_id = $1
+		  AND date_trunc('week', me.date) = date_trunc('week', NOW() - ($2 * INTERVAL '1 week'))
+		GROUP BY me.date
+		ORDER BY me.date ASC
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, userID, weekOffset)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			slog.Error("journal: close stress scores rows", "error", err)
+			slog.Error("journal: close weekly averages rows", "error", err)
 		}
 	}()
 
-	var result []entities.StressScoreRow
-	var total int
+	var result []entities.DailyAverageRow
 
 	for rows.Next() {
-		var row entities.StressScoreRow
-		if err := rows.Scan(&row.ID, &row.Score, &row.Category, &row.ModelVersion, &row.ComputedAt, &total); err != nil {
-			return nil, 0, err
+		var row entities.DailyAverageRow
+		if err := rows.Scan(&row.Date, &row.AvgMood, &row.AvgStress, &row.Total); err != nil {
+			return nil, err
 		}
 		result = append(result, row)
 	}
 
-	return result, total, rows.Err()
-}
-
-func (r *repository) GetMoodEntriesPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entities.MoodEntryRow, int, error) {
-	query := `
-		SELECT id, date, mood_score, encrypted_notes, created_at, updated_at, COUNT(*) OVER() AS total
-		FROM mood_entries
-		WHERE user_id = $1
-		ORDER BY date DESC
-		LIMIT $2 OFFSET $3
-	`
-
-	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			slog.Error("journal: close mood entries rows", "error", err)
-		}
-	}()
-
-	var result []entities.MoodEntryRow
-	var total int
-
-	for rows.Next() {
-		var row entities.MoodEntryRow
-		if err := rows.Scan(&row.ID, &row.Date, &row.MoodScore, &row.EncryptedNotes, &row.CreatedAt, &row.UpdatedAt, &total); err != nil {
-			return nil, 0, err
-		}
-		result = append(result, row)
-	}
-
-	return result, total, rows.Err()
+	return result, rows.Err()
 }

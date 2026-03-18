@@ -1,16 +1,11 @@
 package domain
 
-import (
-	"time"
-
-	"github.com/gofrs/uuid"
-)
+import "github.com/gofrs/uuid"
 
 type JournalReport struct {
-	VeteranID    uuid.UUID
-	UserProfile  *UserProfileSection
-	StressScores *ScoresPage
-	MoodEntries  *MoodPage
+	VeteranID   uuid.UUID
+	UserProfile *UserProfileSection
+	Weekly      *WeeklyPage
 }
 
 type UserProfileSection struct {
@@ -24,29 +19,13 @@ type UserProfileSection struct {
 	IsPrivate    bool
 }
 
-type ScoresPage struct {
-	Items []StressScoreItem
+type WeeklyPage struct {
+	Days  []DailyAverage
 	Total int
 }
 
-type MoodPage struct {
-	Items []MoodEntryItem
-	Total int
-}
-
-type StressScoreItem struct {
-	ID           uuid.UUID
-	Score        float64
-	Category     string
-	ModelVersion string
-	ComputedAt   time.Time
-}
-
-type MoodEntryItem struct {
-	ID        uuid.UUID
-	Date      time.Time
-	MoodScore int
-	Notes     *string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type DailyAverage struct {
+	Date      string
+	AvgMood   float64
+	AvgStress *float64
 }

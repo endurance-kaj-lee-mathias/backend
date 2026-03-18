@@ -1,18 +1,13 @@
 package models
 
 import (
-	"time"
-
-	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/domain"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/response"
 )
 
 type JournalResponse struct {
-	VeteranID    string                                           `json:"veteranId"`
-	UserProfile  UserProfileResponse                              `json:"profile"`
-	StressScores *response.PaginatedResponse[StressScoreResponse] `json:"stressScores,omitempty"`
-	MoodEntries  *response.PaginatedResponse[MoodEntryResponse]   `json:"moodEntries,omitempty"`
+	VeteranID   string               `json:"veteranId"`
+	UserProfile *UserProfileResponse `json:"profile,omitempty"`
+	Weekly      *WeeklyResponse      `json:"weekly,omitempty"`
 }
 
 type UserProfileResponse struct {
@@ -26,32 +21,30 @@ type UserProfileResponse struct {
 	IsPrivate    bool    `json:"isPrivate"`
 }
 
-type StressScoreResponse struct {
-	ID           uuid.UUID `json:"id"`
-	Score        float64   `json:"score"`
-	Category     string    `json:"category"`
-	ModelVersion string    `json:"modelVersion"`
-	ComputedAt   time.Time `json:"computedAt"`
+type WeeklyResponse struct {
+	Days       []DailyAverageResponse `json:"days"`
+	TotalWeeks int                    `json:"totalWeeks"`
+	Week       int                    `json:"week"`
 }
 
-type MoodEntryResponse struct {
-	ID        uuid.UUID `json:"id"`
-	Date      string    `json:"date"`
-	MoodScore int       `json:"moodScore"`
-	Notes     *string   `json:"notes,omitempty"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+type DailyAverageResponse struct {
+	Date      string   `json:"date"`
+	AvgMood   float64  `json:"avgMood"`
+	AvgStress *float64 `json:"avgStress"`
 }
 
-func ToJournalResponse(report domain.JournalReport, limit, offset int) (JournalResponse, error) {
-	if report.UserProfile == nil {
-		return JournalResponse{}, domain.MissingUserProfile
+func ToJournalResponse(report domain.JournalReport, weekOffset int) (JournalResponse, error) {
+	if report.UserProfile == nil && report.Weekly == nil {
+		return JournalResponse{VeteranID: report.VeteranID.String()}, nil
 	}
 
-	p := report.UserProfile
 	jr := JournalResponse{
 		VeteranID: report.VeteranID.String(),
-		UserProfile: UserProfileResponse{
+	}
+
+	if report.UserProfile != nil {
+		p := report.UserProfile
+		prof := UserProfileResponse{
 			FirstName:    p.FirstName,
 			LastName:     p.LastName,
 			Username:     p.Username,
@@ -60,42 +53,26 @@ func ToJournalResponse(report domain.JournalReport, limit, offset int) (JournalR
 			Image:        p.Image,
 			PhoneNumber:  p.PhoneNumber,
 			IsPrivate:    p.IsPrivate,
-		},
+		}
+		jr.UserProfile = &prof
 	}
 
-	if report.StressScores != nil {
-		items := make([]StressScoreResponse, 0, len(report.StressScores.Items))
+	if report.Weekly != nil {
+		days := make([]DailyAverageResponse, 0, len(report.Weekly.Days))
 
-		for _, item := range report.StressScores.Items {
-			items = append(items, StressScoreResponse{
-				ID:           item.ID,
-				Score:        item.Score,
-				Category:     item.Category,
-				ModelVersion: item.ModelVersion,
-				ComputedAt:   item.ComputedAt,
+		for _, d := range report.Weekly.Days {
+			days = append(days, DailyAverageResponse{
+				Date:      d.Date,
+				AvgMood:   d.AvgMood,
+				AvgStress: d.AvgStress,
 			})
 		}
 
-		p := response.NewPaginated(items, report.StressScores.Total, limit, offset)
-		jr.StressScores = &p
-	}
-
-	if report.MoodEntries != nil {
-		items := make([]MoodEntryResponse, 0, len(report.MoodEntries.Items))
-
-		for _, item := range report.MoodEntries.Items {
-			items = append(items, MoodEntryResponse{
-				ID:        item.ID,
-				Date:      item.Date.Format("2006-01-02"),
-				MoodScore: item.MoodScore,
-				Notes:     item.Notes,
-				CreatedAt: item.CreatedAt,
-				UpdatedAt: item.UpdatedAt,
-			})
+		jr.Weekly = &WeeklyResponse{
+			Days:       days,
+			TotalWeeks: report.Weekly.Total,
+			Week:       weekOffset,
 		}
-
-		p := response.NewPaginated(items, report.MoodEntries.Total, limit, offset)
-		jr.MoodEntries = &p
 	}
 
 	return jr, nil

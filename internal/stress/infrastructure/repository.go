@@ -159,7 +159,7 @@ func (r *repository) GetScoresPaginated(ctx context.Context, userID uuid.UUID, w
 		       (SELECT COUNT(DISTINCT date_trunc('week', computed_at)) FROM stress_scores WHERE user_id = $1) AS total
 		FROM stress_scores
 		WHERE user_id = $1
-		  AND date_trunc('week', computed_at) = date_trunc('week', NOW() - ($2 || ' week')::INTERVAL)
+		  AND date_trunc('week', computed_at) = date_trunc('week', NOW() - ($2 * INTERVAL '1 week'))
 		ORDER BY computed_at DESC
 	`
 

@@ -119,7 +119,7 @@ func (r *repository) FindPaginatedByUserID(ctx context.Context, userID uuid.UUID
 		       (SELECT COUNT(DISTINCT date_trunc('week', date)) FROM mood_entries WHERE user_id = $1) AS total
 		FROM mood_entries
 		WHERE user_id = $1
-		  AND date_trunc('week', date) = date_trunc('week', NOW() - ($2 || ' week')::INTERVAL)
+		  AND date_trunc('week', date) = date_trunc('week', NOW() - ($2 * INTERVAL '1 week'))
 		ORDER BY date DESC
 	`
 

@@ -3,10 +3,10 @@ package transport
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
-	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/pagination"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/transport/models"
@@ -32,9 +32,15 @@ func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit, offset := pagination.ParsePagination(r)
+	weekOffset := 0
 
-	report, err := h.service.GetJournal(r.Context(), viewerID, veteranID, limit, offset)
+	if v := r.URL.Query().Get("week"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed >= 0 {
+			weekOffset = parsed
+		}
+	}
+
+	report, err := h.service.GetJournal(r.Context(), viewerID, veteranID, weekOffset)
 	if err != nil {
 		if errors.Is(err, infrastructure.UserNotFound) {
 			response.WriteError(w, http.StatusNotFound, VeteranNotFound)
@@ -50,7 +56,7 @@ func (h *Handler) GetJournal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	journalResponse, err := models.ToJournalResponse(report, limit, offset)
+	journalResponse, err := models.ToJournalResponse(report, weekOffset)
 	if err != nil {
 		response.WriteError(w, http.StatusInternalServerError, err)
 		return

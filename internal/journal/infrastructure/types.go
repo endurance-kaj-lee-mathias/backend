@@ -10,8 +10,7 @@ import (
 
 type Repository interface {
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (entities.UserProfileEntity, error)
-	GetStressScoresPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entities.StressScoreRow, int, error)
-	GetMoodEntriesPaginated(ctx context.Context, userID uuid.UUID, limit, offset int) ([]entities.MoodEntryRow, int, error)
+	GetWeeklyAverages(ctx context.Context, userID uuid.UUID, weekOffset int) ([]entities.DailyAverageRow, error)
 }
 
 type repository struct {

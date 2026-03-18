@@ -10,7 +10,7 @@ import (
 )
 
 type Service interface {
-	GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID uuid.UUID, limit, offset int) (domain.JournalReport, error)
+	GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID uuid.UUID, weekOffset int) (domain.JournalReport, error)
 }
 
 type AuthorizationChecker interface {
