@@ -16,6 +16,7 @@ type Repository interface {
 	UpdateParticipantKey(ctx context.Context, conversationID, userID uuid.UUID, encryptedKey []byte) error
 	GetParticipantKey(ctx context.Context, conversationID, userID uuid.UUID) (entities.ParticipantKeyEntity, error)
 	GetUserEncryptedKey(ctx context.Context, userID uuid.UUID) ([]byte, error)
+	GetEncryptedUsername(ctx context.Context, userID uuid.UUID) ([]byte, error)
 	CreateMessage(ctx context.Context, ent entities.MessageEntity) error
 	GetMessages(ctx context.Context, conversationID uuid.UUID, limit, offset int) ([]entities.MessageEntity, error)
 	CheckSupportRelationship(ctx context.Context, userA, userB uuid.UUID) (bool, error)
