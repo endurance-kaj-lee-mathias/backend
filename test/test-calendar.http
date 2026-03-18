@@ -67,15 +67,15 @@ scope = openid
 ### =====================================================
 
 ### 4a. Get or create VETERAN
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{veteranToken}}
 
 ### 4b. Get or create THERAPIST
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{therapistToken}}
 
 ### 4c. Get or create SUPPORT
-GET {{baseUrl}}/users
+GET {{baseUrl}}/users/me
 Authorization: Bearer {{supportToken}}
 
 ### =====================================================
@@ -89,8 +89,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-10T09:00:00Z",
-  "endTime": "2026-03-10T10:00:00Z",
+  "startTime": "2026-08-10T09:00:00Z",
+  "endTime": "2026-08-10T10:00:00Z",
   "isUrgent": true
 }
 
@@ -104,8 +104,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-10T10:00:00Z",
-  "endTime": "2026-03-10T11:00:00Z",
+  "startTime": "2026-08-10T10:00:00Z",
+  "endTime": "2026-08-10T11:00:00Z",
   "isUrgent": true
 }
 
@@ -115,8 +115,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-10T14:00:00Z",
-  "endTime": "2026-03-10T15:00:00Z",
+  "startTime": "2026-08-10T14:00:00Z",
+  "endTime": "2026-08-10T15:00:00Z",
   "isUrgent": false
 }
 
@@ -130,8 +130,8 @@ Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-11T09:00:00Z",
-  "endTime": "2026-03-11T10:00:00Z",
+  "startTime": "2026-08-11T09:00:00Z",
+  "endTime": "2026-08-11T10:00:00Z",
   "isUrgent": true
 }
 
@@ -143,14 +143,14 @@ Content-Type: application/json
 ### Slot Management – Error cases
 ### =====================================================
 
-### 9. Create slot as VETERAN – expect 403
+### 9. Create slot as VETERAN – expect 408
 POST {{baseUrl}}/calendar/slots
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-10T11:00:00Z",
-  "endTime": "2026-03-10T12:00:00Z",
+  "startTime": "2026-08-10T11:00:00Z",
+  "endTime": "2026-08-10T12:00:00Z",
   "isUrgent": false
 }
 
@@ -161,8 +161,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-12T14:00:00Z",
-  "endTime": "2026-03-12T15:00:00Z",
+  "startTime": "2026-08-12T14:00:00Z",
+  "endTime": "2026-08-12T15:00:00Z",
   "isUrgent": false
 }
 
@@ -183,8 +183,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-10T11:00:00Z",
-  "endTime": "2026-03-10T10:00:00Z",
+  "startTime": "2026-08-10T11:00:00Z",
+  "endTime": "2026-08-10T10:00:00Z",
   "isUrgent": true
 }
 
@@ -194,8 +194,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-10T09:30:00Z",
-  "endTime": "2026-03-10T10:30:00Z",
+  "startTime": "2026-08-10T09:30:00Z",
+  "endTime": "2026-08-10T10:30:00Z",
   "isUrgent": true
 }
 
@@ -204,14 +204,14 @@ Content-Type: application/json
 ### =====================================================
 
 ### 14. Get all slots in a range (no provider filter)
-GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z
+GET {{baseUrl}}/calendar/slots?from=2026-08-10T00:00:00Z&to=2026-08-10T23:59:59Z
 Authorization: Bearer {{therapistToken}}
 ### 15. Get slots filtered by therapist provider
-GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z&providerId=2e808133-794d-4ba3-8da0-e562131692fb
+GET {{baseUrl}}/calendar/slots?from=2026-08-10T00:00:00Z&to=2026-08-10T23:59:59Z&providerId=2e808133-794d-4ba3-8da0-e562131692fb
 Authorization: Bearer {{veteranToken}}
 
 ### 16. Get slots for a week view
-GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-16T23:59:59Z
+GET {{baseUrl}}/calendar/slots?from=2026-08-10T00:00:00Z&to=2026-08-16T23:59:59Z
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
@@ -219,11 +219,11 @@ Authorization: Bearer {{veteranToken}}
 ### =====================================================
 
 ### 17. Missing from param – expect 400
-GET {{baseUrl}}/calendar/slots?to=2026-03-10T23:59:59Z
+GET {{baseUrl}}/calendar/slots?to=2026-08-10T23:59:59Z
 Authorization: Bearer {{veteranToken}}
 
 ### 18. Invalid providerId param – expect 400
-GET {{baseUrl}}/calendar/slots?from=2026-03-10T00:00:00Z&to=2026-03-10T23:59:59Z&providerId=not-a-uuid
+GET {{baseUrl}}/calendar/slots?from=2026-08-10T00:00:00Z&to=2026-08-10T23:59:59Z&providerId=not-a-uuid
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
@@ -231,12 +231,13 @@ Authorization: Bearer {{veteranToken}}
 ### =====================================================
 
 ### 19. VETERAN books the normal slot
-POST {{baseUrl}}/calendar/slots/cd60a096-5924-4108-91e6-0eca05970975/book
+POST {{baseUrl}}/calendar/slots/1f4beeb5-4cbc-41a8-9d6c-784d75ebfdd4/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "urgent": false
+  "urgent": false,
+  "title": "Therapeut meeting bij Mathias"
 }
 
 > {%
@@ -260,7 +261,7 @@ Content-Type: application/json
 ### Booking – Error cases
 ### =====================================================
 
-### 21. THERAPIST tries to book a slot – expect 403
+### 21. THERAPIST tries to book a slot – expect 408
 POST {{baseUrl}}/calendar/slots/{{supportUrgentSlotId}}/book
 Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
@@ -315,8 +316,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-03-13T09:00:00Z",
-  "endTime": "2026-03-13T10:00:00Z",
+  "startTime": "2026-08-13T09:00:00Z",
+  "endTime": "2026-08-13T10:00:00Z",
   "isUrgent": true
 }
 
@@ -336,11 +337,11 @@ Authorization: Bearer {{therapistToken}}
 DELETE {{baseUrl}}/calendar/slots/{{normalSlotId}}
 Authorization: Bearer {{therapistToken}}
 
-### 29. Delete another provider's slot – expect 403
+### 29. Delete another provider's slot – expect 408
 DELETE {{baseUrl}}/calendar/slots/{{supportUrgentSlotId}}
 Authorization: Bearer {{therapistToken}}
 
-### 30. VETERAN tries to delete a slot – expect 403
+### 30. VETERAN tries to delete a slot – expect 408
 DELETE {{baseUrl}}/calendar/slots/{{supportUrgentSlotId}}
 Authorization: Bearer {{veteranToken}}
 
@@ -364,7 +365,7 @@ Authorization: Bearer {{therapistToken}}
 ### Cancel Appointment – Error cases
 ### =====================================================
 
-### 34. Cancel an appointment that does not belong to the caller – expect 403
+### 34. Cancel an appointment that does not belong to the caller – expect 408
 ### (support tries to cancel veteran's appointment on a therapist's slot)
 PATCH {{baseUrl}}/calendar/appointments/{{urgentAppointmentId}}/cancel
 Authorization: Bearer {{supportToken}}

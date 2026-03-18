@@ -118,7 +118,7 @@ func (s *service) DeleteSlot(ctx context.Context, userID uuid.UUID, roles []stri
 	return nil
 }
 
-func (s *service) BookSlot(ctx context.Context, veteranID uuid.UUID, roles []string, slotID domain.SlotId, urgent bool) (domain.Appointment, error) {
+func (s *service) BookSlot(ctx context.Context, veteranID uuid.UUID, roles []string, slotID domain.SlotId, title *string, urgent bool) (domain.Appointment, error) {
 	if !domain.HasVeteranRole(roles) {
 		return domain.Appointment{}, domain.OnlyVeteranCanBook
 	}
@@ -154,6 +154,7 @@ func (s *service) BookSlot(ctx context.Context, veteranID uuid.UUID, roles []str
 		ID:        appointmentID,
 		SlotID:    slotID.UUID,
 		VeteranID: veteranID,
+		Title:     title,
 		Status:    domain.StatusBooked,
 		CreatedAt: now,
 		UpdatedAt: now,

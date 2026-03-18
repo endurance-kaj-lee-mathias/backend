@@ -10,7 +10,7 @@ import (
 
 func (r *repository) GetAppointmentsWithSlots(ctx context.Context, userID uuid.UUID) ([]entities.AppointmentExportEntity, error) {
 	query := `
-		SELECT a.id, a.slot_id, a.veteran_id, s.provider_id, a.status,
+		SELECT a.id, a.slot_id, a.veteran_id, s.provider_id, a.title, a.status,
 			s.start_time, s.end_time, s.is_urgent,
 			a.created_at, a.updated_at,
 			u.encrypted_username, u.encrypted_user_key
@@ -35,7 +35,7 @@ func (r *repository) GetAppointmentsWithSlots(ctx context.Context, userID uuid.U
 	for rows.Next() {
 		var ent entities.AppointmentExportEntity
 		if err := rows.Scan(
-			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.ProviderID, &ent.Status,
+			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.ProviderID, &ent.AppointmentTitle, &ent.Status,
 			&ent.StartTime, &ent.EndTime, &ent.IsUrgent,
 			&ent.CreatedAt, &ent.UpdatedAt,
 			&ent.ProviderEncryptedUsername, &ent.ProviderEncryptedUserKey,

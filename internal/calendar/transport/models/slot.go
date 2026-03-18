@@ -15,6 +15,7 @@ type SlotResponse struct {
 	IsUrgent   bool       `json:"isUrgent"`
 	IsBooked   bool       `json:"isBooked"`
 	SeriesID   *uuid.UUID `json:"seriesId,omitempty"`
+	Title      *string    `json:"title,omitempty"`
 	CreatedAt  time.Time  `json:"createdAt"`
 	UpdatedAt  time.Time  `json:"updatedAt"`
 }
@@ -28,6 +29,7 @@ func ToSlotModel(s domain.Slot) SlotResponse {
 		IsUrgent:   s.IsUrgent,
 		IsBooked:   s.IsBooked,
 		SeriesID:   s.SeriesID,
+		Title:      s.Title,
 		CreatedAt:  s.CreatedAt,
 		UpdatedAt:  s.UpdatedAt,
 	}

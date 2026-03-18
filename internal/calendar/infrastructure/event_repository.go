@@ -10,7 +10,7 @@ import (
 
 func (r *repository) GetEventsByUserID(ctx context.Context, userID uuid.UUID) ([]entities.CalendarEventEntity, error) {
 	query := `
-		SELECT a.id, s.provider_id, a.veteran_id, s.start_time, s.end_time, a.updated_at,
+		SELECT a.id, s.provider_id, a.veteran_id, a.title, s.start_time, s.end_time, a.updated_at,
 			p.encrypted_first_name, p.encrypted_last_name, p.encrypted_user_key,
 			v.encrypted_first_name, v.encrypted_last_name, v.encrypted_user_key
 		FROM appointments a
@@ -37,7 +37,7 @@ func (r *repository) GetEventsByUserID(ctx context.Context, userID uuid.UUID) ([
 	for rows.Next() {
 		var ent entities.CalendarEventEntity
 		if err := rows.Scan(
-			&ent.ID, &ent.ProviderID, &ent.VeteranID, &ent.StartTime, &ent.EndTime, &ent.UpdatedAt,
+			&ent.ID, &ent.ProviderID, &ent.VeteranID, &ent.AppointmentTitle, &ent.StartTime, &ent.EndTime, &ent.UpdatedAt,
 			&ent.ProviderEncryptedFirstName, &ent.ProviderEncryptedLastName, &ent.ProviderEncryptedUserKey,
 			&ent.VeteranEncryptedFirstName, &ent.VeteranEncryptedLastName, &ent.VeteranEncryptedUserKey,
 		); err != nil {

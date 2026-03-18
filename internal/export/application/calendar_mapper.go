@@ -27,12 +27,18 @@ func (s *service) decryptAppointments(ents []entities.AppointmentExportEntity) (
 			providerCache[ent.ProviderID] = providerUsername
 		}
 
+		var title *string
+		if ent.AppointmentTitle.Valid {
+			title = &ent.AppointmentTitle.String
+		}
+
 		result = append(result, domain.AppointmentData{
 			ID:               ent.ID.String(),
 			SlotID:           ent.SlotID.String(),
 			VeteranID:        ent.VeteranID.String(),
 			ProviderID:       ent.ProviderID.String(),
 			ProviderUsername: providerUsername,
+			Title:            title,
 			Status:           ent.Status,
 			StartTime:        ent.StartTime,
 			EndTime:          ent.EndTime,

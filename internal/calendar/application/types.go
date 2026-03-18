@@ -15,7 +15,7 @@ type Service interface {
 	GetSlots(ctx context.Context, from, to time.Time, providerID *uuid.UUID) ([]domain.Slot, error)
 	DeleteSlot(ctx context.Context, userID uuid.UUID, roles []string, slotID domain.SlotId) error
 	DeleteSlotsBySeries(ctx context.Context, providerID uuid.UUID, seriesID uuid.UUID) error
-	BookSlot(ctx context.Context, veteranID uuid.UUID, roles []string, slotID domain.SlotId, urgent bool) (domain.Appointment, error)
+	BookSlot(ctx context.Context, veteranID uuid.UUID, roles []string, slotID domain.SlotId, title *string, urgent bool) (domain.Appointment, error)
 	CancelAppointment(ctx context.Context, userID uuid.UUID, appointmentID domain.AppointmentId) error
 	DeleteMySlots(ctx context.Context, providerID uuid.UUID) error
 	GetCalendarEvents(ctx context.Context, userID uuid.UUID) ([]domain.Event, error)

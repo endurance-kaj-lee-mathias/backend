@@ -66,18 +66,20 @@ func (r *repository) GetSlotsByRange(ctx context.Context, from, to time.Time, pr
 
 	if providerID != nil {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
-			 FROM availability_slots
-			 WHERE start_time >= $1 AND end_time <= $2 AND provider_id = $3
-			 ORDER BY start_time`,
+			`SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id, s.created_at, s.updated_at, a.title
+			 FROM availability_slots s
+			 LEFT JOIN appointments a ON a.slot_id = s.id AND a.status != 'CANCELLED'
+			 WHERE s.start_time >= $1 AND s.end_time <= $2 AND s.provider_id = $3
+			 ORDER BY s.start_time`,
 			from, to, *providerID,
 		)
 	} else {
 		rows, err = r.db.QueryContext(ctx,
-			`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
-			 FROM availability_slots
-			 WHERE start_time >= $1 AND end_time <= $2
-			 ORDER BY start_time`,
+			`SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id, s.created_at, s.updated_at, a.title
+			 FROM availability_slots s
+			 LEFT JOIN appointments a ON a.slot_id = s.id AND a.status != 'CANCELLED'
+			 WHERE s.start_time >= $1 AND s.end_time <= $2
+			 ORDER BY s.start_time`,
 			from, to,
 		)
 	}
@@ -96,7 +98,7 @@ func (r *repository) GetSlotsByRange(ctx context.Context, from, to time.Time, pr
 		var ent entities.SlotEntity
 		if err := rows.Scan(
 			&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime,
-			&ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt,
+			&ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt, &ent.AppointmentTitle,
 		); err != nil {
 			return nil, err
 		}
@@ -113,10 +115,12 @@ func (r *repository) GetSlotByID(ctx context.Context, id uuid.UUID) (entities.Sl
 	var ent entities.SlotEntity
 
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, provider_id, start_time, end_time, is_urgent, is_booked, series_id, created_at, updated_at
-		 FROM availability_slots WHERE id = $1`,
+		`SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id, s.created_at, s.updated_at, a.title
+		 FROM availability_slots s
+		 LEFT JOIN appointments a ON a.slot_id = s.id AND a.status != 'CANCELLED'
+		 WHERE s.id = $1`,
 		id,
-	).Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt)
+	).Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt, &ent.AppointmentTitle)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -159,9 +163,9 @@ func (r *repository) AtomicBookSlot(ctx context.Context, id uuid.UUID, now time.
 
 func (r *repository) CreateAppointment(ctx context.Context, ent entities.AppointmentEntity) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO appointments (id, slot_id, veteran_id, status, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6)`,
-		ent.ID, ent.SlotID, ent.VeteranID, ent.Status, ent.CreatedAt, ent.UpdatedAt,
+		`INSERT INTO appointments (id, slot_id, veteran_id, title, status, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		ent.ID, ent.SlotID, ent.VeteranID, ent.Title, ent.Status, ent.CreatedAt, ent.UpdatedAt,
 	)
 	return err
 }
@@ -170,12 +174,12 @@ func (r *repository) GetAppointmentWithSlot(ctx context.Context, id uuid.UUID) (
 	var ent entities.AppointmentWithSlotEntity
 
 	err := r.db.QueryRowContext(ctx,
-		`SELECT a.id, a.slot_id, a.veteran_id, a.status, a.created_at, a.updated_at, s.provider_id
+		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id
 		 FROM appointments a
 		 JOIN availability_slots s ON a.slot_id = s.id
 		 WHERE a.id = $1`,
 		id,
-	).Scan(&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID)
+	).Scan(&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

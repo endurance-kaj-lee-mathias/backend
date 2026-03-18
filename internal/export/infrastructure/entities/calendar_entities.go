@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -11,6 +12,7 @@ type AppointmentExportEntity struct {
 	SlotID                    uuid.UUID
 	VeteranID                 uuid.UUID
 	ProviderID                uuid.UUID
+	AppointmentTitle          sql.NullString
 	Status                    string
 	StartTime                 time.Time
 	EndTime                   time.Time

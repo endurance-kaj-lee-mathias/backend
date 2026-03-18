@@ -14,6 +14,7 @@ type Slot struct {
 	IsUrgent   bool
 	IsBooked   bool
 	SeriesID   *uuid.UUID
+	Title      *string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

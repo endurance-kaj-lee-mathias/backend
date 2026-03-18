@@ -43,9 +43,16 @@ func (s *service) GetCalendarEvents(ctx context.Context, userID uuid.UUID) ([]do
 			return nil, err
 		}
 
+		var title string
+		if ent.AppointmentTitle.Valid && ent.AppointmentTitle.String != "" {
+			title = ent.AppointmentTitle.String
+		} else {
+			title = fmt.Sprintf("Appointment with %s %s", string(firstNameBytes), string(lastNameBytes))
+		}
+
 		events = append(events, domain.Event{
 			ID:        ent.ID.String(),
-			Title:     fmt.Sprintf("Appointment with %s %s", string(firstNameBytes), string(lastNameBytes)),
+			Title:     title,
 			StartTime: ent.StartTime.UTC(),
 			EndTime:   ent.EndTime.UTC(),
 			UpdatedAt: ent.UpdatedAt.UTC(),

@@ -18,6 +18,7 @@ type Appointment struct {
 	ID        AppointmentId
 	SlotID    uuid.UUID
 	VeteranID uuid.UUID
+	Title     *string
 	Status    AppointmentStatus
 	CreatedAt time.Time
 	UpdatedAt time.Time
