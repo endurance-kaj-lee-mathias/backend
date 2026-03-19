@@ -205,12 +205,12 @@ func (r *repository) GetAppointmentWithSlot(ctx context.Context, id uuid.UUID) (
 	var ent entities.AppointmentWithSlotEntity
 
 	err := r.db.QueryRowContext(ctx,
-		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time
+		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time, s.is_urgent
 		 FROM appointments a
 		 JOIN availability_slots s ON a.slot_id = s.id
 		 WHERE a.id = $1`,
 		id,
-	).Scan(&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID, &ent.StartTime, &ent.EndTime)
+	).Scan(&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent)
 
 	if err == nil {
 	}
@@ -300,7 +300,7 @@ func (r *repository) DeleteSlotsByProviderID(ctx context.Context, providerID uui
 
 func (r *repository) GetAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
+		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time, s.is_urgent, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
 		 FROM appointments a
 		 JOIN availability_slots s ON a.slot_id = s.id
 		 JOIN users u ON u.id = s.provider_id
@@ -324,7 +324,7 @@ func (r *repository) GetAppointmentsByDay(ctx context.Context, veteranID uuid.UU
 	for rows.Next() {
 		var ent entities.AppointmentWithSlotEntity
 		if err := rows.Scan(
-			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID, &ent.StartTime, &ent.EndTime, &ent.ProviderUsernameEncrypted, &ent.ProviderFirstNameEncrypted, &ent.ProviderLastNameEncrypted, &ent.ProviderEncryptedUserKey, &ent.ProviderImage,
+			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.ProviderUsernameEncrypted, &ent.ProviderFirstNameEncrypted, &ent.ProviderLastNameEncrypted, &ent.ProviderEncryptedUserKey, &ent.ProviderImage,
 		); err != nil {
 			return nil, err
 		}
