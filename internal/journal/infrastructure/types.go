@@ -11,6 +11,7 @@ import (
 type Repository interface {
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (entities.UserProfileEntity, error)
 	GetWeeklyAverages(ctx context.Context, userID uuid.UUID, weekOffset int) ([]entities.DailyAverageRow, error)
+	GetWeeklyMoodNotes(ctx context.Context, userID uuid.UUID, weekOffset int) ([]entities.MoodEntryNoteRow, error)
 }
 
 type repository struct {

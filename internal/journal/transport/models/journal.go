@@ -31,6 +31,7 @@ type DailyAverageResponse struct {
 	Date      string   `json:"date"`
 	AvgMood   float64  `json:"avgMood"`
 	AvgStress *float64 `json:"avgStress"`
+	Notes     []string `json:"notes,omitempty"`
 }
 
 func ToJournalResponse(report domain.JournalReport, weekOffset int) (JournalResponse, error) {
@@ -65,6 +66,7 @@ func ToJournalResponse(report domain.JournalReport, weekOffset int) (JournalResp
 				Date:      d.Date,
 				AvgMood:   d.AvgMood,
 				AvgStress: d.AvgStress,
+				Notes:     d.Notes,
 			})
 		}
 

@@ -82,3 +82,37 @@ func (r *repository) GetWeeklyAverages(ctx context.Context, userID uuid.UUID, we
 
 	return result, rows.Err()
 }
+
+func (r *repository) GetWeeklyMoodNotes(ctx context.Context, userID uuid.UUID, weekOffset int) ([]entities.MoodEntryNoteRow, error) {
+	query := `
+		SELECT date, encrypted_notes
+		FROM mood_entries
+		WHERE user_id = $1
+		  AND date_trunc('week', date) = date_trunc('week', NOW() - ($2 * INTERVAL '1 week'))
+		  AND encrypted_notes IS NOT NULL
+		  AND octet_length(encrypted_notes) > 0
+		ORDER BY date ASC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID, weekOffset)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("journal: close weekly mood notes rows", "error", err)
+		}
+	}()
+
+	var result []entities.MoodEntryNoteRow
+
+	for rows.Next() {
+		var row entities.MoodEntryNoteRow
+		if err := rows.Scan(&row.Date, &row.EncryptedNotes); err != nil {
+			return nil, err
+		}
+		result = append(result, row)
+	}
+
+	return result, rows.Err()
+}

@@ -115,7 +115,7 @@ Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
-  "date": "2026-03-05",
+  "date": "2026-03-19",
   "moodScore": 6,
   "notes": "Feeling okay, a bit tired"
 }
@@ -126,7 +126,7 @@ Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
-  "date": "2026-03-11",
+  "date": "2026-03-19",
   "moodScore": 4,
   "notes": "Rough night"
 }
@@ -137,7 +137,7 @@ Authorization: Bearer {{veteranToken2}}
 Content-Type: application/json
 
 {
-  "date": "2026-03-12",
+  "date": "2026-03-19",
   "moodScore": 7
 }
 
@@ -212,12 +212,12 @@ Authorization: Bearer {{veterantoken}}
 
 ### 15. Pagination – current week (default)
 ###     Expected: 200 OK – weekly.week=0, days for current ISO week
-GET {{baseUrl}}/users/journal/{{usernameVeteran}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}?week=0
 Authorization: Bearer {{supportToken}}
 
 ### 16. Pagination – previous week
 ###     Expected: 200 OK – weekly.week=1, days from last ISO week (may be empty)
-GET {{baseUrl}}/users/journal/{{usernameVeteran}}?week=1
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}?week=3
 Authorization: Bearer {{supportToken}}
 
 ### 17. VETERAN deletes the wildcard rule and creates scoped allow rules instead

@@ -494,7 +494,7 @@ Content-Type: application/json
 
 {
   "userId": "{{veteranId}}",
-  "timestamp": "2026-03-03T08:00:00Z",
+  "timestamp": "2026-03-19T08:00:00Z",
   "windowMinutes": 5,
   "meanHr": 96.8,
   "rmssdMs": 15.0,
@@ -510,7 +510,7 @@ Content-Type: application/json
 
 {
   "userId": "{{veteranId}}",
-  "timestamp": "2026-03-04T08:00:00Z",
+  "timestamp": "2026-03-19T10:00:00Z",
   "windowMinutes": 5,
   "meanHr": 56.0,
   "rmssdMs": 65.0,
