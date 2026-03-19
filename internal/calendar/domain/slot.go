@@ -18,3 +18,11 @@ type Slot struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
+
+type SlotWithProvider struct {
+	Slot
+	ProviderUsername  string
+	ProviderImage     string
+	ProviderFirstName string
+	ProviderLastName  string
+}

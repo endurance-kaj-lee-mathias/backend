@@ -257,6 +257,23 @@ func (h *Handler) GetSlotsByUserID(w http.ResponseWriter, r *http.Request) {
 	response.Write(w, http.StatusOK, models.ToSlotModels(slots))
 }
 
+func (h *Handler) GetSlotWithProvider(w http.ResponseWriter, r *http.Request) {
+	slotID, err := domain.ParseSlotId(chi.URLParam(r, "id"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	slot, err := h.service.GetSlotWithProvider(r.Context(), slotID.UUID)
+	if err != nil {
+		status, errMsg := mapError(err)
+		response.WriteError(w, status, errMsg)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToSlotWithProviderModel(slot))
+}
+
 func (h *Handler) ExportCalendar(w http.ResponseWriter, r *http.Request) {
 	claims, ok := auth.GetUserClaims(r.Context())
 	if !ok {

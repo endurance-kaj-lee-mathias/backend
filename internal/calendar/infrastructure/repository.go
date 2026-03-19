@@ -132,6 +132,28 @@ func (r *repository) GetSlotByID(ctx context.Context, id uuid.UUID) (entities.Sl
 	return ent, nil
 }
 
+func (r *repository) GetSlotWithProvider(ctx context.Context, id uuid.UUID) (entities.SlotWithProviderEntity, error) {
+	var ent entities.SlotWithProviderEntity
+
+	err := r.db.QueryRowContext(ctx,
+		`SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id , s.created_at, s.updated_at, a.title, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
+		 FROM availability_slots s
+		 LEFT JOIN appointments a ON a.slot_id = s.id AND a.status != 'CANCELLED'
+		 JOIN users u ON u.id = s.provider_id
+		 WHERE s.id = $1`,
+		id,
+	).Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt, &ent.AppointmentTitle, &ent.ProviderUsernameEncrypted, &ent.ProviderFirstNameEncrypted, &ent.ProviderLastNameEncrypted, &ent.ProviderEncryptedUserKey, &ent.ProviderImage)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entities.SlotWithProviderEntity{}, SlotNotFound
+		}
+		return entities.SlotWithProviderEntity{}, err
+	}
+
+	return ent, nil
+}
+
 func (r *repository) DeleteSlot(ctx context.Context, id uuid.UUID) error {
 	result, err := r.db.ExecContext(ctx, `DELETE FROM availability_slots WHERE id = $1`, id)
 	if err != nil {
@@ -147,6 +169,15 @@ func (r *repository) DeleteSlot(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (r *repository) GetEncryptedUserKey(ctx context.Context, userID uuid.UUID) ([]byte, error) {
+	var encryptedKey []byte
+	err := r.db.QueryRowContext(ctx, `SELECT encrypted_user_key FROM users WHERE id = $1`, userID).Scan(&encryptedKey)
+	if err != nil {
+		return nil, err
+	}
+	return encryptedKey, nil
 }
 
 func (r *repository) AtomicBookSlot(ctx context.Context, id uuid.UUID, now time.Time) (int64, error) {
@@ -269,9 +300,10 @@ func (r *repository) DeleteSlotsByProviderID(ctx context.Context, providerID uui
 
 func (r *repository) GetAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time
+		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
 		 FROM appointments a
 		 JOIN availability_slots s ON a.slot_id = s.id
+		 JOIN users u ON u.id = s.provider_id
 		 WHERE a.veteran_id = $1
 		   AND s.start_time >= $2
 		   AND s.start_time < $3
@@ -292,7 +324,7 @@ func (r *repository) GetAppointmentsByDay(ctx context.Context, veteranID uuid.UU
 	for rows.Next() {
 		var ent entities.AppointmentWithSlotEntity
 		if err := rows.Scan(
-			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID, &ent.StartTime, &ent.EndTime,
+			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID, &ent.StartTime, &ent.EndTime, &ent.ProviderUsernameEncrypted, &ent.ProviderFirstNameEncrypted, &ent.ProviderLastNameEncrypted, &ent.ProviderEncryptedUserKey, &ent.ProviderImage,
 		); err != nil {
 			return nil, err
 		}

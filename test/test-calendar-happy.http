@@ -171,10 +171,14 @@ Content-Type: application/json
 %}
 
 ### 11. Get my appointments for the day (should contain the two bookings on 2026-04-07)
-GET {{baseUrl}}/calendar/slots/me/2026-04-07
+GET {{baseUrl}}/calendar/appointments/me/2026-04-07
 Authorization: Bearer {{veteranToken}}
 
 ### 12. Get my appointments for a day with no appointments (should return null/empty)
-GET {{baseUrl}}/calendar/slots/me/2026-04-09
+GET {{baseUrl}}/calendar/appointments/me/2026-04-09
+Authorization: Bearer {{veteranToken}}
+
+### 12. Get my appointments for a day with no appointments (should return null/empty)
+GET {{baseUrl}}/calendar/slots/6ae77a92-5e33-44f9-becf-4a9ee4c2bdb6/details
 Authorization: Bearer {{veteranToken}}
 

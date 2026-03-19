@@ -24,6 +24,8 @@ type Repository interface {
 	DeleteFutureSlotsBySeries(ctx context.Context, seriesID uuid.UUID, providerID uuid.UUID) error
 	GetEventsByUserID(ctx context.Context, userID uuid.UUID) ([]entities.CalendarEventEntity, error)
 	GetAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error)
+	GetSlotWithProvider(ctx context.Context, id uuid.UUID) (entities.SlotWithProviderEntity, error)
+	GetEncryptedUserKey(ctx context.Context, userID uuid.UUID) ([]byte, error)
 }
 
 type repository struct {

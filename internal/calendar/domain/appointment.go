@@ -15,13 +15,17 @@ const (
 )
 
 type Appointment struct {
-	ID        AppointmentId
-	SlotID    uuid.UUID
-	VeteranID uuid.UUID
-	Title     *string
-	Status    AppointmentStatus
-	StartTime time.Time
-	EndTime   time.Time
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                AppointmentId
+	SlotID            uuid.UUID
+	VeteranID         uuid.UUID
+	Title             *string
+	Status            AppointmentStatus
+	StartTime         time.Time
+	EndTime           time.Time
+	ProviderUsername  string
+	ProviderImage     string
+	ProviderFirstName string
+	ProviderLastName  string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
