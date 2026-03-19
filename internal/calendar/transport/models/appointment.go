@@ -13,6 +13,7 @@ type AppointmentResponse struct {
 	VeteranID         uuid.UUID `json:"veteranId"`
 	Title             *string   `json:"title,omitempty"`
 	Status            string    `json:"status"`
+	Urgent            bool      `json:"urgent"`
 	StartTime         time.Time `json:"startTime"`
 	EndTime           time.Time `json:"endTime"`
 	ProviderUsername  string    `json:"providerUsername"`
@@ -30,6 +31,7 @@ func ToAppointmentModel(a domain.Appointment) AppointmentResponse {
 		VeteranID:         a.VeteranID,
 		Title:             a.Title,
 		Status:            string(a.Status),
+		Urgent:            a.Urgent,
 		StartTime:         a.StartTime,
 		EndTime:           a.EndTime,
 		ProviderUsername:  a.ProviderUsername,

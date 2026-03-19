@@ -25,6 +25,7 @@ type AppointmentEntity struct {
 type AppointmentWithSlotEntity struct {
 	AppointmentEntity
 	SlotProviderID             uuid.UUID `db:"provider_id"`
+	IsUrgent                   bool      `db:"is_urgent"`
 	ProviderUsernameEncrypted  []byte    `db:"encrypted_username"`
 	ProviderFirstNameEncrypted []byte    `db:"encrypted_first_name"`
 	ProviderLastNameEncrypted  []byte    `db:"encrypted_last_name"`

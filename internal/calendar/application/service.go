@@ -156,6 +156,7 @@ func (s *service) BookSlot(ctx context.Context, veteranID uuid.UUID, roles []str
 		VeteranID: veteranID,
 		Title:     title,
 		Status:    domain.StatusBooked,
+		Urgent:    slot.IsUrgent,
 		StartTime: slot.StartTime,
 		EndTime:   slot.EndTime,
 		CreatedAt: now,
@@ -206,6 +207,7 @@ func (s *service) GetMyAppointmentsByDay(ctx context.Context, veteranID uuid.UUI
 	appointments := make([]domain.Appointment, 0, len(ents))
 	for _, ent := range ents {
 		a := entities.AppointmentFromEntity(ent.AppointmentEntity)
+		a.Urgent = ent.IsUrgent
 
 		providerUsername := ""
 		providerFirst := ""
