@@ -329,6 +329,10 @@ Content-Type: application/json
 DELETE {{baseUrl}}/calendar/slots/{{deletableSlotId}}
 Authorization: Bearer {{therapistToken}}
 
+### GET /ME endpoint
+
+GET http://localhost:8080/calendar/slots/me?from=2025-03-01T00:00:00Z&to=2026-12-31T00:00:00Z
+Authorization: Bearer {{therapistToken}}
 ### =====================================================
 ### Delete Slot – Error cases
 ### =====================================================
