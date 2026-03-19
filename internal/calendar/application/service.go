@@ -156,6 +156,8 @@ func (s *service) BookSlot(ctx context.Context, veteranID uuid.UUID, roles []str
 		VeteranID: veteranID,
 		Title:     title,
 		Status:    domain.StatusBooked,
+		StartTime: slot.StartTime,
+		EndTime:   slot.EndTime,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -190,4 +192,22 @@ func (s *service) DeleteMySlots(ctx context.Context, providerID uuid.UUID) error
 
 func (s *service) DeleteSlotsBySeries(ctx context.Context, providerID uuid.UUID, seriesID uuid.UUID) error {
 	return s.repo.DeleteFutureSlotsBySeries(ctx, seriesID, providerID)
+}
+
+func (s *service) GetMyAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, date time.Time) ([]domain.Appointment, error) {
+	dayStart := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+	dayEnd := dayStart.Add(24 * time.Hour)
+
+	ents, err := s.repo.GetAppointmentsByDay(ctx, veteranID, dayStart, dayEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	appointments := make([]domain.Appointment, 0, len(ents))
+	for _, ent := range ents {
+		a := entities.AppointmentFromEntity(ent.AppointmentEntity)
+		appointments = append(appointments, a)
+	}
+
+	return appointments, nil
 }

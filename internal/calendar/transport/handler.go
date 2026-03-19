@@ -342,3 +342,44 @@ func (h *Handler) GetAppointments(w http.ResponseWriter, r *http.Request) {
 
 	response.Write(w, http.StatusOK, models.ToEventModels(events))
 }
+
+func (h *Handler) GetMyAppointmentsByDay(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	day, err := time.Parse("2006-01-02", chi.URLParam(r, "day"))
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, models.InvalidDayParam)
+		return
+	}
+
+	dayStart := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC)
+	dayEnd := dayStart.Add(24 * time.Hour)
+
+	slog.Info("GetMyAppointmentsByDay called", "userId", userID.String(), "day", day.Format("2006-01-02"), "dayStart", dayStart, "dayEnd", dayEnd)
+
+	appointments, err := h.service.GetMyAppointmentsByDay(r.Context(), userID, day)
+	if err != nil {
+		status, errMsg := mapError(err)
+		response.WriteError(w, status, errMsg)
+		return
+	}
+
+	slog.Info("GetMyAppointmentsByDay result count", "userId", userID.String(), "day", day.Format("2006-01-02"), "count", len(appointments))
+
+	if len(appointments) == 0 {
+		response.Write(w, http.StatusOK, nil)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToAppointmentModels(appointments))
+}

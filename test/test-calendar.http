@@ -89,8 +89,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-10T09:00:00Z",
-  "endTime": "2026-08-10T10:00:00Z",
+  "startTime": "2026-04-07T09:00:00Z",
+  "endTime": "2026-04-07T10:00:00Z",
   "isUrgent": true
 }
 
@@ -104,8 +104,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-10T10:00:00Z",
-  "endTime": "2026-08-10T11:00:00Z",
+  "startTime": "2026-04-07T10:00:00Z",
+  "endTime": "2026-04-07T11:00:00Z",
   "isUrgent": true
 }
 
@@ -115,8 +115,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-10T14:00:00Z",
-  "endTime": "2026-08-10T15:00:00Z",
+  "startTime": "2026-04-07T14:00:00Z",
+  "endTime": "2026-04-07T15:00:00Z",
   "isUrgent": false
 }
 
@@ -130,8 +130,8 @@ Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-11T09:00:00Z",
-  "endTime": "2026-08-11T10:00:00Z",
+  "startTime": "2026-04-08T09:00:00Z",
+  "endTime": "2026-04-08T10:00:00Z",
   "isUrgent": true
 }
 
@@ -149,8 +149,8 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-10T11:00:00Z",
-  "endTime": "2026-08-10T12:00:00Z",
+  "startTime": "2026-04-07T11:00:00Z",
+  "endTime": "2026-04-07T12:00:00Z",
   "isUrgent": false
 }
 
@@ -161,8 +161,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-12T14:00:00Z",
-  "endTime": "2026-08-12T15:00:00Z",
+  "startTime": "2026-04-12T14:00:00Z",
+  "endTime": "2026-04-12T15:00:00Z",
   "isUrgent": false
 }
 
@@ -183,8 +183,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-10T11:00:00Z",
-  "endTime": "2026-08-10T10:00:00Z",
+  "startTime": "2026-04-07T11:00:00Z",
+  "endTime": "2026-04-07T10:00:00Z",
   "isUrgent": true
 }
 
@@ -194,8 +194,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-10T09:30:00Z",
-  "endTime": "2026-08-10T10:30:00Z",
+  "startTime": "2026-04-07T09:30:00Z",
+  "endTime": "2026-04-07T10:30:00Z",
   "isUrgent": true
 }
 
@@ -204,14 +204,14 @@ Content-Type: application/json
 ### =====================================================
 
 ### 14. Get all slots in a range (no provider filter)
-GET {{baseUrl}}/calendar/slots?from=2026-08-10T00:00:00Z&to=2026-08-10T23:59:59Z
+GET {{baseUrl}}/calendar/slots?from=2026-04-07T00:00:00Z&to=2026-04-07T23:59:59Z
 Authorization: Bearer {{therapistToken}}
 ### 15. Get slots filtered by therapist provider
-GET {{baseUrl}}/calendar/slots?from=2026-08-10T00:00:00Z&to=2026-08-10T23:59:59Z&providerId=2e808133-794d-4ba3-8da0-e562131692fb
+GET {{baseUrl}}/calendar/slots?from=2026-04-07T00:00:00Z&to=2026-04-07T23:59:59Z&providerId=2e808133-794d-4ba3-8da0-e562131692fb
 Authorization: Bearer {{veteranToken}}
 
 ### 16. Get slots for a week view
-GET {{baseUrl}}/calendar/slots?from=2026-08-10T00:00:00Z&to=2026-08-16T23:59:59Z
+GET {{baseUrl}}/calendar/slots?from=2026-04-07T00:00:00Z&to=2026-04-13T23:59:59Z
 Authorization: Bearer {{veteranToken}}
 
 ### =====================================================
@@ -231,7 +231,7 @@ Authorization: Bearer {{veteranToken}}
 ### =====================================================
 
 ### 19. VETERAN books the normal slot
-POST {{baseUrl}}/calendar/slots/1f4beeb5-4cbc-41a8-9d6c-784d75ebfdd4/book
+POST {{baseUrl}}/calendar/slots/{{normalSlotId}}/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
@@ -245,7 +245,7 @@ Content-Type: application/json
 %}
 
 ### 20. VETERAN books the urgent slot with urgent=true
-POST {{baseUrl}}/calendar/slots/3ec75cb8-e7c4-4f96-b2ef-b233cc1c4d1e/book
+POST {{baseUrl}}/calendar/slots/{{urgentSlotId}}/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
@@ -316,8 +316,8 @@ Authorization: Bearer {{therapistToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-08-13T09:00:00Z",
-  "endTime": "2026-08-13T10:00:00Z",
+  "startTime": "2026-04-10T09:00:00Z",
+  "endTime": "2026-04-10T10:00:00Z",
   "isUrgent": true
 }
 

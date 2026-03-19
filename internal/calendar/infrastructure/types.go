@@ -23,6 +23,7 @@ type Repository interface {
 	DeleteSlotsByProviderID(ctx context.Context, providerID uuid.UUID) error
 	DeleteFutureSlotsBySeries(ctx context.Context, seriesID uuid.UUID, providerID uuid.UUID) error
 	GetEventsByUserID(ctx context.Context, userID uuid.UUID) ([]entities.CalendarEventEntity, error)
+	GetAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error)
 }
 
 type repository struct {

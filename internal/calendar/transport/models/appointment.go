@@ -13,6 +13,8 @@ type AppointmentResponse struct {
 	VeteranID uuid.UUID `json:"veteranId"`
 	Title     *string   `json:"title,omitempty"`
 	Status    string    `json:"status"`
+	StartTime time.Time `json:"startTime"`
+	EndTime   time.Time `json:"endTime"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -24,9 +26,19 @@ func ToAppointmentModel(a domain.Appointment) AppointmentResponse {
 		VeteranID: a.VeteranID,
 		Title:     a.Title,
 		Status:    string(a.Status),
+		StartTime: a.StartTime,
+		EndTime:   a.EndTime,
 		CreatedAt: a.CreatedAt,
 		UpdatedAt: a.UpdatedAt,
 	}
+}
+
+func ToAppointmentModels(appointments []domain.Appointment) []AppointmentResponse {
+	out := make([]AppointmentResponse, 0, len(appointments))
+	for _, a := range appointments {
+		out = append(out, ToAppointmentModel(a))
+	}
+	return out
 }
 
 type EventResponse struct {

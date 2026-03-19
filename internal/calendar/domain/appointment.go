@@ -20,6 +20,8 @@ type Appointment struct {
 	VeteranID uuid.UUID
 	Title     *string
 	Status    AppointmentStatus
+	StartTime time.Time
+	EndTime   time.Time
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

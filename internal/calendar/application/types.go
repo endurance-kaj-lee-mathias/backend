@@ -19,6 +19,7 @@ type Service interface {
 	CancelAppointment(ctx context.Context, userID uuid.UUID, appointmentID domain.AppointmentId) error
 	DeleteMySlots(ctx context.Context, providerID uuid.UUID) error
 	GetCalendarEvents(ctx context.Context, userID uuid.UUID) ([]domain.Event, error)
+	GetMyAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, date time.Time) ([]domain.Appointment, error)
 }
 
 type service struct {

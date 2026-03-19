@@ -152,6 +152,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
+			r.Get("/slots/me/{day}", calendarHandler.GetMyAppointmentsByDay)
 			r.Delete("/slots/me", calendarHandler.DeleteMySlots)
 			r.Delete("/slots/series/{seriesId}", calendarHandler.DeleteSlotsBySeries)
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
