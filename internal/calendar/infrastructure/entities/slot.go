@@ -21,6 +21,15 @@ type SlotEntity struct {
 	UpdatedAt        time.Time      `db:"updated_at"`
 }
 
+type SlotWithProviderEntity struct {
+	SlotEntity
+	ProviderUsernameEncrypted  []byte  `db:"encrypted_username"`
+	ProviderFirstNameEncrypted []byte  `db:"encrypted_firstname"`
+	ProviderLastNameEncrypted  []byte  `db:"encrypted_lastname"`
+	ProviderEncryptedUserKey   []byte  `db:"encrypted_user_key"`
+	ProviderImage              *string `db:"image"`
+}
+
 func SlotToEntity(slot domain.Slot) SlotEntity {
 	var title sql.NullString
 	if slot.Title != nil {

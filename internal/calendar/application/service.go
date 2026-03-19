@@ -156,6 +156,8 @@ func (s *service) BookSlot(ctx context.Context, veteranID uuid.UUID, roles []str
 		VeteranID: veteranID,
 		Title:     title,
 		Status:    domain.StatusBooked,
+		StartTime: slot.StartTime,
+		EndTime:   slot.EndTime,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -190,4 +192,106 @@ func (s *service) DeleteMySlots(ctx context.Context, providerID uuid.UUID) error
 
 func (s *service) DeleteSlotsBySeries(ctx context.Context, providerID uuid.UUID, seriesID uuid.UUID) error {
 	return s.repo.DeleteFutureSlotsBySeries(ctx, seriesID, providerID)
+}
+
+func (s *service) GetMyAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, date time.Time) ([]domain.Appointment, error) {
+	dayStart := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+	dayEnd := dayStart.Add(24 * time.Hour)
+
+	ents, err := s.repo.GetAppointmentsByDay(ctx, veteranID, dayStart, dayEnd)
+	if err != nil {
+		return nil, err
+	}
+
+	appointments := make([]domain.Appointment, 0, len(ents))
+	for _, ent := range ents {
+		a := entities.AppointmentFromEntity(ent.AppointmentEntity)
+
+		providerUsername := ""
+		providerFirst := ""
+		providerLast := ""
+		if len(ent.ProviderEncryptedUserKey) > 0 {
+			userKey, derr := s.enc.DecryptUserKey(ent.ProviderEncryptedUserKey)
+			if derr == nil {
+				if len(ent.ProviderUsernameEncrypted) > 0 {
+					if uname, derr2 := s.enc.Decrypt(ent.ProviderUsernameEncrypted, userKey); derr2 == nil {
+						providerUsername = string(uname)
+					}
+				}
+				if len(ent.ProviderFirstNameEncrypted) > 0 {
+					if fname, derr2 := s.enc.Decrypt(ent.ProviderFirstNameEncrypted, userKey); derr2 == nil {
+						providerFirst = string(fname)
+					}
+				}
+				if len(ent.ProviderLastNameEncrypted) > 0 {
+					if lname, derr2 := s.enc.Decrypt(ent.ProviderLastNameEncrypted, userKey); derr2 == nil {
+						providerLast = string(lname)
+					}
+				}
+			}
+		}
+
+		providerImage := ""
+		if ent.ProviderImage != nil {
+			providerImage = *ent.ProviderImage
+		}
+
+		a.ProviderUsername = providerUsername
+		a.ProviderImage = providerImage
+		a.ProviderFirstName = providerFirst
+		a.ProviderLastName = providerLast
+
+		appointments = append(appointments, a)
+	}
+
+	return appointments, nil
+}
+
+func (s *service) GetSlotWithProvider(ctx context.Context, id uuid.UUID) (domain.SlotWithProvider, error) {
+	ent, err := s.repo.GetSlotWithProvider(ctx, id)
+	if err != nil {
+		if errors.Is(err, infrastructure.SlotNotFound) {
+			return domain.SlotWithProvider{}, domain.SlotNotFound
+		}
+		return domain.SlotWithProvider{}, err
+	}
+
+	providerUsername := ""
+	providerFirst := ""
+	providerLast := ""
+	if len(ent.ProviderEncryptedUserKey) > 0 {
+		userKey, derr := s.enc.DecryptUserKey(ent.ProviderEncryptedUserKey)
+		if derr == nil {
+			if len(ent.ProviderUsernameEncrypted) > 0 {
+				if uname, derr2 := s.enc.Decrypt(ent.ProviderUsernameEncrypted, userKey); derr2 == nil {
+					providerUsername = string(uname)
+				}
+			}
+			if len(ent.ProviderFirstNameEncrypted) > 0 {
+				if fname, derr2 := s.enc.Decrypt(ent.ProviderFirstNameEncrypted, userKey); derr2 == nil {
+					providerFirst = string(fname)
+				}
+			}
+			if len(ent.ProviderLastNameEncrypted) > 0 {
+				if lname, derr2 := s.enc.Decrypt(ent.ProviderLastNameEncrypted, userKey); derr2 == nil {
+					providerLast = string(lname)
+				}
+			}
+		}
+	}
+
+	providerImage := ""
+	if ent.ProviderImage != nil {
+		providerImage = *ent.ProviderImage
+	}
+
+	slot := entities.SlotFromEntity(ent.SlotEntity)
+
+	return domain.SlotWithProvider{
+		Slot:              slot,
+		ProviderUsername:  providerUsername,
+		ProviderImage:     providerImage,
+		ProviderFirstName: providerFirst,
+		ProviderLastName:  providerLast,
+	}, nil
 }

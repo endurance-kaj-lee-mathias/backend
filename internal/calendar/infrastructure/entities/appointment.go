@@ -16,13 +16,20 @@ type AppointmentEntity struct {
 	VeteranID uuid.UUID      `db:"veteran_id"`
 	Title     sql.NullString `db:"title"`
 	Status    string         `db:"status"`
+	StartTime time.Time      `db:"start_time"`
+	EndTime   time.Time      `db:"end_time"`
 	CreatedAt time.Time      `db:"created_at"`
 	UpdatedAt time.Time      `db:"updated_at"`
 }
 
 type AppointmentWithSlotEntity struct {
 	AppointmentEntity
-	SlotProviderID uuid.UUID `db:"provider_id"`
+	SlotProviderID             uuid.UUID `db:"provider_id"`
+	ProviderUsernameEncrypted  []byte    `db:"encrypted_username"`
+	ProviderFirstNameEncrypted []byte    `db:"encrypted_first_name"`
+	ProviderLastNameEncrypted  []byte    `db:"encrypted_last_name"`
+	ProviderEncryptedUserKey   []byte    `db:"encrypted_user_key"`
+	ProviderImage              *string   `db:"image"`
 }
 
 func AppointmentToEntity(a domain.Appointment) AppointmentEntity {
@@ -37,6 +44,8 @@ func AppointmentToEntity(a domain.Appointment) AppointmentEntity {
 		VeteranID: a.VeteranID,
 		Title:     title,
 		Status:    string(a.Status),
+		StartTime: a.StartTime,
+		EndTime:   a.EndTime,
 		CreatedAt: a.CreatedAt,
 		UpdatedAt: a.UpdatedAt,
 	}
@@ -52,6 +61,8 @@ func AppointmentFromEntity(ent AppointmentEntity) domain.Appointment {
 		ID:        domain.AppointmentId{UUID: ent.ID},
 		SlotID:    ent.SlotID,
 		VeteranID: ent.VeteranID,
+		StartTime: ent.StartTime,
+		EndTime:   ent.EndTime,
 		Title:     title,
 		Status:    domain.AppointmentStatus(ent.Status),
 		CreatedAt: ent.CreatedAt,

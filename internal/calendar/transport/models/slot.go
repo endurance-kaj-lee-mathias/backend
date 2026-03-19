@@ -42,3 +42,39 @@ func ToSlotModels(slots []domain.Slot) []SlotResponse {
 	}
 	return out
 }
+
+type SlotWithProviderResponse struct {
+	ID                uuid.UUID  `json:"id"`
+	ProviderID        uuid.UUID  `json:"providerId"`
+	ProviderUsername  string     `json:"providerUsername,omitempty"`
+	ProviderImage     string     `json:"providerImage,omitempty"`
+	ProviderFirstName string     `json:"providerFirstName"`
+	ProviderLastName  string     `json:"providerLastName,omitempty"`
+	StartTime         time.Time  `json:"startTime"`
+	EndTime           time.Time  `json:"endTime"`
+	IsUrgent          bool       `json:"isUrgent"`
+	IsBooked          bool       `json:"isBooked"`
+	SeriesID          *uuid.UUID `json:"seriesId,omitempty"`
+	Title             *string    `json:"title,omitempty"`
+	CreatedAt         time.Time  `json:"createdAt"`
+	UpdatedAt         time.Time  `json:"updatedAt"`
+}
+
+func ToSlotWithProviderModel(s domain.SlotWithProvider) SlotWithProviderResponse {
+	return SlotWithProviderResponse{
+		ID:                s.ID.UUID,
+		ProviderID:        s.ProviderID,
+		ProviderUsername:  s.ProviderUsername,
+		ProviderImage:     s.ProviderImage,
+		ProviderFirstName: s.ProviderFirstName,
+		ProviderLastName:  s.ProviderLastName,
+		StartTime:         s.StartTime,
+		EndTime:           s.EndTime,
+		IsUrgent:          s.IsUrgent,
+		IsBooked:          s.IsBooked,
+		SeriesID:          s.SeriesID,
+		Title:             s.Title,
+		CreatedAt:         s.CreatedAt,
+		UpdatedAt:         s.UpdatedAt,
+	}
+}

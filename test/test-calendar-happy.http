@@ -1,0 +1,184 @@
+### =====================================================
+### Variables
+### =====================================================
+@baseUrl = http://localhost:8080
+@keycloakUrl = http://localhost:8180
+@realm = endurance
+@clientId = backend
+@clientSecret = Hvkh9JcoLjjNFT8FIgd3qPpJZWT3E7v9
+@usernameVeteran = Mathias
+@usernameTherapist = Kaj
+@usernameSupport = Lee
+@password = password
+
+### =====================================================
+### 1. Get access token – VETERAN
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameVeteran}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("veteranToken", response.body.access_token);
+%}
+
+### =====================================================
+### 2. Get access token – THERAPIST
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameTherapist}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("therapistToken", response.body.access_token);
+%}
+
+### =====================================================
+### 3. Get access token – SUPPORT
+### =====================================================
+POST {{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = {{clientId}} &
+client_secret = {{clientSecret}} &
+username = {{usernameSupport}} &
+password = {{password}} &
+scope = openid
+
+> {%
+    client.global.set("supportToken", response.body.access_token);
+%}
+
+### =====================================================
+### 4. Ensure users exist in DB
+### =====================================================
+
+### 4a. Get or create VETERAN
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
+
+### 4b. Get or create THERAPIST
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{therapistToken}}
+
+### 4c. Get or create SUPPORT
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{supportToken}}
+
+### =====================================================
+### Slot Management – Happy paths
+### =====================================================
+
+### 5. Create urgent slot (THERAPIST) – must succeed
+### Stores slotId for use in later requests
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-07T09:00:00Z",
+  "endTime": "2026-04-07T10:00:00Z",
+  "isUrgent": true
+}
+
+> {%
+    client.global.set("urgentSlotId", response.body.id);
+%}
+
+### 6. Create second urgent slot (THERAPIST) – fills the daily urgent quota
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-07T10:00:00Z",
+  "endTime": "2026-04-07T11:00:00Z",
+  "isUrgent": true
+}
+
+### 7. Create normal (non-urgent) slot (THERAPIST) – should succeed now that quota is met
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{therapistToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-07T14:00:00Z",
+  "endTime": "2026-04-07T15:00:00Z",
+  "isUrgent": false
+}
+
+> {%
+    client.global.set("normalSlotId", response.body.id);
+%}
+
+### 8. Create urgent slot (SUPPORT) – support role can also manage slots
+POST {{baseUrl}}/calendar/slots
+Authorization: Bearer {{supportToken}}
+Content-Type: application/json
+
+{
+  "startTime": "2026-04-08T09:00:00Z",
+  "endTime": "2026-04-08T10:00:00Z",
+  "isUrgent": true
+}
+
+> {%
+    client.global.set("supportUrgentSlotId", response.body.id);
+%}
+
+### =====================================================
+### Booking – Happy paths
+### =====================================================
+
+### 9. VETERAN books the normal slot
+POST {{baseUrl}}/calendar/slots/{{normalSlotId}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": false,
+  "title": "Therapeut meeting bij Mathias"
+}
+
+> {%
+    client.global.set("appointmentId", response.body.id);
+%}
+
+### 10. VETERAN books the urgent slot with urgent=true
+POST {{baseUrl}}/calendar/slots/{{urgentSlotId}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": true
+}
+
+> {%
+    client.global.set("urgentAppointmentId", response.body.id);
+%}
+
+### 11. Get my appointments for the day (should contain the two bookings on 2026-04-07)
+GET {{baseUrl}}/calendar/appointments/me/2026-04-07
+Authorization: Bearer {{veteranToken}}
+
+### 12. Get my appointments for a day with no appointments (should return null/empty)
+GET {{baseUrl}}/calendar/appointments/me/2026-04-09
+Authorization: Bearer {{veteranToken}}
+
+### 12. Get my appointments for a day with no appointments (should return null/empty)
+GET {{baseUrl}}/calendar/slots/6ae77a92-5e33-44f9-becf-4a9ee4c2bdb6/details
+Authorization: Bearer {{veteranToken}}
+

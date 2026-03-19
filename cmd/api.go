@@ -149,6 +149,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Get("/me/export", calendarHandler.ExportCalendar)
 			r.Get("/me/feed", calendarHandler.FeedCalendar)
 			r.Get("/appointments", calendarHandler.GetAppointments)
+			r.Get("/appointments/me/{day}", calendarHandler.GetMyAppointmentsByDay)
+			r.Patch("/appointments/{id}/cancel", calendarHandler.CancelAppointment)
 
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
@@ -156,7 +158,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Delete("/slots/series/{seriesId}", calendarHandler.DeleteSlotsBySeries)
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
 			r.Post("/slots/{id}/book", calendarHandler.BookSlot)
-			r.Patch("/appointments/{id}/cancel", calendarHandler.CancelAppointment)
+			r.Get("/slots/{id}/details", calendarHandler.GetSlotWithProvider)
 
 			r.Group(func(r chi.Router) {
 				r.Use(auth.WithResource(string(authzdomain.ResourceCalendar)))
