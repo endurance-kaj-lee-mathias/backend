@@ -26,3 +26,8 @@ type DailyAverageRow struct {
 	AvgStress *float64
 	Total     int
 }
+
+type MoodEntryNoteRow struct {
+	Date           time.Time
+	EncryptedNotes []byte
+}

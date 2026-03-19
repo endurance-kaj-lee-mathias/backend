@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	authzdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization/domain"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/journal/infrastructure/entities"
 )
@@ -74,8 +75,18 @@ func (s *service) GetJournal(ctx context.Context, viewerID uuid.UUID, veteranID 
 			return domain.JournalReport{}, err
 		}
 
+		noteRows, err := s.repo.GetWeeklyMoodNotes(ctx, veteranID, weekOffset)
+		if err != nil {
+			return domain.JournalReport{}, err
+		}
+
+		notesByDate, err := decryptNotesByDate(noteRows, s.enc, userKey)
+		if err != nil {
+			return domain.JournalReport{}, err
+		}
+
 		total := totalFromRows(rows)
-		days := toDailyAverages(rows, stressAllowed)
+		days := toDailyAverages(rows, stressAllowed, notesByDate)
 		report.Weekly = &domain.WeeklyPage{Days: days, Total: total}
 	}
 
@@ -89,7 +100,7 @@ func totalFromRows(rows []entities.DailyAverageRow) int {
 	return rows[0].Total
 }
 
-func toDailyAverages(rows []entities.DailyAverageRow, stressAllowed bool) []domain.DailyAverage {
+func toDailyAverages(rows []entities.DailyAverageRow, stressAllowed bool, notesByDate map[string][]string) []domain.DailyAverage {
 	days := make([]domain.DailyAverage, 0, len(rows))
 
 	for _, row := range rows {
@@ -98,14 +109,38 @@ func toDailyAverages(rows []entities.DailyAverageRow, stressAllowed bool) []doma
 			avgStress = nil
 		}
 
+		dateKey := row.Date.Format("2006-01-02")
+		notes := notesByDate[dateKey]
+
 		days = append(days, domain.DailyAverage{
-			Date:      row.Date.Format("2006-01-02"),
+			Date:      dateKey,
 			AvgMood:   row.AvgMood,
 			AvgStress: avgStress,
+			Notes:     notes,
 		})
 	}
 
 	return days
+}
+
+func decryptNotesByDate(rows []entities.MoodEntryNoteRow, enc encryption.Service, userKey []byte) (map[string][]string, error) {
+	result := make(map[string][]string)
+
+	for _, row := range rows {
+		if len(row.EncryptedNotes) == 0 {
+			continue
+		}
+
+		decrypted, err := enc.Decrypt(row.EncryptedNotes, userKey)
+		if err != nil {
+			return nil, err
+		}
+
+		dateKey := row.Date.Format("2006-01-02")
+		result[dateKey] = append(result[dateKey], string(decrypted))
+	}
+
+	return result, nil
 }
 
 func (s *service) decryptProfile(ent entities.UserProfileEntity, userKey []byte) (domain.UserProfileSection, error) {

@@ -141,7 +141,7 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "date": "2026-02-08",
+  "date": "2026-03-19",
   "moodScore": 4,
   "notes": "Two weeks ago was stressful."
 }
@@ -316,7 +316,7 @@ Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "date": "26-02-2026",
+  "date": "19-03-2026",
   "moodScore": 8
 }
 

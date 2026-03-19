@@ -28,4 +28,5 @@ type DailyAverage struct {
 	Date      string
 	AvgMood   float64
 	AvgStress *float64
+	Notes     []string
 }
