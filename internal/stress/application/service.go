@@ -8,6 +8,7 @@ import (
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress/infrastructure/entities"
+	usersdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
 
 const minSamplesForComputation = 12
@@ -88,6 +89,21 @@ func (s *service) computeStressScore(ctx context.Context, userID uuid.UUID) (dom
 	if err := s.repo.CreateScore(ctx, scoreEnt); err != nil {
 		slog.Error("stress: persist score", "userID", userID, "error", err)
 		return domain.StressScore{}, err
+	}
+
+	if score.Score >= 80 {
+		if err := s.riskSvc.UpdateRiskLevel(ctx, usersdomain.UserId{UUID: userID}, usersdomain.RiskLevelHigh); err != nil {
+			slog.Error("stress: update risk level", "userID", userID, "error", err)
+		} else {
+			tokens, err := s.riskSvc.FindDeviceTokensByUserID(ctx, usersdomain.UserId{UUID: userID})
+			if err != nil {
+				slog.Error("stress: fetch device tokens for high stress notification", "userID", userID, "error", err)
+			} else {
+				if err := s.notifier.NotifyHighStress(ctx, userID, tokens); err != nil {
+					slog.Error("stress: notify high stress", "userID", userID, "error", err)
+				}
+			}
+		}
 	}
 
 	return score, nil

@@ -117,11 +117,6 @@ func (s *service) IsAllowed(ctx context.Context, ownerID uuid.UUID, viewerID uui
 		return true, nil
 	}
 
-	isPrivate, err := s.repo.GetPrivacy(ctx, ownerID)
-	if err != nil {
-		return false, err
-	}
-
 	rule, err := s.repo.FindRule(ctx, ownerID, viewerID, resource)
 	if err != nil {
 		return false, err
@@ -131,7 +126,43 @@ func (s *service) IsAllowed(ctx context.Context, ownerID uuid.UUID, viewerID uui
 		return rule.Effect == domain.EffectAllow, nil
 	}
 
+	resourcePrivate, err := s.repo.GetResourcePrivacy(ctx, ownerID, resource)
+	if err != nil {
+		return false, err
+	}
+
+	if resourcePrivate != nil {
+		return !*resourcePrivate, nil
+	}
+
+	isPrivate, err := s.repo.GetPrivacy(ctx, ownerID)
+	if err != nil {
+		return false, err
+	}
+
 	return !isPrivate, nil
+}
+
+func (s *service) SetResourcePrivacy(ctx context.Context, actorID uuid.UUID, resource string, isPrivate bool) error {
+	if !domain.ValidResource(resource) {
+		return domain.InvalidResource
+	}
+
+	if err := s.repo.SetResourcePrivacy(ctx, actorID, resource, isPrivate); err != nil {
+		return err
+	}
+
+	slog.Info("resource privacy updated",
+		"owner", actorID.String(),
+		"resource", resource,
+		"isPrivate", isPrivate,
+	)
+
+	return nil
+}
+
+func (s *service) GetResourcePrivacySettings(ctx context.Context, ownerID uuid.UUID) (map[string]bool, error) {
+	return s.repo.ListResourcePrivacy(ctx, ownerID)
 }
 
 func (s *service) HasSupportRelationship(ctx context.Context, userA uuid.UUID, userB uuid.UUID) (bool, error) {

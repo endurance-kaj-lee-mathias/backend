@@ -11,10 +11,10 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/stress/transport"
 )
 
-func Wire(db *sql.DB, enc encryption.Service, algoBaseURL string, algoAPIKey string) *transport.Handler {
+func Wire(db *sql.DB, enc encryption.Service, algoBaseURL string, algoAPIKey string, riskSvc application.UserRiskService, notifier application.Notifier) *transport.Handler {
 	repo := infrastructure.NewRepository(db)
 	userKeyReader := infrastructure.NewUserKeyReader(db, enc)
 	algoClient := infrastructure.NewAlgoClient(algoBaseURL, algoAPIKey, &http.Client{Timeout: 3 * time.Second})
-	service := application.NewService(repo, userKeyReader, algoClient, enc)
+	service := application.NewService(repo, userKeyReader, algoClient, enc, riskSvc, notifier)
 	return transport.NewHandler(service)
 }

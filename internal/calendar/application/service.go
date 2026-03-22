@@ -9,6 +9,7 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar/infrastructure"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar/infrastructure/entities"
+	supportdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/domain"
 )
 
 func (s *service) CreateSlot(ctx context.Context, providerID uuid.UUID, roles []string, startTime, endTime time.Time, isUrgent bool, isRecurring bool) (domain.Slot, error) {
@@ -290,6 +291,69 @@ func (s *service) GetSlotWithProvider(ctx context.Context, id uuid.UUID) (domain
 	slot := entities.SlotFromEntity(ent.SlotEntity)
 
 	return domain.SlotWithProvider{
+		Slot:              slot,
+		ProviderUsername:  providerUsername,
+		ProviderImage:     providerImage,
+		ProviderFirstName: providerFirst,
+		ProviderLastName:  providerLast,
+	}, nil
+}
+
+func (s *service) GetFirstAvailableSlot(ctx context.Context, veteranID uuid.UUID) (*domain.SlotWithProvider, error) {
+	members, err := s.supportSvc.GetAll(ctx, supportdomain.VeteranId{UUID: veteranID})
+	if err != nil {
+		return nil, err
+	}
+
+	var providerIDs []uuid.UUID
+	for _, m := range members {
+		providerIDs = append(providerIDs, m.ID.UUID)
+	}
+
+	if len(providerIDs) == 0 {
+		return nil, nil
+	}
+
+	ent, err := s.repo.GetFirstAvailableSlotByProviders(ctx, providerIDs, time.Now().UTC())
+	if err != nil {
+		if errors.Is(err, infrastructure.SlotNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	providerUsername := ""
+	providerFirst := ""
+	providerLast := ""
+	if len(ent.ProviderEncryptedUserKey) > 0 {
+		userKey, derr := s.enc.DecryptUserKey(ent.ProviderEncryptedUserKey)
+		if derr == nil {
+			if len(ent.ProviderUsernameEncrypted) > 0 {
+				if uname, derr2 := s.enc.Decrypt(ent.ProviderUsernameEncrypted, userKey); derr2 == nil {
+					providerUsername = string(uname)
+				}
+			}
+			if len(ent.ProviderFirstNameEncrypted) > 0 {
+				if fname, derr2 := s.enc.Decrypt(ent.ProviderFirstNameEncrypted, userKey); derr2 == nil {
+					providerFirst = string(fname)
+				}
+			}
+			if len(ent.ProviderLastNameEncrypted) > 0 {
+				if lname, derr2 := s.enc.Decrypt(ent.ProviderLastNameEncrypted, userKey); derr2 == nil {
+					providerLast = string(lname)
+				}
+			}
+		}
+	}
+
+	providerImage := ""
+	if ent.ProviderImage != nil {
+		providerImage = *ent.ProviderImage
+	}
+
+	slot := entities.SlotFromEntity(ent.SlotEntity)
+
+	return &domain.SlotWithProvider{
 		Slot:              slot,
 		ProviderUsername:  providerUsername,
 		ProviderImage:     providerImage,

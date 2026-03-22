@@ -9,10 +9,10 @@ import (
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/support/transport"
 )
 
-func Wire(db *sql.DB, enc encryption.Service, authz application.AuthzRevoker, notifier application.Notifier) *transport.Handler {
+func Wire(db *sql.DB, enc encryption.Service, authz application.AuthzRevoker, notifier application.Notifier) (*transport.Handler, application.Service) {
 	repo := infrastructure.NewRepository(db, enc)
 	inviteRepo := infrastructure.NewInviteRepository(db, enc)
 	userRoleRead := infrastructure.NewUserRoleReader(db, enc)
 	service := application.NewService(repo, inviteRepo, userRoleRead, enc, authz, notifier)
-	return transport.NewHandler(service)
+	return transport.NewHandler(service), service
 }

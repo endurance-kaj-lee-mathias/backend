@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/infrastructure"
 )
 
@@ -60,10 +61,8 @@ func (s *Scheduler) run(ctx context.Context) {
 				return
 			}
 
-			for _, token := range tokens {
-				if err := notify(ctx, s.notifier, token); err != nil {
-					slog.Warn("failed to notify device after retries", "user_id", id, "error", err)
-				}
+			if err := notify(ctx, s.notifier, id, tokens); err != nil {
+				slog.Warn("failed to notify device after retries", "user_id", id, "error", err)
 			}
 		}()
 	}
@@ -71,12 +70,12 @@ func (s *Scheduler) run(ctx context.Context) {
 	wg.Wait()
 }
 
-func notify(ctx context.Context, notifier PhoneNotifier, deviceToken string) error {
+func notify(ctx context.Context, notifier PhoneNotifier, userID uuid.UUID, deviceTokens []string) error {
 	delays := []time.Duration{time.Second, 2 * time.Second, 4 * time.Second}
 
 	var err error
 	for attempt := 0; attempt <= len(delays); attempt++ {
-		err = notifier.Notify(ctx, deviceToken)
+		err = notifier.Notify(ctx, userID, deviceTokens)
 		if err == nil {
 			return nil
 		}

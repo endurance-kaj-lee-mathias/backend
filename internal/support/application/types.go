@@ -14,8 +14,8 @@ type AuthzRevoker interface {
 }
 
 type Notifier interface {
-	NotifyInvite(ctx context.Context, deviceToken string) error
-	NotifyInviteAccepted(ctx context.Context, deviceToken string) error
+	NotifyInvite(ctx context.Context, userID uuid.UUID, deviceTokens []string) error
+	NotifyInviteAccepted(ctx context.Context, userID uuid.UUID, deviceTokens []string) error
 }
 
 type Service interface {

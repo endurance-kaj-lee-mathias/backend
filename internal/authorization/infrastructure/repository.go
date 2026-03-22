@@ -168,6 +168,59 @@ func (r *repository) GetPrivacy(ctx context.Context, userID uuid.UUID) (bool, er
 	return isPrivate, nil
 }
 
+func (r *repository) SetResourcePrivacy(ctx context.Context, ownerID uuid.UUID, resource string, isPrivate bool) error {
+	query := `
+		INSERT INTO resource_privacy (owner_id, resource, is_private)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (owner_id, resource) DO UPDATE
+		SET is_private = EXCLUDED.is_private
+	`
+
+	_, err := r.db.ExecContext(ctx, query, ownerID, resource, isPrivate)
+	return err
+}
+
+func (r *repository) GetResourcePrivacy(ctx context.Context, ownerID uuid.UUID, resource string) (*bool, error) {
+	query := `SELECT is_private FROM resource_privacy WHERE owner_id = $1 AND resource = $2`
+
+	var isPrivate bool
+	err := r.db.QueryRowContext(ctx, query, ownerID, resource).Scan(&isPrivate)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &isPrivate, nil
+}
+
+func (r *repository) ListResourcePrivacy(ctx context.Context, ownerID uuid.UUID) (map[string]bool, error) {
+	query := `SELECT resource, is_private FROM resource_privacy WHERE owner_id = $1`
+
+	rows, err := r.db.QueryContext(ctx, query, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
+
+	result := make(map[string]bool)
+	for rows.Next() {
+		var resource string
+		var isPrivate bool
+		if err := rows.Scan(&resource, &isPrivate); err != nil {
+			return nil, err
+		}
+		result[resource] = isPrivate
+	}
+
+	return result, rows.Err()
+}
+
 func (r *repository) HasSupportRelationship(ctx context.Context, userA uuid.UUID, userB uuid.UUID) (bool, error) {
 	query := `
 		SELECT 1 FROM user_supports

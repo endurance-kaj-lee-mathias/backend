@@ -25,7 +25,7 @@ type AuthorizationChecker interface {
 }
 
 type PhoneNotifier interface {
-	Notify(ctx context.Context, deviceToken string) error
+	Notify(ctx context.Context, userID uuid.UUID, deviceTokens []string) error
 }
 
 type service struct {

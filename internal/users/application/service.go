@@ -381,3 +381,11 @@ func (s *service) AssignRole(ctx context.Context, id domain.UserId, roleName str
 func (s *service) DeleteDevice(ctx context.Context, deviceToken string) error {
 	return s.repo.DeleteDevice(ctx, deviceToken)
 }
+
+func (s *service) UpdateRiskLevel(ctx context.Context, id domain.UserId, riskLevel domain.RiskLevel) error {
+	return s.repo.UpdateRiskLevel(ctx, id.UUID, string(riskLevel))
+}
+
+func (s *service) FindDeviceTokensByUserID(ctx context.Context, userID domain.UserId) ([]string, error) {
+	return s.repo.FindDeviceTokensByUserID(ctx, userID.UUID)
+}

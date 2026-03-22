@@ -112,11 +112,11 @@ Authorization: Bearer {{therapistToken}}
 ###    Expected: 201 Created, status = PENDING
 ### =====================================================
 POST {{baseUrl}}/support
-Authorization: Bearer {{veteranToken2}}
+Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
 {
-  "username": "{{usernameSupport}}"
+  "username": "{{usernameTherapist}}"
 }
 
 > {%

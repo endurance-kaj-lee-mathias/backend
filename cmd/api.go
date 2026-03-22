@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/auth"
+	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/cmd/config"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization"
 	authzdomain "gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/authorization/domain"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/calendar"
@@ -36,16 +37,20 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r.Use(middleware.Timeout(time.Minute))
 	r.Use(corsMiddleware(server.config.AllowedOrigins))
 
-	userHandler := users.Wire(server.db, server.enc, server.kc, "mobile", server.idp.WebClientID)
+	userHandler, usersService := users.Wire(server.db, server.enc, server.kc, "mobile", server.idp.WebClientID)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
-	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey)
 	wsManager := wsapp.NewManager()
-	chatsHandler, chatsSvc := chats.Wire(server.db, server.enc, server.notifier, wsManager)
+
+	notifier := config.NewAppNotifier(server.notifier, wsManager)
+
+	stressHandler := stress.Wire(server.db, server.enc, server.config.AlgoServiceURL, server.config.AlgoAPIKey, usersService, notifier)
+
+	chatsHandler, chatsSvc := chats.Wire(server.db, server.enc, notifier, wsManager)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins, wsManager, chatsSvc)
 	authzHandler, authzService := authorization.Wire(server.db)
-	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, server.notifier, authzService)
-	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes)
-	supportHandler := support.Wire(server.db, server.enc, authzService, server.notifier)
+	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, notifier, authzService)
+	supportHandler, supportService := support.Wire(server.db, server.enc, authzService, notifier)
+	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes, supportService)
 	exportHandler := export.Wire(server.db, server.enc)
 	journalHandler := journal.Wire(server.db, server.enc, authzService)
 
@@ -67,6 +72,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Patch("/me/image", userHandler.PatchImage)
 			r.Patch("/me/privacy", userHandler.PatchPrivacy)
 			r.Put("/me/address", userHandler.UpsertAddress)
+			r.Put("/me/risk-level", userHandler.PutRiskLevel)
 
 			r.Put("/device", userHandler.PutDevice)
 			r.Delete("/device", userHandler.DeleteDevice)
@@ -106,6 +112,9 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Delete("/rules/{id}", authzHandler.DeleteRule)
 			r.Get("/rules", authzHandler.ListRules)
 			r.Get("/rules/{id}", authzHandler.GetRulesByViewer)
+
+			r.Get("/resources", authzHandler.GetResourcePrivacySettings)
+			r.Patch("/resources/{resource}/privacy", authzHandler.PatchResourcePrivacy)
 		})
 
 		r.Route("/stress", func(r chi.Router) {
@@ -155,6 +164,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Post("/slots", calendarHandler.CreateSlot)
 			r.Get("/slots", calendarHandler.GetSlots)
 			r.Get("/slots/me", calendarHandler.GetMySlots)
+			r.Get("/slots/first-available", calendarHandler.GetFirstAvailableSlot)
 			r.Delete("/slots/me", calendarHandler.DeleteMySlots)
 			r.Delete("/slots/series/{seriesId}", calendarHandler.DeleteSlotsBySeries)
 			r.Delete("/slots/{id}", calendarHandler.DeleteSlot)
@@ -171,6 +181,7 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	})
 
 	r.Get("/health", healthHandler.Health)
+	r.Get("/ws/notifications", wsHandler.ServeNotificationsWS)
 	r.Get("/ws/{conversationId}", wsHandler.ServeWS)
 
 	return r, moodScheduler

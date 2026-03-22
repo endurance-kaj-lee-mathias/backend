@@ -382,3 +382,8 @@ Authorization: Bearer {{veteranToken}}
 PATCH {{baseUrl}}/calendar/appointments/{{appointmentId}}/cancel
 Authorization: Bearer {{veteranToken}}
 
+### =====================================================
+### Get first available slot – expect 200 or 404
+### =====================================================
+GET {{baseUrl}}/calendar/slots/first-available
+Authorization: Bearer {{veteranToken}}

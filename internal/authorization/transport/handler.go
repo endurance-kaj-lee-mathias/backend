@@ -147,3 +147,77 @@ func mapError(err error) int {
 		return http.StatusInternalServerError
 	}
 }
+
+func (h *Handler) PatchResourcePrivacy(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	actorID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	resource := chi.URLParam(r, "resource")
+	if !domain.ValidResource(resource) {
+		response.WriteError(w, http.StatusUnprocessableEntity, domain.InvalidResource)
+		return
+	}
+
+	var body models.PatchResourcePrivacyRequest
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if err := h.service.SetResourcePrivacy(r.Context(), actorID, resource, body.IsPrivate); err != nil {
+		status := mapError(err)
+		response.WriteError(w, status, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) GetResourcePrivacySettings(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	actorID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	settingsMap, err := h.service.GetResourcePrivacySettings(r.Context(), actorID)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	var responses []models.ResourcePrivacyResponse
+	for res, isPrivate := range settingsMap {
+		responses = append(responses, models.ResourcePrivacyResponse{
+			Resource:  res,
+			IsPrivate: isPrivate,
+		})
+	}
+
+	// Ensure we don't return null but empty array if no settings
+	if responses == nil {
+		responses = []models.ResourcePrivacyResponse{}
+	}
+
+	response.Write(w, http.StatusOK, responses)
+}

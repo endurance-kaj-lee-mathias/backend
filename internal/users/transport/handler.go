@@ -411,3 +411,32 @@ func (h *Handler) DeleteDevice(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) PutRiskLevel(w http.ResponseWriter, r *http.Request) {
+	id, _, ok := h.authenticatedID(w, r)
+	if !ok {
+		return
+	}
+
+	var body models.UpdateRiskLevelModel
+	if err := request.Decode(r, &body); err != nil {
+		response.WriteError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		response.WriteError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if err := h.service.UpdateRiskLevel(r.Context(), id, domain.RiskLevel(body.RiskLevel)); err != nil {
+		if errors.Is(err, infrastructure.NotFound) {
+			response.WriteError(w, http.StatusNotFound, NotFound)
+			return
+		}
+		response.WriteError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

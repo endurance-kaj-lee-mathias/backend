@@ -8,3 +8,4 @@ var InvalidFromParam = errors.New("from query parameter is required and must be 
 var InvalidToParam = errors.New("to query parameter is required and must be a valid RFC3339 timestamp")
 var InvalidProviderIdParam = errors.New("providerId query parameter must be a valid UUID")
 var InvalidDayParam = errors.New("day path parameter is required and must be a valid date in YYYY-MM-DD format")
+var SlotNotFound = errors.New("slot not found")
