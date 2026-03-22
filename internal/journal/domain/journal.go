@@ -17,6 +17,7 @@ type UserProfileSection struct {
 	Image        string
 	PhoneNumber  *string
 	IsPrivate    bool
+	RiskLevel    string
 }
 
 type WeeklyPage struct {

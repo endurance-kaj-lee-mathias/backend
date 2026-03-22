@@ -18,6 +18,7 @@ type UserProfileEntity struct {
 	EncryptedRoles        []byte
 	Image                 string
 	IsPrivate             bool
+	RiskLevel             string
 }
 
 type DailyAverageRow struct {
