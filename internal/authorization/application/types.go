@@ -15,6 +15,8 @@ type Service interface {
 	ListRulesByViewer(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) ([]domain.Rule, error)
 	RevokeAll(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) error
 	IsAllowed(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID, resource string) (bool, error)
+	SetResourcePrivacy(ctx context.Context, actorID uuid.UUID, resource string, isPrivate bool) error
+	GetResourcePrivacySettings(ctx context.Context, ownerID uuid.UUID) (map[string]bool, error)
 	HasSupportRelationship(ctx context.Context, userA uuid.UUID, userB uuid.UUID) (bool, error)
 }
 

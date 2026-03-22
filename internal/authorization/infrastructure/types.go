@@ -17,6 +17,9 @@ type Repository interface {
 	FindRule(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID, resource string) (*domain.Rule, error)
 	DeleteByOwnerAndViewer(ctx context.Context, ownerID uuid.UUID, viewerID uuid.UUID) error
 	GetPrivacy(ctx context.Context, userID uuid.UUID) (bool, error)
+	SetResourcePrivacy(ctx context.Context, ownerID uuid.UUID, resource string, isPrivate bool) error
+	GetResourcePrivacy(ctx context.Context, ownerID uuid.UUID, resource string) (*bool, error)
+	ListResourcePrivacy(ctx context.Context, ownerID uuid.UUID) (map[string]bool, error)
 	HasSupportRelationship(ctx context.Context, userA uuid.UUID, userB uuid.UUID) (bool, error)
 }
 
