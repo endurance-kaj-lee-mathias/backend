@@ -68,7 +68,7 @@ scope = openid
 
 ### 3a. Get or create VETERAN – store veteranId
 GET {{baseUrl}}/users/me
-Authorization: Bearer {{veteranToken2}}
+Authorization: Bearer {{veteranToken}}
 
 > {%
     client.global.set("veteranId", response.body.id);

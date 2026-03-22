@@ -73,14 +73,14 @@ func (r *repository) FindByID(ctx context.Context, id uuid.UUID) (entities.UserE
 	var e entities.UserEntity
 
 	query := `
-		SELECT id, email_hash, username_hash, phone_number_hash, encrypted_email, encrypted_username, encrypted_first_name, encrypted_last_name, encrypted_phone_number, encrypted_roles, encrypted_about, encrypted_introduction, image, is_private, encrypted_user_key, key_version, created_at, updated_at
-		FROM users
-		WHERE id = $1
-	`
+			   SELECT id, email_hash, username_hash, phone_number_hash, encrypted_email, encrypted_username, encrypted_first_name, encrypted_last_name, encrypted_phone_number, encrypted_roles, encrypted_about, encrypted_introduction, image, risk_level, is_private, encrypted_user_key, key_version, created_at, updated_at
+			   FROM users
+			   WHERE id = $1
+	   `
 
 	if err := r.db.
 		QueryRowContext(ctx, query, id).
-		Scan(&e.ID, &e.EmailHash, &e.UsernameHash, &e.PhoneNumberHash, &e.EncryptedEmail, &e.EncryptedUsername, &e.EncryptedFirstName, &e.EncryptedLastName, &e.EncryptedPhoneNumber, &e.EncryptedRoles, &e.EncryptedAbout, &e.EncryptedIntroduction, &e.Image, &e.IsPrivate, &e.EncryptedUserKey, &e.KeyVersion, &e.CreatedAt, &e.UpdatedAt); err != nil {
+		Scan(&e.ID, &e.EmailHash, &e.UsernameHash, &e.PhoneNumberHash, &e.EncryptedEmail, &e.EncryptedUsername, &e.EncryptedFirstName, &e.EncryptedLastName, &e.EncryptedPhoneNumber, &e.EncryptedRoles, &e.EncryptedAbout, &e.EncryptedIntroduction, &e.Image, &e.RiskLevel, &e.IsPrivate, &e.EncryptedUserKey, &e.KeyVersion, &e.CreatedAt, &e.UpdatedAt); err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
 			return entities.UserEntity{}, NotFound
