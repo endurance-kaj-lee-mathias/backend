@@ -497,7 +497,7 @@ Content-Type: application/json
 ### 35. THERAPIST tries to view VETERAN profile again
 ###     Expected: 200 OK (person-specific rule overrides resource-level privacy)
 GET {{baseUrl}}/users/{{veteranId}}
-Authorization: Bearer {{therapistToken}}
+Authorization: Bearer {{supportToken}}
 
 ### 36. VETERAN makes userProfile public again
 ###     Expected: 204 No Content

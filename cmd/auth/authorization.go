@@ -96,7 +96,7 @@ func RequireSupportRelationship(authService application.Service, extract TargetE
 			}
 
 			if !hasSupportRel {
-				response.WriteError(w, http.StatusForbidden, MissingRole)
+				response.WriteError(w, http.StatusForbidden, errors.New("support relationship is missing"))
 				return
 			}
 
@@ -140,7 +140,7 @@ func RequireAuthorization(authService application.Service) func(http.Handler) ht
 			}
 
 			if !allowed {
-				response.WriteError(w, http.StatusForbidden, MissingRole)
+				response.WriteError(w, http.StatusForbidden, errors.New("access denied by privacy settings or rules"))
 				return
 			}
 
