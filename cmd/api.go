@@ -106,6 +106,9 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 			r.Delete("/rules/{id}", authzHandler.DeleteRule)
 			r.Get("/rules", authzHandler.ListRules)
 			r.Get("/rules/{id}", authzHandler.GetRulesByViewer)
+
+			r.Get("/resources", authzHandler.GetResourcePrivacySettings)
+			r.Patch("/resources/{resource}/privacy", authzHandler.PatchResourcePrivacy)
 		})
 
 		r.Route("/stress", func(r chi.Router) {

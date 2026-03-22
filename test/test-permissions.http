@@ -444,3 +444,71 @@ Authorization: Bearer {{therapistToken}}
 DELETE {{baseUrl}}/sharing/rules/{{veteranOwnedRuleId}}
 Authorization: Bearer {{veteranToken}}
 
+### =====================================================
+### Per-Resource Privacy
+### =====================================================
+
+### 29. Default state - no resource privacy settings
+###     Expected: 200 OK - empty array []
+GET {{baseUrl}}/sharing/resources
+Authorization: Bearer {{veteranToken}}
+
+### 30. VETERAN restricts userProfile for everyone globally
+###     Expected: 204 No Content
+PATCH {{baseUrl}}/sharing/resources/userProfile/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": true
+}
+
+### 31. THERAPIST tries to view VETERAN profile
+###     Expected: 403 Forbidden (restricted via resource privacy)
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
+
+### 32. SUPPORT tries to view VETERAN profile
+###     Expected: 403 Forbidden (restricted via resource privacy)
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{supportToken}}
+
+### 33. VETERAN checks their resource privacy settings
+###     Expected: 200 OK - array with userProfile: true
+GET {{baseUrl}}/sharing/resources
+Authorization: Bearer {{veteranToken}}
+
+### 34. VETERAN creates explicit allow rule for THERAPIST on userProfile
+###     Expected: 201 Created (This proves per-person rule overrides resource setting)
+POST {{baseUrl}}/sharing/rules
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "viewerId": "{{therapistId}}",
+  "resource": "userProfile",
+  "effect": "allow"
+}
+
+> {%
+    client.global.set("allowTherapistRuleId", response.body.id);
+%}
+
+### 35. THERAPIST tries to view VETERAN profile again
+###     Expected: 200 OK (person-specific rule overrides resource-level privacy)
+GET {{baseUrl}}/users/{{veteranId}}
+Authorization: Bearer {{therapistToken}}
+
+### 36. VETERAN makes userProfile public again
+###     Expected: 204 No Content
+PATCH {{baseUrl}}/sharing/resources/userProfile/privacy
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "isPrivate": false
+}
+
+### Cleanup - delete the allow rule
+DELETE {{baseUrl}}/sharing/rules/{{allowTherapistRuleId}}
+Authorization: Bearer {{veteranToken}}
