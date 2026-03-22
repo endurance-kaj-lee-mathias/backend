@@ -287,3 +287,15 @@ Content-Type: application/json
 GET {{baseUrl}}/users/me
 Authorization: Bearer {{veteranToken}}
 
+### 29. Set risk level to normal (VETERAN)
+PUT {{baseUrl}}/users/me/risk-level
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "riskLevel": "normal"
+}
+
+### 30. Verify risk level is normal (VETERAN)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{veteranToken}}
