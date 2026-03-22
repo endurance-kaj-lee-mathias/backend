@@ -12,8 +12,8 @@ import (
 
 type Handler = transport.Handler
 
-func Wire(db *sql.DB, enc encryption.Service, kc keycloak.Client, mobileClientID string, webClientID string) *Handler {
+func Wire(db *sql.DB, enc encryption.Service, kc keycloak.Client, mobileClientID string, webClientID string) (*Handler, application.Service) {
 	repo := infrastructure.NewRepository(db, enc)
 	service := application.NewService(repo, enc, kc)
-	return transport.NewHandler(service, mobileClientID, webClientID)
+	return transport.NewHandler(service, mobileClientID, webClientID), service
 }

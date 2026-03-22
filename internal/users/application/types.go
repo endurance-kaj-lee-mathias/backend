@@ -22,10 +22,12 @@ type Service interface {
 	UpdateAbout(ctx context.Context, id domain.UserId, about string) error
 	UpdateImage(ctx context.Context, id domain.UserId, image string) error
 	UpdatePrivacy(ctx context.Context, id domain.UserId, isPrivate bool) error
+	UpdateRiskLevel(ctx context.Context, id domain.UserId, riskLevel domain.RiskLevel) error
 	UpsertAddress(ctx context.Context, userID domain.UserId, street string, locality string, region string, postalCode string, country string) (domain.Address, error)
 	GetAddress(ctx context.Context, userID domain.UserId) (domain.Address, error)
 	UpsertDevice(ctx context.Context, userID domain.UserId, deviceToken string, platform string) error
 	DeleteDevice(ctx context.Context, deviceToken string) error
+	FindDeviceTokensByUserID(ctx context.Context, userID domain.UserId) ([]string, error)
 	AssignRole(ctx context.Context, userID domain.UserId, roleName string) error
 }
 

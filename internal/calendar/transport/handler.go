@@ -438,3 +438,31 @@ func (h *Handler) GetMyAppointmentsByDay(w http.ResponseWriter, r *http.Request)
 
 	response.Write(w, http.StatusOK, models.ToAppointmentModels(appointments))
 }
+
+func (h *Handler) GetFirstAvailableSlot(w http.ResponseWriter, r *http.Request) {
+	claims, ok := auth.GetUserClaims(r.Context())
+	if !ok {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	veteranID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, InvalidId)
+		return
+	}
+
+	slot, err := h.service.GetFirstAvailableSlot(r.Context(), veteranID)
+	if err != nil {
+		status, errMsg := mapError(err)
+		response.WriteError(w, status, errMsg)
+		return
+	}
+
+	if slot == nil {
+		response.WriteError(w, http.StatusNotFound, models.SlotNotFound)
+		return
+	}
+
+	response.Write(w, http.StatusOK, models.ToSlotWithProviderModel(*slot))
+}

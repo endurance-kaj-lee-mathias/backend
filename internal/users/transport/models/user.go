@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/users/domain"
 )
@@ -14,6 +16,7 @@ type UserModel struct {
 	About        string        `json:"about"`
 	Introduction string        `json:"introduction"`
 	Image        string        `json:"image"`
+	RiskLevel    string        `json:"riskLevel"`
 	IsPrivate    bool          `json:"isPrivate"`
 	Address      *AddressModel `json:"address,omitempty"`
 }
@@ -28,6 +31,7 @@ func ToModel(usr domain.User, addr *domain.Address) UserModel {
 		About:        usr.About,
 		Introduction: usr.Introduction,
 		Image:        usr.Image,
+		RiskLevel:    string(usr.RiskLevel),
 		IsPrivate:    usr.IsPrivate,
 	}
 	if addr != nil {
@@ -35,4 +39,15 @@ func ToModel(usr domain.User, addr *domain.Address) UserModel {
 		m.Address = &a
 	}
 	return m
+}
+
+type UpdateRiskLevelModel struct {
+	RiskLevel string `json:"riskLevel"`
+}
+
+func (m UpdateRiskLevelModel) Validate() error {
+	if m.RiskLevel != string(domain.RiskLevelNormal) && m.RiskLevel != string(domain.RiskLevelHigh) {
+		return errors.New("invalid risk level")
+	}
+	return nil
 }

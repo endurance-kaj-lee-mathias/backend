@@ -345,3 +345,26 @@ func (r *repository) DeleteFutureSlotsBySeries(ctx context.Context, seriesID uui
 	)
 	return err
 }
+
+func (r *repository) GetFirstAvailableSlotByProviders(ctx context.Context, providerIDs []uuid.UUID, from time.Time) (entities.SlotWithProviderEntity, error) {
+	var ent entities.SlotWithProviderEntity
+
+	query := `SELECT s.id, s.provider_id, s.start_time, s.end_time, s.is_urgent, s.is_booked, s.series_id, s.created_at, s.updated_at, null as title, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
+		 FROM availability_slots s
+		 JOIN users u ON u.id = s.provider_id
+		 WHERE s.provider_id = ANY($1) AND s.start_time >= $2 AND s.is_booked = false
+         ORDER BY s.start_time ASC
+         LIMIT 1`
+
+	err := r.db.QueryRowContext(ctx, query, providerIDs, from).
+		Scan(&ent.ID, &ent.ProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.IsBooked, &ent.SeriesID, &ent.CreatedAt, &ent.UpdatedAt, &ent.AppointmentTitle, &ent.ProviderUsernameEncrypted, &ent.ProviderFirstNameEncrypted, &ent.ProviderLastNameEncrypted, &ent.ProviderEncryptedUserKey, &ent.ProviderImage)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entities.SlotWithProviderEntity{}, SlotNotFound
+		}
+		return entities.SlotWithProviderEntity{}, err
+	}
+
+	return ent, nil
+}

@@ -84,3 +84,19 @@ func (n *AppNotifier) NotifyNewMessage(ctx context.Context, userID uuid.UUID, de
 	}
 	return nil
 }
+
+func (n *AppNotifier) NotifyHighStress(ctx context.Context, userID uuid.UUID, deviceTokens []string) error {
+	channel := "notifications:" + userID.String()
+	n.ws.Broadcast(channel, wsdomain.OutboundMessage{
+		Channel:   channel,
+		Content:   "High stress detected: Your stress levels are high. Please open the app for support.",
+		CreatedAt: time.Now().UTC(),
+	})
+
+	for _, token := range deviceTokens {
+		if token != "" {
+			_ = n.fb.NotifyHighStress(ctx, token)
+		}
+	}
+	return nil
+}

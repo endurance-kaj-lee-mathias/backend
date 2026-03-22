@@ -444,3 +444,23 @@ func (r *repository) FindDeviceTokensByUserID(ctx context.Context, userID uuid.U
 
 	return tokens, rows.Err()
 }
+
+func (r *repository) UpdateRiskLevel(ctx context.Context, id uuid.UUID, riskLevel string) error {
+	query := `UPDATE users SET risk_level = $1, updated_at = NOW() WHERE id = $2`
+
+	result, err := r.db.ExecContext(ctx, query, riskLevel, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return NotFound
+	}
+
+	return nil
+}

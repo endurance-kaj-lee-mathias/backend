@@ -26,6 +26,7 @@ type Repository interface {
 	GetAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error)
 	GetSlotWithProvider(ctx context.Context, id uuid.UUID) (entities.SlotWithProviderEntity, error)
 	GetEncryptedUserKey(ctx context.Context, userID uuid.UUID) ([]byte, error)
+	GetFirstAvailableSlotByProviders(ctx context.Context, providerIDs []uuid.UUID, from time.Time) (entities.SlotWithProviderEntity, error)
 }
 
 type repository struct {

@@ -86,3 +86,21 @@ func (n *FirebaseNotifier) NotifyNewMessage(ctx context.Context, deviceToken str
 
 	return nil
 }
+
+func (n *FirebaseNotifier) NotifyHighStress(ctx context.Context, deviceToken string) error {
+	msg := &messaging.Message{
+		Notification: &messaging.Notification{
+			Title: "High stress detected",
+			Body:  "Your stress levels are high. Please open the app for support.",
+		},
+		Token: deviceToken,
+	}
+
+	_, err := n.client.Send(ctx, msg)
+	if err != nil {
+		slog.Error("sending firebase high stress notification", "error", err)
+		return err
+	}
+
+	return nil
+}

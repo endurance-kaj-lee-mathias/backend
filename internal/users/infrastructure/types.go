@@ -28,6 +28,7 @@ type Repository interface {
 	UpsertDevice(ctx context.Context, ent entities.UserDeviceEntity) error
 	DeleteDevice(ctx context.Context, deviceToken string) error
 	FindDeviceTokensByUserID(ctx context.Context, userID uuid.UUID) ([]string, error)
+	UpdateRiskLevel(ctx context.Context, id uuid.UUID, riskLevel string) error
 }
 
 type repository struct {

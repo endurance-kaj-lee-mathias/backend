@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+type RiskLevel string
+
+const (
+	RiskLevelNormal RiskLevel = "normal"
+	RiskLevelHigh   RiskLevel = "high"
+)
+
 type User struct {
 	ID           UserId    `json:"id"`
 	Email        string    `json:"email"`
@@ -16,6 +23,7 @@ type User struct {
 	About        string    `json:"about"`
 	Introduction string    `json:"introduction"`
 	Image        string    `json:"image"`
+	RiskLevel    RiskLevel `json:"riskLevel"`
 	IsPrivate    bool      `json:"isPrivate"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
@@ -34,6 +42,7 @@ func NewUser(id UserId, email string, username string, firstName string, lastNam
 		About:        fmt.Sprintf("Hey, I'm %s. I'm here to find support and connect with others who understand.", firstName),
 		Introduction: fmt.Sprintf("Hi, I'm %s! I'm new to Endurance and looking forward to connecting.", firstName),
 		Image:        "https://firebase.google.com/static/images/brand-guidelines/logo-vertical.png",
+		RiskLevel:    RiskLevelNormal,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
