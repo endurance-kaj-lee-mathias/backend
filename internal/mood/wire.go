@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/gofrs/uuid"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/encryption"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/application"
 	"gitlab.com/kdg-ti/the-lab/teams-25-26/26-de-uitgeruste-it-ers/backend/internal/mood/infrastructure"
@@ -11,7 +12,7 @@ import (
 )
 
 type Notifier interface {
-	Notify(ctx context.Context, deviceToken string) error
+	Notify(ctx context.Context, userID uuid.UUID, deviceTokens []string) error
 }
 
 func Wire(db *sql.DB, enc encryption.Service, notifier Notifier, authz application.AuthorizationChecker) (*transport.Handler, *application.Scheduler) {

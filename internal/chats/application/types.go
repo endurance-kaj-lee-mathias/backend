@@ -11,7 +11,7 @@ import (
 )
 
 type Notifier interface {
-	NotifyNewMessage(ctx context.Context, deviceToken string) error
+	NotifyNewMessage(ctx context.Context, userID uuid.UUID, deviceTokens []string) error
 }
 
 type Service interface {

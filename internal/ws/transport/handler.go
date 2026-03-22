@@ -68,6 +68,43 @@ func (h *Handler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) ServeNotificationsWS(w http.ResponseWriter, r *http.Request) {
+	claims, err := h.authenticate(r)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(claims.Sub)
+	if err != nil {
+		response.WriteError(w, http.StatusUnauthorized, Unauthorized)
+		return
+	}
+
+	opts := h.acceptOptions()
+
+	conn, err := websocket.Accept(w, r, opts)
+	if err != nil {
+		slog.Error("ws: failed to accept connection for notifications", "error", err)
+		return
+	}
+
+	client := application.NewClient(claims.Sub)
+	h.manager.Subscribe(notificationChannel(userID), client)
+
+	defer func() {
+		h.manager.UnsubscribeAll(client)
+		client.Close()
+		_ = conn.CloseNow()
+	}()
+
+	ctx := conn.CloseRead(r.Context())
+
+	if err := h.writeLoop(ctx, conn, client); err != nil && err != context.Canceled {
+		slog.Debug("ws: notifications write loop ended", "userID", client.UserID, "error", err)
+	}
+}
+
 func (h *Handler) writeLoop(ctx context.Context, conn *websocket.Conn, client *application.Client) error {
 	for {
 		select {
@@ -96,6 +133,10 @@ func (h *Handler) acceptOptions() *websocket.AcceptOptions {
 
 func conversationChannel(conversationID uuid.UUID) string {
 	return "conversation:" + conversationID.String()
+}
+
+func notificationChannel(userID uuid.UUID) string {
+	return "notifications:" + userID.String()
 }
 
 func containsConversation(conversationIDs []uuid.UUID, conversationID uuid.UUID) bool {

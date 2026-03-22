@@ -172,14 +172,8 @@ func (s *service) notifyMessage(conversationID, senderID uuid.UUID) {
 			continue
 		}
 
-		for _, token := range tokens {
-			if token == "" {
-				continue
-			}
-
-			if err := s.notifier.NotifyNewMessage(ctx, token); err != nil {
-				slog.Warn("failed to send message notification", "user_id", recipientID, "error", err)
-			}
+		if err := s.notifier.NotifyNewMessage(ctx, recipientID, tokens); err != nil {
+			slog.Warn("failed to send message notification", "user_id", recipientID, "error", err)
 		}
 	}
 }

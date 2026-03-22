@@ -253,14 +253,8 @@ func (s *service) notifyInviteReceived(receiverID uuid.UUID) {
 		return
 	}
 
-	for _, token := range tokens {
-		if token == "" {
-			continue
-		}
-
-		if err := s.notifier.NotifyInvite(ctx, token); err != nil {
-			slog.Warn("failed to send invite notification", "user_id", receiverID, "error", err)
-		}
+	if err := s.notifier.NotifyInvite(ctx, receiverID, tokens); err != nil {
+		slog.Warn("failed to send invite notification", "user_id", receiverID, "error", err)
 	}
 }
 
@@ -273,14 +267,8 @@ func (s *service) notifyInviteAccepted(senderID uuid.UUID) {
 		return
 	}
 
-	for _, token := range tokens {
-		if token == "" {
-			continue
-		}
-
-		if err := s.notifier.NotifyInviteAccepted(ctx, token); err != nil {
-			slog.Warn("failed to send invite accepted notification", "user_id", senderID, "error", err)
-		}
+	if err := s.notifier.NotifyInviteAccepted(ctx, senderID, tokens); err != nil {
+		slog.Warn("failed to send invite accepted notification", "user_id", senderID, "error", err)
 	}
 }
 
