@@ -19,6 +19,7 @@ type UserProfileResponse struct {
 	Image        string  `json:"image"`
 	PhoneNumber  *string `json:"phoneNumber,omitempty"`
 	IsPrivate    bool    `json:"isPrivate"`
+	RiskLevel    string  `json:"riskLevel"`
 }
 
 type WeeklyResponse struct {
@@ -54,6 +55,7 @@ func ToJournalResponse(report domain.JournalReport, weekOffset int) (JournalResp
 			Image:        p.Image,
 			PhoneNumber:  p.PhoneNumber,
 			IsPrivate:    p.IsPrivate,
+			RiskLevel:    p.RiskLevel,
 		}
 		jr.UserProfile = &prof
 	}

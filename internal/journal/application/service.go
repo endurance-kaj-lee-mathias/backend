@@ -189,5 +189,6 @@ func (s *service) decryptProfile(ent entities.UserProfileEntity, userKey []byte)
 		Image:        ent.Image,
 		PhoneNumber:  phoneNumber,
 		IsPrivate:    ent.IsPrivate,
+		RiskLevel:    ent.RiskLevel,
 	}, nil
 }

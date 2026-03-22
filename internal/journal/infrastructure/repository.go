@@ -13,7 +13,7 @@ import (
 func (r *repository) GetUserProfile(ctx context.Context, userID uuid.UUID) (entities.UserProfileEntity, error) {
 	query := `
 		SELECT id, encrypted_user_key, encrypted_first_name, encrypted_last_name, encrypted_username,
-		       encrypted_about, encrypted_introduction, encrypted_phone_number, encrypted_roles, image, is_private
+		       encrypted_about, encrypted_introduction, encrypted_phone_number, encrypted_roles, image, is_private, risk_level
 		FROM users
 		WHERE id = $1
 	`
@@ -31,6 +31,7 @@ func (r *repository) GetUserProfile(ctx context.Context, userID uuid.UUID) (enti
 		&ent.EncryptedRoles,
 		&ent.Image,
 		&ent.IsPrivate,
+		&ent.RiskLevel,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
