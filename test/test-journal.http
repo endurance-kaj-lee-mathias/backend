@@ -217,7 +217,7 @@ Authorization: Bearer {{supportToken}}
 
 ### 16. Pagination – previous week
 ###     Expected: 200 OK – weekly.week=1, days from last ISO week (may be empty)
-GET {{baseUrl}}/users/journal/{{usernameVeteran}}?week=3
+GET {{baseUrl}}/users/journal/{{usernameVeteran}}?week=2
 Authorization: Bearer {{supportToken}}
 
 ### 17. VETERAN deletes the wildcard rule and creates scoped allow rules instead
@@ -308,8 +308,8 @@ Content-Type: application/json
 
 ### 25. SUPPORT fetches journal – stressScores and moodEntries present, userProfile still null
 ###     Expected: 200 OK
-GET {{baseUrl}}/users/journal/{{usernameSupport}}
-Authorization: Bearer {{veterantoken}}
+GET {{baseUrl}}/users/journal/{{usernameVeteran2}}
+Authorization: Bearer {{supportToken}}
 
 ### Cleanup shared rules
 DELETE {{baseUrl}}/sharing/rules/{{moodRuleId}}
