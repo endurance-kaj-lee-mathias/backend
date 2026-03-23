@@ -298,18 +298,18 @@ func (r *repository) DeleteSlotsByProviderID(ctx context.Context, providerID uui
 	return err
 }
 
-func (r *repository) GetAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error) {
+func (r *repository) GetAppointmentsByDay(ctx context.Context, userID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time, s.is_urgent, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
 		 FROM appointments a
 		 JOIN availability_slots s ON a.slot_id = s.id
 		 JOIN users u ON u.id = s.provider_id
-		 WHERE a.veteran_id = $1
+		 WHERE (a.veteran_id = $1 OR s.provider_id = $1)
 		   AND s.start_time >= $2
 		   AND s.start_time < $3
 		   AND a.status != 'CANCELLED'
 		 ORDER BY s.start_time`,
-		veteranID, dayStart, dayEnd,
+		userID, dayStart, dayEnd,
 	)
 	if err != nil {
 		return nil, err

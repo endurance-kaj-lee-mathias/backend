@@ -85,7 +85,7 @@ Authorization: Bearer {{supportToken}}
 ### 5. Create urgent slot (THERAPIST) – must succeed
 ### Stores slotId for use in later requests
 POST {{baseUrl}}/calendar/slots
-Authorization: Bearer {{therapistToken}}
+Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
@@ -100,18 +100,18 @@ Content-Type: application/json
 
 ### 6. Create second urgent slot (THERAPIST) – fills the daily urgent quota
 POST {{baseUrl}}/calendar/slots
-Authorization: Bearer {{therapistToken}}
+Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-04-07T10:00:00Z",
-  "endTime": "2026-04-07T11:00:00Z",
+  "startTime": "2026-04-07T11:00:00Z",
+  "endTime": "2026-04-07T12:00:00Z",
   "isUrgent": true
 }
 
 ### 7. Create normal (non-urgent) slot (THERAPIST) – should succeed now that quota is met
 POST {{baseUrl}}/calendar/slots
-Authorization: Bearer {{therapistToken}}
+Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
@@ -130,8 +130,8 @@ Authorization: Bearer {{supportToken}}
 Content-Type: application/json
 
 {
-  "startTime": "2026-04-08T09:00:00Z",
-  "endTime": "2026-04-08T10:00:00Z",
+  "startTime": "2026-04-08T10:00:00Z",
+  "endTime": "2026-04-08T11:00:00Z",
   "isUrgent": true
 }
 
@@ -158,7 +158,20 @@ Content-Type: application/json
 %}
 
 ### 10. VETERAN books the urgent slot with urgent=true
-POST {{baseUrl}}/calendar/slots/{{urgentSlotId}}/book
+POST {{baseUrl}}/calendar/slots/{{supportUrgentSlotId}}/book
+Authorization: Bearer {{veteranToken}}
+Content-Type: application/json
+
+{
+  "urgent": true
+}
+
+> {%
+    client.global.set("urgentAppointmentId", response.body.id);
+%}
+
+### 10. VETERAN books the urgent slot with urgent=true
+POST {{baseUrl}}/calendar/slots/{{}}/book
 Authorization: Bearer {{veteranToken}}
 Content-Type: application/json
 
@@ -175,7 +188,7 @@ GET {{baseUrl}}/calendar/appointments/me/2026-04-07
 Authorization: Bearer {{veteranToken}}
 
 ### 12. Get my appointments for a day with no appointments (should return null/empty)
-GET {{baseUrl}}/calendar/appointments/me/2026-04-09
+GET {{baseUrl}}/calendar/appointments/me/2026-04-08
 Authorization: Bearer {{veteranToken}}
 
 ### 12. Get my appointments for a day with no appointments (should return null/empty)
