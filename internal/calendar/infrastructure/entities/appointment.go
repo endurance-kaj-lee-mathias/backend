@@ -24,13 +24,18 @@ type AppointmentEntity struct {
 
 type AppointmentWithSlotEntity struct {
 	AppointmentEntity
-	SlotProviderID             uuid.UUID `db:"provider_id"`
-	IsUrgent                   bool      `db:"is_urgent"`
-	ProviderUsernameEncrypted  []byte    `db:"encrypted_username"`
-	ProviderFirstNameEncrypted []byte    `db:"encrypted_first_name"`
-	ProviderLastNameEncrypted  []byte    `db:"encrypted_last_name"`
-	ProviderEncryptedUserKey   []byte    `db:"encrypted_user_key"`
-	ProviderImage              *string   `db:"image"`
+	SlotProviderID                uuid.UUID `db:"provider_id"`
+	IsUrgent                      bool      `db:"is_urgent"`
+	ProviderUsernameEncrypted     []byte    `db:"encrypted_username"`
+	ProviderFirstNameEncrypted    []byte    `db:"encrypted_first_name"`
+	ProviderLastNameEncrypted     []byte    `db:"encrypted_last_name"`
+	ProviderEncryptedUserKey      []byte    `db:"encrypted_user_key"`
+	ProviderImage                 *string   `db:"image"`
+	TempVeteranUsernameEncrypted  []byte
+	TempVeteranFirstNameEncrypted []byte
+	TempVeteranLastNameEncrypted  []byte
+	TempVeteranEncryptedUserKey   []byte
+	TempVeteranImage              *string
 }
 
 func AppointmentToEntity(a domain.Appointment) AppointmentEntity {

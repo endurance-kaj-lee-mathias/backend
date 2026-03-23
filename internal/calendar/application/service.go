@@ -196,11 +196,11 @@ func (s *service) DeleteSlotsBySeries(ctx context.Context, providerID uuid.UUID,
 	return s.repo.DeleteFutureSlotsBySeries(ctx, seriesID, providerID)
 }
 
-func (s *service) GetMyAppointmentsByDay(ctx context.Context, veteranID uuid.UUID, date time.Time) ([]domain.Appointment, error) {
+func (s *service) GetMyAppointmentsByDay(ctx context.Context, userID uuid.UUID, date time.Time) ([]domain.Appointment, error) {
 	dayStart := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 	dayEnd := dayStart.Add(24 * time.Hour)
 
-	ents, err := s.repo.GetAppointmentsByDay(ctx, veteranID, dayStart, dayEnd)
+	ents, err := s.repo.GetAppointmentsByDay(ctx, userID, dayStart, dayEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -213,36 +213,62 @@ func (s *service) GetMyAppointmentsByDay(ctx context.Context, veteranID uuid.UUI
 		providerUsername := ""
 		providerFirst := ""
 		providerLast := ""
-		if len(ent.ProviderEncryptedUserKey) > 0 {
-			userKey, derr := s.enc.DecryptUserKey(ent.ProviderEncryptedUserKey)
-			if derr == nil {
-				if len(ent.ProviderUsernameEncrypted) > 0 {
-					if uname, derr2 := s.enc.Decrypt(ent.ProviderUsernameEncrypted, userKey); derr2 == nil {
-						providerUsername = string(uname)
+		providerImage := ""
+
+		if userID == ent.VeteranID {
+			if len(ent.ProviderEncryptedUserKey) > 0 {
+				userKey, derr := s.enc.DecryptUserKey(ent.ProviderEncryptedUserKey)
+				if derr == nil {
+					if len(ent.ProviderUsernameEncrypted) > 0 {
+						if uname, derr2 := s.enc.Decrypt(ent.ProviderUsernameEncrypted, userKey); derr2 == nil {
+							providerUsername = string(uname)
+						}
 					}
-				}
-				if len(ent.ProviderFirstNameEncrypted) > 0 {
-					if fname, derr2 := s.enc.Decrypt(ent.ProviderFirstNameEncrypted, userKey); derr2 == nil {
-						providerFirst = string(fname)
+					if len(ent.ProviderFirstNameEncrypted) > 0 {
+						if fname, derr2 := s.enc.Decrypt(ent.ProviderFirstNameEncrypted, userKey); derr2 == nil {
+							providerFirst = string(fname)
+						}
 					}
-				}
-				if len(ent.ProviderLastNameEncrypted) > 0 {
-					if lname, derr2 := s.enc.Decrypt(ent.ProviderLastNameEncrypted, userKey); derr2 == nil {
-						providerLast = string(lname)
+					if len(ent.ProviderLastNameEncrypted) > 0 {
+						if lname, derr2 := s.enc.Decrypt(ent.ProviderLastNameEncrypted, userKey); derr2 == nil {
+							providerLast = string(lname)
+						}
 					}
 				}
 			}
-		}
-
-		providerImage := ""
-		if ent.ProviderImage != nil {
-			providerImage = *ent.ProviderImage
+			if ent.ProviderImage != nil {
+				providerImage = *ent.ProviderImage
+			}
+		} else if userID == ent.SlotProviderID {
+			if len(ent.TempVeteranEncryptedUserKey) > 0 {
+				userKey, derr := s.enc.DecryptUserKey(ent.TempVeteranEncryptedUserKey)
+				if derr == nil {
+					if len(ent.TempVeteranUsernameEncrypted) > 0 {
+						if uname, derr2 := s.enc.Decrypt(ent.TempVeteranUsernameEncrypted, userKey); derr2 == nil {
+							providerUsername = string(uname)
+						}
+					}
+					if len(ent.TempVeteranFirstNameEncrypted) > 0 {
+						if fname, derr2 := s.enc.Decrypt(ent.TempVeteranFirstNameEncrypted, userKey); derr2 == nil {
+							providerFirst = string(fname)
+						}
+					}
+					if len(ent.TempVeteranLastNameEncrypted) > 0 {
+						if lname, derr2 := s.enc.Decrypt(ent.TempVeteranLastNameEncrypted, userKey); derr2 == nil {
+							providerLast = string(lname)
+						}
+					}
+				}
+			}
+			if ent.TempVeteranImage != nil {
+				providerImage = *ent.TempVeteranImage
+			}
 		}
 
 		a.ProviderUsername = providerUsername
-		a.ProviderImage = providerImage
 		a.ProviderFirstName = providerFirst
 		a.ProviderLastName = providerLast
+		a.ProviderImage = providerImage
 
 		appointments = append(appointments, a)
 	}

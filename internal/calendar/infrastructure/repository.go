@@ -300,10 +300,14 @@ func (r *repository) DeleteSlotsByProviderID(ctx context.Context, providerID uui
 
 func (r *repository) GetAppointmentsByDay(ctx context.Context, userID uuid.UUID, dayStart, dayEnd time.Time) ([]entities.AppointmentWithSlotEntity, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at, s.provider_id, s.start_time, s.end_time, s.is_urgent, u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image
+		`SELECT a.id, a.slot_id, a.veteran_id, a.title, a.status, a.created_at, a.updated_at,
+		 s.provider_id, s.start_time, s.end_time, s.is_urgent,
+		 u.encrypted_username, u.encrypted_first_name, u.encrypted_last_name, u.encrypted_user_key, u.image,
+		 v.encrypted_username, v.encrypted_first_name, v.encrypted_last_name, v.encrypted_user_key, v.image
 		 FROM appointments a
 		 JOIN availability_slots s ON a.slot_id = s.id
 		 JOIN users u ON u.id = s.provider_id
+		 JOIN users v ON v.id = a.veteran_id
 		 WHERE (a.veteran_id = $1 OR s.provider_id = $1)
 		   AND s.start_time >= $2
 		   AND s.start_time < $3
@@ -323,11 +327,21 @@ func (r *repository) GetAppointmentsByDay(ctx context.Context, userID uuid.UUID,
 	var ents []entities.AppointmentWithSlotEntity
 	for rows.Next() {
 		var ent entities.AppointmentWithSlotEntity
+		var vUsername, vFirst, vLast, vKey []byte
+		var vImage *string
 		if err := rows.Scan(
-			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt, &ent.SlotProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent, &ent.ProviderUsernameEncrypted, &ent.ProviderFirstNameEncrypted, &ent.ProviderLastNameEncrypted, &ent.ProviderEncryptedUserKey, &ent.ProviderImage,
+			&ent.ID, &ent.SlotID, &ent.VeteranID, &ent.Title, &ent.Status, &ent.CreatedAt, &ent.UpdatedAt,
+			&ent.SlotProviderID, &ent.StartTime, &ent.EndTime, &ent.IsUrgent,
+			&ent.ProviderUsernameEncrypted, &ent.ProviderFirstNameEncrypted, &ent.ProviderLastNameEncrypted, &ent.ProviderEncryptedUserKey, &ent.ProviderImage,
+			&vUsername, &vFirst, &vLast, &vKey, &vImage,
 		); err != nil {
 			return nil, err
 		}
+		ent.TempVeteranUsernameEncrypted = vUsername
+		ent.TempVeteranFirstNameEncrypted = vFirst
+		ent.TempVeteranLastNameEncrypted = vLast
+		ent.TempVeteranEncryptedUserKey = vKey
+		ent.TempVeteranImage = vImage
 		ents = append(ents, ent)
 	}
 	if rows.Err() != nil {
