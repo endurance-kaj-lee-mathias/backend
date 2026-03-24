@@ -8,20 +8,26 @@ import (
 )
 
 type UserModel struct {
-	ID           uuid.UUID     `json:"id"`
-	FirstName    string        `json:"firstName"`
-	LastName     string        `json:"lastName"`
-	Username     string        `json:"username"`
-	PhoneNumber  *string       `json:"phoneNumber,omitempty"`
-	About        string        `json:"about"`
-	Introduction string        `json:"introduction"`
-	Image        string        `json:"image"`
-	RiskLevel    string        `json:"riskLevel"`
-	IsPrivate    bool          `json:"isPrivate"`
-	Address      *AddressModel `json:"address,omitempty"`
+	ID               uuid.UUID              `json:"id"`
+	FirstName        string                 `json:"firstName"`
+	LastName         string                 `json:"lastName"`
+	Username         string                 `json:"username"`
+	PhoneNumber      *string                `json:"phoneNumber,omitempty"`
+	About            string                 `json:"about"`
+	Introduction     string                 `json:"introduction"`
+	Image            string                 `json:"image"`
+	RiskLevel        string                 `json:"riskLevel"`
+	IsPrivate        bool                   `json:"isPrivate"`
+	Address          *AddressModel          `json:"address,omitempty"`
+	SharingResources []ResourcePrivacyModel `json:"sharingResources"`
 }
 
-func ToModel(usr domain.User, addr *domain.Address) UserModel {
+type ResourcePrivacyModel struct {
+	Resource  string `json:"resource"`
+	IsPrivate bool   `json:"isPrivate"`
+}
+
+func ToModel(usr domain.User, addr *domain.Address, sharingResources map[string]bool) UserModel {
 	m := UserModel{
 		ID:           usr.ID.UUID,
 		FirstName:    usr.FirstName,
@@ -38,6 +44,24 @@ func ToModel(usr domain.User, addr *domain.Address) UserModel {
 		a := ToAddressModel(*addr)
 		m.Address = &a
 	}
+
+	if sharingResources != nil {
+		var resources []ResourcePrivacyModel
+		for res, isPrivate := range sharingResources {
+			resources = append(resources, ResourcePrivacyModel{
+				Resource:  res,
+				IsPrivate: isPrivate,
+			})
+		}
+		if resources != nil {
+			m.SharingResources = resources
+		} else {
+			m.SharingResources = []ResourcePrivacyModel{}
+		}
+	} else {
+		m.SharingResources = []ResourcePrivacyModel{}
+	}
+
 	return m
 }
 

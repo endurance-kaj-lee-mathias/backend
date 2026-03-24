@@ -37,7 +37,8 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 	r.Use(middleware.Timeout(time.Minute))
 	r.Use(corsMiddleware(server.config.AllowedOrigins))
 
-	userHandler, usersService := users.Wire(server.db, server.enc, server.kc, "mobile", server.idp.WebClientID)
+	authzHandler, authzService := authorization.Wire(server.db)
+	userHandler, usersService := users.Wire(server.db, server.enc, server.kc, "mobile", server.idp.WebClientID, authzService)
 	healthHandler := health.NewHandler(server.db, server.messagingClient)
 	wsManager := wsapp.NewManager()
 
@@ -47,7 +48,6 @@ func (server *server) mount() (http.Handler, *moodapp.Scheduler) {
 
 	chatsHandler, chatsSvc := chats.Wire(server.db, server.enc, notifier, wsManager)
 	wsHandler := ws.Wire(server.idp, server.config.AllowedOrigins, wsManager, chatsSvc)
-	authzHandler, authzService := authorization.Wire(server.db)
 	moodHandler, moodScheduler := mood.Wire(server.db, server.enc, notifier, authzService)
 	supportHandler, supportService := support.Wire(server.db, server.enc, authzService, notifier)
 	calendarHandler := calendar.Wire(server.db, server.enc, server.config.MinUrgentMinutes, supportService)

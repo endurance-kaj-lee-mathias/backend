@@ -120,7 +120,12 @@ func (h *Handler) GetOrCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToModel(usr, addr))
+	sharingResources, err := h.authzService.GetResourcePrivacySettings(r.Context(), id.UUID)
+	if err != nil {
+		sharingResources = map[string]bool{}
+	}
+
+	response.Write(w, http.StatusOK, models.ToModel(usr, addr, sharingResources))
 }
 
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +146,12 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToModel(usr, addr))
+	sharingResources, err := h.authzService.GetResourcePrivacySettings(r.Context(), id.UUID)
+	if err != nil {
+		sharingResources = map[string]bool{}
+	}
+
+	response.Write(w, http.StatusOK, models.ToModel(usr, addr, sharingResources))
 }
 
 func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
@@ -172,7 +182,12 @@ func (h *Handler) GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Write(w, http.StatusOK, models.ToModel(usr, addr))
+	sharingResources, err := h.authzService.GetResourcePrivacySettings(r.Context(), usr.ID.UUID)
+	if err != nil {
+		sharingResources = map[string]bool{}
+	}
+
+	response.Write(w, http.StatusOK, models.ToModel(usr, addr, sharingResources))
 }
 
 func (h *Handler) PatchFirstName(w http.ResponseWriter, r *http.Request) {

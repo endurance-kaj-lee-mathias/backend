@@ -14,14 +14,19 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+type AuthorizationService interface {
+	GetResourcePrivacySettings(ctx context.Context, ownerID uuid.UUID) (map[string]bool, error)
+}
+
 type Handler struct {
 	service        application.Service
+	authzService   AuthorizationService
 	mobileClientID string
 	webClientID    string
 }
 
-func NewHandler(s application.Service, mobileClientID string, webClientID string) *Handler {
-	return &Handler{service: s, mobileClientID: mobileClientID, webClientID: webClientID}
+func NewHandler(s application.Service, authzService AuthorizationService, mobileClientID string, webClientID string) *Handler {
+	return &Handler{service: s, authzService: authzService, mobileClientID: mobileClientID, webClientID: webClientID}
 }
 
 func (h *Handler) authenticatedID(w http.ResponseWriter, r *http.Request) (domain.UserId, *auth.Claims, bool) {
