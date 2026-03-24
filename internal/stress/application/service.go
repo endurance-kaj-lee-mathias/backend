@@ -91,7 +91,7 @@ func (s *service) computeStressScore(ctx context.Context, userID uuid.UUID) (dom
 		return domain.StressScore{}, err
 	}
 
-	if score.Score >= 80 {
+	if score.Score >= 85 {
 		if err := s.riskSvc.UpdateRiskLevel(ctx, usersdomain.UserId{UUID: userID}, usersdomain.RiskLevelHigh); err != nil {
 			slog.Error("stress: update risk level", "userID", userID, "error", err)
 		} else {
@@ -103,6 +103,10 @@ func (s *service) computeStressScore(ctx context.Context, userID uuid.UUID) (dom
 					slog.Error("stress: notify high stress", "userID", userID, "error", err)
 				}
 			}
+		}
+	} else {
+		if err := s.riskSvc.UpdateRiskLevel(ctx, usersdomain.UserId{UUID: userID}, usersdomain.RiskLevelNormal); err != nil {
+			slog.Error("stress: update risk level", "userID", userID, "error", err)
 		}
 	}
 
